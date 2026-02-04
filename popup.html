@@ -117,8 +117,64 @@
 
 
 
+        <!-- Weather Card - Compact like bookmark-card -->
+        <div id="weatherCard" class="weather-card hidden">
+            <!-- Refresh Button (corner) -->
+            <button class="weather-refresh-btn" id="weatherRefreshBtn" title="Refresh weather">🔄</button>
+            <div class="weather-loading hidden" id="weatherLoading">
+                <div class="spinner"></div>
+                <span>Loading...</span>
+            </div>
+            <div class="weather-content hidden" id="weatherContent">
+                <!-- Current Weather Row -->
+                <div class="weather-current">
+                    <!-- Icon on left like favicon -->
+                    <div class="weather-icon-wrapper" id="weatherIconWrapper">
+                        <span class="weather-icon" id="weatherIcon">☀️</span>
+                    </div>
+                    <!-- Info on right like bookmark-info -->
+                    <div class="weather-info">
+                        <div class="weather-header">
+                            <span class="weather-location" id="weatherLocation">--</span>
+                            <span class="weather-updated" id="weatherUpdated">--</span>
+                        </div>
+                        <div class="weather-main">
+                            <div class="weather-temp-section">
+                                <span class="weather-temp" id="weatherTemp">--°</span>
+                                <span class="weather-condition" id="weatherCondition">--</span>
+                            </div>
+                        </div>
+                        <div class="weather-stats">
+                            <div class="weather-stat">
+                                <span class="stat-icon">💧</span>
+                                <span class="stat-value" id="weatherHumidity">--%</span>
+                            </div>
+                            <div class="weather-stat">
+                                <span class="stat-icon">💨</span>
+                                <span class="stat-value" id="weatherWind">--</span>
+                            </div>
+                            <div class="weather-stat">
+                                <span class="stat-icon">🌡️</span>
+                                <span class="stat-value" id="weatherFeelsLike">--°</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 5-Day Forecast -->
+                <div class="weather-forecast" id="weatherForecast">
+                    <!-- Forecast days will be rendered by JS -->
+                </div>
+            </div>
+            <div class="weather-error hidden" id="weatherError">
+                <span class="error-icon">⚠️</span>
+                <span class="error-text" id="weatherErrorText">Unable to load weather</span>
+            </div>
+        </div>
+
         <!-- Bookmark List -->
         <div id="bookmarksContainer" class="bookmark-list">
+
+            
             <!-- Loading State -->
             <div class="loading" id="loadingState">
                 <div class="spinner"></div>
@@ -166,6 +222,70 @@
                             <option value="Asia/Kolkata">India (IST)</option>
                             <option value="Asia/Dubai">Dubai (GST)</option>
                             <option value="Australia/Sydney">Sydney (AEDT)</option>
+                        </select>
+                    </div>
+                </div>
+                <!-- Weather Settings -->
+                <div class="settings-section">
+                    <h3>🌤️ Weather</h3>
+                    <div class="settings-row">
+                        <label for="weatherEnabled">Enable Weather Widget</label>
+                        <input type="checkbox" id="weatherEnabled" class="toggle-checkbox">
+                    </div>
+                    <div class="settings-row" id="apiKeyRow">
+                        <label for="weatherApiKey">OpenWeatherMap API Key</label>
+                        <div class="api-key-input">
+                            <input type="password" id="weatherApiKey" class="settings-input" placeholder="Enter API key...">
+                            <button type="button" class="api-key-toggle" id="apiKeyToggle">👁️</button>
+                        </div>
+                    </div>
+                    <div class="settings-row">
+                        <label for="weatherCity">City</label>
+                        <select id="weatherCity" class="settings-select">
+                            <option value="">Auto-detect (IP)</option>
+                            <optgroup label="India">
+                                <option value="Bardhaman,IN">Bardhaman (Burdwan)</option>
+                                <option value="Kolkata,IN">Kolkata</option>
+                                <option value="Mumbai,IN">Mumbai</option>
+                                <option value="Delhi,IN">Delhi</option>
+                                <option value="Bangalore,IN">Bangalore</option>
+                                <option value="Chennai,IN">Chennai</option>
+                                <option value="Hyderabad,IN">Hyderabad</option>
+                            </optgroup>
+                            <optgroup label="Asia">
+                                <option value="Tokyo,JP">Tokyo, Japan</option>
+                                <option value="Singapore,SG">Singapore</option>
+                                <option value="Hong Kong,HK">Hong Kong</option>
+                                <option value="Dubai,AE">Dubai, UAE</option>
+                                <option value="Bangkok,TH">Bangkok, Thailand</option>
+                            </optgroup>
+                            <optgroup label="Europe">
+                                <option value="London,GB">London, UK</option>
+                                <option value="Paris,FR">Paris, France</option>
+                                <option value="Berlin,DE">Berlin, Germany</option>
+                                <option value="Amsterdam,NL">Amsterdam</option>
+                                <option value="Rome,IT">Rome, Italy</option>
+                            </optgroup>
+                            <optgroup label="Americas">
+                                <option value="New York,US">New York, USA</option>
+                                <option value="Los Angeles,US">Los Angeles, USA</option>
+                                <option value="San Francisco,US">San Francisco, USA</option>
+                                <option value="Atlanta,US">Atlanta, Georgia</option>
+                                <option value="Toronto,CA">Toronto, Canada</option>
+                                <option value="Sao Paulo,BR">São Paulo, Brazil</option>
+                            </optgroup>
+                            <optgroup label="Australia & Oceania">
+                                <option value="Sydney,AU">Sydney, Australia</option>
+                                <option value="Melbourne,AU">Melbourne, Australia</option>
+                                <option value="Auckland,NZ">Auckland, NZ</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div class="settings-row">
+                        <label for="tempUnit">Temperature Unit</label>
+                        <select id="tempUnit" class="settings-select">
+                            <option value="celsius">Celsius (°C)</option>
+                            <option value="fahrenheit">Fahrenheit (°F)</option>
                         </select>
                     </div>
                 </div>

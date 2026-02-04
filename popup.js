@@ -34,17 +34,48 @@ const showNetworkCheckbox = document.getElementById('showNetwork');
 const showMemoryCheckbox = document.getElementById('showMemory');
 const timezoneSelect = document.getElementById('timezoneSelect');
 
+// Weather elements
+const weatherCard = document.getElementById('weatherCard');
+const weatherLoading = document.getElementById('weatherLoading');
+const weatherContent = document.getElementById('weatherContent');
+const weatherError = document.getElementById('weatherError');
+const weatherErrorText = document.getElementById('weatherErrorText');
+const weatherLocation = document.getElementById('weatherLocation');
+const weatherUpdated = document.getElementById('weatherUpdated');
+const weatherTemp = document.getElementById('weatherTemp');
+const weatherCondition = document.getElementById('weatherCondition');
+const weatherIcon = document.getElementById('weatherIcon');
+const weatherIconWrapper = document.getElementById('weatherIconWrapper');
+const weatherHumidity = document.getElementById('weatherHumidity');
+const weatherWind = document.getElementById('weatherWind');
+const weatherFeelsLike = document.getElementById('weatherFeelsLike');
+const weatherForecast = document.getElementById('weatherForecast');
+const weatherRefreshBtn = document.getElementById('weatherRefreshBtn');
+
+// Weather settings elements
+const weatherEnabledCheckbox = document.getElementById('weatherEnabled');
+const weatherApiKeyInput = document.getElementById('weatherApiKey');
+const apiKeyToggle = document.getElementById('apiKeyToggle');
+const tempUnitSelect = document.getElementById('tempUnit');
+const weatherCitySelect = document.getElementById('weatherCity');
+
 // State
 let allBookmarks = [];
 let isFormVisible = false;
 let fetchedMetadata = null;
+let weatherRefreshInterval = null;
 
 // Settings state (with defaults)
 let settings = {
     showDateTime: true,
     showNetwork: true,
     showMemory: true,
-    timezone: 'local'
+    timezone: 'local',
+    // Weather settings
+    weatherEnabled: false,
+    weatherApiKey: '',
+    weatherCity: '',
+    tempUnit: 'celsius'
 };
 
 /**
@@ -134,6 +165,30 @@ function setupEventListeners() {
     }
     if (timezoneSelect) {
         timezoneSelect.addEventListener('change', handleSettingsChange);
+    }
+    
+    // Weather settings events
+    if (weatherEnabledCheckbox) {
+        weatherEnabledCheckbox.addEventListener('change', handleWeatherSettingsChange);
+    }
+    if (weatherApiKeyInput) {
+        weatherApiKeyInput.addEventListener('change', handleWeatherSettingsChange);
+    }
+    if (apiKeyToggle) {
+        apiKeyToggle.addEventListener('click', toggleApiKeyVisibility);
+    }
+    if (weatherCitySelect) {
+        weatherCitySelect.addEventListener('change', handleWeatherSettingsChange);
+    }
+    if (tempUnitSelect) {
+        tempUnitSelect.addEventListener('change', handleWeatherSettingsChange);
+    }
+    if (weatherRefreshBtn) {
+        weatherRefreshBtn.addEventListener('click', () => {
+            if (settings.weatherEnabled && settings.weatherApiKey) {
+                fetchWeather();
+            }
+        });
     }
 }
 
@@ -876,6 +931,17 @@ function loadSettings() {
     if (showNetworkCheckbox) showNetworkCheckbox.checked = settings.showNetwork;
     if (showMemoryCheckbox) showMemoryCheckbox.checked = settings.showMemory;
     if (timezoneSelect) timezoneSelect.value = settings.timezone;
+    
+    // Update weather controls
+    if (weatherEnabledCheckbox) weatherEnabledCheckbox.checked = settings.weatherEnabled;
+    if (weatherApiKeyInput) weatherApiKeyInput.value = settings.weatherApiKey;
+    if (weatherCitySelect) weatherCitySelect.value = settings.weatherCity || '';
+    if (tempUnitSelect) tempUnitSelect.value = settings.tempUnit;
+    
+    // Initialize weather if enabled
+    if (settings.weatherEnabled && settings.weatherApiKey) {
+        initWeather();
+    }
 }
 
 /**
@@ -944,6 +1010,453 @@ function closeSettingsModal() {
     if (settingsModal) {
         settingsModal.classList.add('hidden');
     }
+}
+
+// ==========================================
+// WEATHER FUNCTIONS
+// ==========================================
+
+const WEATHER_CACHE_KEY = 'weatherCache';
+const WEATHER_CACHE_DURATION = 60 * 60 * 1000; // 60 minutes
+
+/**
+ * Toggle API key visibility
+ */
+function toggleApiKeyVisibility() {
+    if (!weatherApiKeyInput) return;
+    
+    const isPassword = weatherApiKeyInput.type === 'password';
+    weatherApiKeyInput.type = isPassword ? 'text' : 'password';
+    if (apiKeyToggle) {
+        apiKeyToggle.textContent = isPassword ? '🙈' : '👁️';
+    }
+}
+
+/**
+ * Handle weather settings change
+ */
+function handleWeatherSettingsChange() {
+    settings.weatherEnabled = weatherEnabledCheckbox?.checked ?? false;
+    settings.weatherApiKey = weatherApiKeyInput?.value?.trim() ?? '';
+    settings.weatherCity = weatherCitySelect?.value ?? '';
+    settings.tempUnit = tempUnitSelect?.value ?? 'celsius';
+    
+    saveSettings();
+    
+    // Initialize or hide weather based on settings
+    if (settings.weatherEnabled && settings.weatherApiKey) {
+        initWeather();
+    } else {
+        hideWeatherCard();
+    }
+}
+
+/**
+ * Initialize weather widget
+ */
+function initWeather() {
+    if (!settings.weatherEnabled || !settings.weatherApiKey) {
+        hideWeatherCard();
+        return;
+    }
+    
+    // Clear any existing interval
+    if (weatherRefreshInterval) {
+        clearInterval(weatherRefreshInterval);
+    }
+    
+    // Show weather card
+    if (weatherCard) {
+        weatherCard.classList.remove('hidden');
+    }
+    
+    // Try to load from cache first
+    const cached = getWeatherCache();
+    if (cached) {
+        // Handle new cache format with current and forecast
+        if (cached.current) {
+            renderWeather(cached.current);
+            if (cached.forecast) {
+                renderForecast(cached.forecast);
+            }
+        } else {
+            // Legacy cache format - just current data
+            renderWeather(cached);
+        }
+    } else {
+        fetchWeather();
+    }
+    
+    // Set up 60-minute refresh interval
+    weatherRefreshInterval = setInterval(() => {
+        fetchWeather();
+    }, WEATHER_CACHE_DURATION);
+}
+
+/**
+ * Hide weather card
+ */
+function hideWeatherCard() {
+    if (weatherCard) {
+        weatherCard.classList.add('hidden');
+    }
+    if (weatherRefreshInterval) {
+        clearInterval(weatherRefreshInterval);
+        weatherRefreshInterval = null;
+    }
+}
+
+/**
+ * Get weather from cache
+ */
+function getWeatherCache() {
+    try {
+        const cached = localStorage.getItem(WEATHER_CACHE_KEY);
+        if (!cached) return null;
+        
+        const { data, timestamp } = JSON.parse(cached);
+        const age = Date.now() - timestamp;
+        
+        // Check if cache is still valid (60 minutes)
+        if (age < WEATHER_CACHE_DURATION) {
+            return data;
+        }
+        return null;
+    } catch (e) {
+        return null;
+    }
+}
+
+/**
+ * Save weather to cache
+ */
+function setWeatherCache(data) {
+    try {
+        localStorage.setItem(WEATHER_CACHE_KEY, JSON.stringify({
+            data,
+            timestamp: Date.now()
+        }));
+    } catch (e) {
+        console.error('Failed to cache weather:', e);
+    }
+}
+
+/**
+ * Fetch weather data
+ */
+async function fetchWeather() {
+    showWeatherLoading();
+    
+    try {
+        const units = settings.tempUnit === 'fahrenheit' ? 'imperial' : 'metric';
+        let weatherUrl, forecastUrl;
+        
+        // If city is provided, use city-based API
+        if (settings.weatherCity) {
+            const cityEncoded = encodeURIComponent(settings.weatherCity);
+            weatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${cityEncoded}&units=${units}&appid=${settings.weatherApiKey}`;
+            forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${cityEncoded}&units=${units}&appid=${settings.weatherApiKey}`;
+        } else {
+            // Otherwise, use coordinates
+            let latitude, longitude;
+            
+            // Try device geolocation first, fallback to IP-based
+            try {
+                const position = await getCurrentPosition();
+                latitude = position.coords.latitude;
+                longitude = position.coords.longitude;
+            } catch (geoError) {
+                console.log('Device location failed, trying IP-based:', geoError.message);
+                const ipLocation = await getLocationByIP();
+                latitude = ipLocation.lat;
+                longitude = ipLocation.lon;
+            }
+            
+            weatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&units=${units}&appid=${settings.weatherApiKey}`;
+            forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${latitude}&lon=${longitude}&units=${units}&appid=${settings.weatherApiKey}`;
+        }
+        
+        // Fetch current weather
+        const response = await fetch(weatherUrl);
+        
+        if (!response.ok) {
+            if (response.status === 401) {
+                throw new Error('Invalid API key - wait 2hrs after creation');
+            } else if (response.status === 404) {
+                throw new Error('City not found');
+            } else {
+                throw new Error('Weather fetch failed');
+            }
+        }
+        
+        const data = await response.json();
+        
+        // Fetch 5-day forecast
+        let forecastData = null;
+        try {
+            const forecastResponse = await fetch(forecastUrl);
+            if (forecastResponse.ok) {
+                forecastData = await forecastResponse.json();
+            }
+        } catch (e) {
+            console.log('Forecast fetch failed, continuing without it');
+        }
+        
+        // Cache the result
+        setWeatherCache({ current: data, forecast: forecastData });
+        
+        // Render weather
+        renderWeather(data);
+        
+        // Render forecast if available
+        if (forecastData) {
+            renderForecast(forecastData);
+        }
+        
+    } catch (error) {
+        console.error('Weather fetch error:', error);
+        showWeatherError(error.message || 'Unable to load weather');
+    }
+}
+
+/**
+ * Get location by IP (fallback)
+ */
+async function getLocationByIP() {
+    const response = await fetch('http://ip-api.com/json/?fields=lat,lon,city,country');
+    if (!response.ok) {
+        throw new Error('IP location failed');
+    }
+    return await response.json();
+}
+
+/**
+ * Get current position with promise wrapper
+ */
+function getCurrentPosition() {
+    return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+            reject(new Error('Geolocation not supported'));
+            return;
+        }
+        
+        navigator.geolocation.getCurrentPosition(resolve, (error) => {
+            switch (error.code) {
+                case error.PERMISSION_DENIED:
+                    reject(new Error('Location permission denied'));
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    reject(new Error('Location unavailable'));
+                    break;
+                case error.TIMEOUT:
+                    reject(new Error('Location request timed out'));
+                    break;
+                default:
+                    reject(new Error('Location error'));
+            }
+        }, {
+            enableHighAccuracy: false,
+            timeout: 5000,
+            maximumAge: 300000 // 5 minutes
+        });
+    });
+}
+
+/**
+ * Show weather loading state
+ */
+function showWeatherLoading() {
+    if (weatherLoading) weatherLoading.classList.remove('hidden');
+    if (weatherContent) weatherContent.classList.add('hidden');
+    if (weatherError) weatherError.classList.add('hidden');
+}
+
+/**
+ * Show weather error state
+ */
+function showWeatherError(message) {
+    if (weatherLoading) weatherLoading.classList.add('hidden');
+    if (weatherContent) weatherContent.classList.add('hidden');
+    if (weatherError) weatherError.classList.remove('hidden');
+    if (weatherErrorText) weatherErrorText.textContent = message;
+}
+
+/**
+ * Render weather data
+ */
+function renderWeather(data) {
+    if (weatherLoading) weatherLoading.classList.add('hidden');
+    if (weatherError) weatherError.classList.add('hidden');
+    if (weatherContent) weatherContent.classList.remove('hidden');
+    
+    // Location
+    if (weatherLocation) {
+        weatherLocation.textContent = `${data.name}, ${data.sys?.country || ''}`;
+    }
+    
+    // Temperature
+    if (weatherTemp) {
+        const temp = Math.round(data.main?.temp || 0);
+        const unit = settings.tempUnit === 'fahrenheit' ? '°F' : '°C';
+        weatherTemp.textContent = `${temp}${unit}`;
+    }
+    
+    // Condition
+    if (weatherCondition && data.weather?.[0]) {
+        weatherCondition.textContent = data.weather[0].description;
+    }
+    
+    // Weather icon
+    if (weatherIcon && data.weather?.[0]) {
+        weatherIcon.textContent = getWeatherEmoji(data.weather[0].main, data.weather[0].icon);
+    }
+    
+    // Humidity
+    if (weatherHumidity) {
+        weatherHumidity.textContent = `${data.main?.humidity || '--'}%`;
+    }
+    
+    // Wind
+    if (weatherWind) {
+        const windSpeed = Math.round(data.wind?.speed || 0);
+        const unit = settings.tempUnit === 'fahrenheit' ? 'mph' : 'km/h';
+        weatherWind.textContent = `${windSpeed} ${unit}`;
+    }
+    
+    // Feels like
+    if (weatherFeelsLike) {
+        const feelsLike = Math.round(data.main?.feels_like || 0);
+        const unit = settings.tempUnit === 'fahrenheit' ? '°F' : '°C';
+        weatherFeelsLike.textContent = `${feelsLike}${unit}`;
+    }
+    
+    // Last updated
+    if (weatherUpdated) {
+        const now = new Date();
+        weatherUpdated.textContent = `Updated ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    }
+    
+    // Apply weather-based gradient class
+    applyWeatherGradient(data.weather?.[0]?.main, data.weather?.[0]?.icon);
+}
+
+/**
+ * Get weather emoji based on condition
+ */
+function getWeatherEmoji(condition, icon) {
+    const isNight = icon?.includes('n');
+    
+    const emojiMap = {
+        'Clear': isNight ? '🌙' : '☀️',
+        'Clouds': isNight ? '☁️' : '⛅',
+        'Rain': '🌧️',
+        'Drizzle': '🌦️',
+        'Thunderstorm': '⛈️',
+        'Snow': '❄️',
+        'Mist': '🌫️',
+        'Fog': '🌫️',
+        'Haze': '🌫️',
+        'Smoke': '💨',
+        'Dust': '💨',
+        'Sand': '💨',
+        'Tornado': '🌪️'
+    };
+    
+    return emojiMap[condition] || '🌡️';
+}
+
+/**
+ * Apply weather gradient class to card
+ */
+function applyWeatherGradient(condition, icon) {
+    if (!weatherCard) return;
+    
+    // Remove existing weather classes
+    weatherCard.classList.remove('weather-clear', 'weather-clouds', 'weather-rain', 'weather-snow', 'weather-thunderstorm', 'weather-night');
+    
+    const isNight = icon?.includes('n');
+    
+    if (isNight) {
+        weatherCard.classList.add('weather-night');
+    } else {
+        const conditionClass = {
+            'Clear': 'weather-clear',
+            'Clouds': 'weather-clouds',
+            'Rain': 'weather-rain',
+            'Drizzle': 'weather-rain',
+            'Thunderstorm': 'weather-thunderstorm',
+            'Snow': 'weather-snow'
+        };
+        
+        if (conditionClass[condition]) {
+            weatherCard.classList.add(conditionClass[condition]);
+        }
+    }
+}
+
+/**
+ * Render 5-day forecast
+ */
+function renderForecast(data) {
+    if (!weatherForecast || !data?.list) return;
+    
+    // Group forecast by day (the API returns 3-hour intervals)
+    const dailyForecasts = {};
+    const today = new Date().toDateString();
+    
+    data.list.forEach(item => {
+        const date = new Date(item.dt * 1000);
+        const dateStr = date.toDateString();
+        
+        // Skip today
+        if (dateStr === today) return;
+        
+        if (!dailyForecasts[dateStr]) {
+            dailyForecasts[dateStr] = {
+                date: date,
+                temps: [],
+                conditions: [],
+                icons: []
+            };
+        }
+        
+        dailyForecasts[dateStr].temps.push(item.main.temp);
+        dailyForecasts[dateStr].conditions.push(item.weather[0].main);
+        dailyForecasts[dateStr].icons.push(item.weather[0].icon);
+    });
+    
+    // Take first 5 days
+    const days = Object.values(dailyForecasts).slice(0, 5);
+    
+    // Clear existing forecast
+    weatherForecast.innerHTML = '';
+    
+    // Render each day
+    days.forEach(day => {
+        const maxTemp = Math.round(Math.max(...day.temps));
+        const minTemp = Math.round(Math.min(...day.temps));
+        const unit = settings.tempUnit === 'fahrenheit' ? '°' : '°';
+        
+        // Get most common condition
+        const conditionCounts = {};
+        day.conditions.forEach(c => conditionCounts[c] = (conditionCounts[c] || 0) + 1);
+        const mainCondition = Object.entries(conditionCounts).sort((a, b) => b[1] - a[1])[0][0];
+        const icon = day.icons.find(i => i.includes('d')) || day.icons[0];
+        
+        const dayName = day.date.toLocaleDateString('en', { weekday: 'short' });
+        const emoji = getWeatherEmoji(mainCondition, icon);
+        
+        const dayEl = document.createElement('div');
+        dayEl.className = 'forecast-day';
+        dayEl.innerHTML = `
+            <span class="day-name">${dayName}</span>
+            <span class="day-icon">${emoji}</span>
+            <span class="day-temp">${maxTemp}${unit}</span>
+            <span class="day-temp-low">${minTemp}${unit}</span>
+        `;
+        
+        weatherForecast.appendChild(dayEl);
+    });
 }
 
 // Initialize when DOM is ready
