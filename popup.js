@@ -16,10 +16,36 @@ const loadingState = document.getElementById('loadingState');
 const addToggleBtn = document.getElementById('addToggleBtn');
 const fetchStatus = document.getElementById('fetchStatus');
 
+// Status indicator elements
+const dateTimeDisplay = document.getElementById('dateTimeDisplay');
+const timeText = document.getElementById('timeText');
+const timeIcon = document.getElementById('timeIcon');
+const networkStatus = document.getElementById('networkStatus');
+const networkIcon = document.getElementById('networkIcon');
+const memoryStatus = document.getElementById('memoryStatus');
+const memoryText = document.getElementById('memoryText');
+
+// Settings modal elements
+const settingsToggle = document.getElementById('settingsToggle');
+const settingsModal = document.getElementById('settingsModal');
+const settingsClose = document.getElementById('settingsClose');
+const showDateTimeCheckbox = document.getElementById('showDateTime');
+const showNetworkCheckbox = document.getElementById('showNetwork');
+const showMemoryCheckbox = document.getElementById('showMemory');
+const timezoneSelect = document.getElementById('timezoneSelect');
+
 // State
 let allBookmarks = [];
 let isFormVisible = false;
 let fetchedMetadata = null;
+
+// Settings state (with defaults)
+let settings = {
+    showDateTime: true,
+    showNetwork: true,
+    showMemory: true,
+    timezone: 'local'
+};
 
 /**
  * Initialize the application
@@ -32,11 +58,17 @@ async function init() {
         // Load theme preference
         loadTheme();
         
+        // Load settings
+        loadSettings();
+        
         // Load bookmarks
         await loadBookmarks();
         
         // Setup event listeners
         setupEventListeners();
+        
+        // Initialize status indicators
+        initStatusIndicators();
     } catch (error) {
         console.error('Failed to initialize:', error);
         showToast('Failed to initialize app', 'error');
@@ -72,6 +104,68 @@ function setupEventListeners() {
     // Add form toggle button
     if (addToggleBtn) {
         addToggleBtn.addEventListener('click', toggleAddForm);
+    }
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', handleKeyboardShortcuts);
+    
+    // Settings modal events
+    if (settingsToggle) {
+        settingsToggle.addEventListener('click', openSettingsModal);
+    }
+    if (settingsClose) {
+        settingsClose.addEventListener('click', closeSettingsModal);
+    }
+    if (settingsModal) {
+        settingsModal.addEventListener('click', (e) => {
+            if (e.target === settingsModal) closeSettingsModal();
+        });
+    }
+    
+    // Settings change events
+    if (showDateTimeCheckbox) {
+        showDateTimeCheckbox.addEventListener('change', handleSettingsChange);
+    }
+    if (showNetworkCheckbox) {
+        showNetworkCheckbox.addEventListener('change', handleSettingsChange);
+    }
+    if (showMemoryCheckbox) {
+        showMemoryCheckbox.addEventListener('change', handleSettingsChange);
+    }
+    if (timezoneSelect) {
+        timezoneSelect.addEventListener('change', handleSettingsChange);
+    }
+}
+
+/**
+ * Handle keyboard shortcuts
+ * Ctrl/Cmd + K = Focus search
+ * Ctrl/Cmd + N = Toggle add new bookmark form
+ */
+function handleKeyboardShortcuts(e) {
+    const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+    const modifierKey = isMac ? e.metaKey : e.ctrlKey;
+    
+    // Ctrl/Cmd + K = Focus search
+    if (modifierKey && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        searchInput.focus();
+        searchInput.select();
+    }
+    
+    // Ctrl/Cmd + N = Toggle add new bookmark form
+    if (modifierKey && e.key.toLowerCase() === 'n') {
+        e.preventDefault();
+        toggleAddForm();
+        // If form is now visible, focus URL input
+        if (isFormVisible) {
+            setTimeout(() => urlInput.focus(), 100);
+        }
+    }
+    
+    // Escape = Close add form if open
+    if (e.key === 'Escape' && isFormVisible) {
+        toggleAddForm();
     }
 }
 
@@ -612,6 +706,244 @@ function showToast(message, type = 'success') {
     setTimeout(() => {
         toast.remove();
     }, 3000);
+}
+
+/**
+ * Initialize status indicators (time, network, memory)
+ */
+function initStatusIndicators() {
+    // Update time immediately and every second
+    updateTime();
+    setInterval(updateTime, 1000);
+    
+    // Update network status
+    updateNetworkStatus();
+    window.addEventListener('online', updateNetworkStatus);
+    window.addEventListener('offline', updateNetworkStatus);
+    if (navigator.connection) {
+        navigator.connection.addEventListener('change', updateNetworkStatus);
+    }
+    
+    // Update memory every 5 seconds
+    updateMemory();
+    setInterval(updateMemory, 5000);
+}
+
+/**
+ * Update time display
+ */
+function updateTime() {
+    if (!timeText || !settings.showDateTime) return;
+    
+    const now = new Date();
+    let hours, minutes;
+    
+    // Handle timezone
+    if (settings.timezone === 'local') {
+        hours = now.getHours();
+        minutes = now.getMinutes();
+    } else {
+        // Use Intl.DateTimeFormat for timezone conversion
+        try {
+            const options = { 
+                timeZone: settings.timezone, 
+                hour: 'numeric', 
+                minute: '2-digit', 
+                hour12: false 
+            };
+            const formatter = new Intl.DateTimeFormat('en-US', options);
+            const parts = formatter.formatToParts(now);
+            hours = parseInt(parts.find(p => p.type === 'hour')?.value || '0');
+            minutes = parseInt(parts.find(p => p.type === 'minute')?.value || '0');
+        } catch (e) {
+            // Fallback to local time
+            hours = now.getHours();
+            minutes = now.getMinutes();
+        }
+    }
+    
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12;
+    const minutesStr = minutes.toString().padStart(2, '0');
+    
+    timeText.textContent = `${displayHours}:${minutesStr} ${ampm}`;
+    
+    // Update clock icon based on hour
+    if (timeIcon) {
+        const clockIcons = ['🕛', '🕐', '🕑', '🕒', '🕓', '🕔', '🕕', '🕖', '🕗', '🕘', '🕙', '🕚'];
+        timeIcon.textContent = clockIcons[hours % 12];
+    }
+    
+    // Update tooltip with timezone info
+    if (dateTimeDisplay) {
+        const tzLabel = settings.timezone === 'local' ? 'Local' : settings.timezone.split('/').pop().replace('_', ' ');
+        dateTimeDisplay.title = `Time (${tzLabel})`;
+    }
+}
+
+/**
+ * Update network status
+ */
+function updateNetworkStatus() {
+    if (!networkStatus || !networkIcon) return;
+    
+    const isOnline = navigator.onLine;
+    
+    if (isOnline) {
+        networkStatus.classList.add('online');
+        networkStatus.classList.remove('offline');
+        
+        // Try to get connection info
+        if (navigator.connection) {
+            const conn = navigator.connection;
+            
+            // conn.type gives actual connection (wifi, ethernet, cellular)
+            // conn.effectiveType gives speed estimation (4g, 3g, 2g)
+            const actualType = conn.type || 'unknown';
+            const effectiveSpeed = conn.effectiveType || '4g';
+            
+            // Determine icon and label based on actual type first
+            let icon = '📶';
+            let label = 'Online';
+            
+            if (actualType === 'wifi') {
+                icon = '📶';
+                label = 'WiFi';
+            } else if (actualType === 'ethernet') {
+                icon = '🔌';
+                label = 'Ethernet';
+            } else if (actualType === 'cellular') {
+                icon = '📱';
+                label = effectiveSpeed.toUpperCase();
+            } else {
+                // Fallback: assume WiFi for desktop browsers
+                icon = '📶';
+                label = 'WiFi';
+            }
+            
+            networkIcon.textContent = icon;
+            networkStatus.title = `${label} (${effectiveSpeed.toUpperCase()} speed)`;
+        } else {
+            // No connection API, assume online
+            networkIcon.textContent = '📶';
+            networkStatus.title = 'Online';
+        }
+    } else {
+        networkStatus.classList.remove('online');
+        networkStatus.classList.add('offline');
+        networkIcon.textContent = '📵';
+        networkStatus.title = 'Offline';
+    }
+}
+
+/**
+ * Update memory usage display
+ */
+function updateMemory() {
+    if (!memoryText || !settings.showMemory) return;
+    
+    // Check if performance.memory is available (Chrome only)
+    if (performance.memory) {
+        const usedMB = Math.round(performance.memory.usedJSHeapSize / (1024 * 1024));
+        memoryText.textContent = `${usedMB}MB`;
+    } else {
+        memoryText.textContent = 'N/A';
+    }
+}
+
+// ==========================================
+// SETTINGS FUNCTIONS
+// ==========================================
+
+/**
+ * Load settings from localStorage
+ */
+function loadSettings() {
+    const saved = localStorage.getItem('bmSettings');
+    if (saved) {
+        try {
+            settings = { ...settings, ...JSON.parse(saved) };
+        } catch (e) {
+            console.error('Failed to load settings:', e);
+        }
+    }
+    
+    // Apply settings to UI
+    applySettings();
+    
+    // Update form controls to match
+    if (showDateTimeCheckbox) showDateTimeCheckbox.checked = settings.showDateTime;
+    if (showNetworkCheckbox) showNetworkCheckbox.checked = settings.showNetwork;
+    if (showMemoryCheckbox) showMemoryCheckbox.checked = settings.showMemory;
+    if (timezoneSelect) timezoneSelect.value = settings.timezone;
+}
+
+/**
+ * Save settings to localStorage
+ */
+function saveSettings() {
+    try {
+        localStorage.setItem('bmSettings', JSON.stringify(settings));
+    } catch (e) {
+        console.error('Failed to save settings:', e);
+    }
+}
+
+/**
+ * Apply settings (show/hide indicators, timezone)
+ */
+function applySettings() {
+    // Show/hide date time
+    if (dateTimeDisplay) {
+        dateTimeDisplay.style.display = settings.showDateTime ? 'flex' : 'none';
+    }
+    
+    // Show/hide network
+    if (networkStatus) {
+        networkStatus.style.display = settings.showNetwork ? 'flex' : 'none';
+    }
+    
+    // Show/hide memory
+    if (memoryStatus) {
+        memoryStatus.style.display = settings.showMemory ? 'flex' : 'none';
+    }
+    
+    // Refresh all indicators when settings change
+    // This ensures values are up-to-date when re-showing hidden indicators
+    updateTime();
+    updateNetworkStatus();
+    updateMemory();
+}
+
+/**
+ * Handle settings change
+ */
+function handleSettingsChange() {
+    settings.showDateTime = showDateTimeCheckbox?.checked ?? true;
+    settings.showNetwork = showNetworkCheckbox?.checked ?? true;
+    settings.showMemory = showMemoryCheckbox?.checked ?? true;
+    settings.timezone = timezoneSelect?.value ?? 'local';
+    
+    saveSettings();
+    applySettings();
+}
+
+/**
+ * Open settings modal
+ */
+function openSettingsModal() {
+    if (settingsModal) {
+        settingsModal.classList.remove('hidden');
+    }
+}
+
+/**
+ * Close settings modal
+ */
+function closeSettingsModal() {
+    if (settingsModal) {
+        settingsModal.classList.add('hidden');
+    }
 }
 
 // Initialize when DOM is ready

@@ -13,16 +13,52 @@
     <div class="container">
         <!-- Header -->
         <header class="header">
-            <h1>Bookmark Manager</h1>
+            <h1><img src="icon48.png" alt="logo" class="header-logo"> BM</h1>
+            
+            <!-- Search Section in Header -->
+            <div class="header-search">
+                <div class="search-wrapper">
+                    <span class="icon">🔍</span>
+                    <input 
+                        type="text" 
+                        id="searchInput" 
+                        class="search-input" 
+                        placeholder="⌘/Ctrl + K to Search bookmarks..."
+                        autocomplete="off"
+                    >
+                    <div class="stats-count" id="statsCount">
+                        <span id="bookmarkCount">0</span>
+                    </div>
+                </div>
+            </div>
+            
             <div class="header-actions">
+                <!-- Date/Time Display -->
+                <div class="status-indicator" id="dateTimeDisplay" title="Current time">
+                    <span class="status-icon" id="timeIcon">🕐</span>
+                    <span class="status-text" id="timeText">--:--</span>
+                </div>
+                <!-- Network Status -->
+                <div class="status-indicator" id="networkStatus" title="Network connection">
+                    <span class="status-icon" id="networkIcon">📶</span>
+                </div>
+                <!-- Memory Usage -->
+                <div class="status-indicator" id="memoryStatus" title="Browser memory usage">
+                    <span class="status-icon">💾</span>
+                    <span class="status-text" id="memoryText">--</span>
+                </div>
                 <!-- Add New Bookmark Toggle Button -->
-                <button class="btn-add-toggle" id="addToggleBtn" title="Add new bookmark">
+                <button class="btn-add-toggle" id="addToggleBtn" title="Add new bookmark (⌘/Ctrl+N)">
                     <span class="btn-icon">➕</span>
                     <span class="btn-text">New</span>
                 </button>
                 <!-- Theme Toggle -->
                 <button class="theme-toggle" id="themeToggle" title="Toggle theme">
                     <span class="theme-icon" id="themeIcon">🌙</span>
+                </button>
+                <!-- Settings Button -->
+                <button class="settings-toggle" id="settingsToggle" title="Settings">
+                    <span class="settings-icon">⚙️</span>
                 </button>
             </div>
         </header>
@@ -79,29 +115,60 @@
             </div>
         </form>
 
-        <!-- Search Section with Count -->
-        <div class="search-section">
-            <div class="search-wrapper">
-                <span class="icon">🔍</span>
-                <input 
-                    type="text" 
-                    id="searchInput" 
-                    class="search-input" 
-                    placeholder="Search bookmarks..."
-                    autocomplete="off"
-                >
-                <!-- Bookmark Count inside search bar -->
-                <div class="stats-count" id="statsCount">
-                    <span id="bookmarkCount">0</span>
-                </div>
-            </div>
-        </div>
+
 
         <!-- Bookmark List -->
         <div id="bookmarksContainer" class="bookmark-list">
             <!-- Loading State -->
             <div class="loading" id="loadingState">
                 <div class="spinner"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal-overlay hidden" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚙️ Settings</h2>
+                <button class="modal-close" id="settingsClose">✕</button>
+            </div>
+            <div class="modal-body">
+                <!-- Show/Hide Indicators -->
+                <div class="settings-section">
+                    <h3>Status Indicators</h3>
+                    <div class="settings-row">
+                        <label for="showDateTime">🕐 Show Date/Time</label>
+                        <input type="checkbox" id="showDateTime" class="toggle-checkbox" checked>
+                    </div>
+                    <div class="settings-row">
+                        <label for="showNetwork">📶 Show Network</label>
+                        <input type="checkbox" id="showNetwork" class="toggle-checkbox" checked>
+                    </div>
+                    <div class="settings-row">
+                        <label for="showMemory">💾 Show Memory</label>
+                        <input type="checkbox" id="showMemory" class="toggle-checkbox" checked>
+                    </div>
+                </div>
+                <!-- Timezone Setting -->
+                <div class="settings-section">
+                    <h3>Timezone</h3>
+                    <div class="settings-row">
+                        <label for="timezoneSelect">Select Timezone</label>
+                        <select id="timezoneSelect" class="settings-select">
+                            <option value="local">Local (Device)</option>
+                            <option value="UTC">UTC</option>
+                            <option value="America/New_York">New York (EST)</option>
+                            <option value="America/Los_Angeles">Los Angeles (PST)</option>
+                            <option value="Europe/London">London (GMT)</option>
+                            <option value="Europe/Paris">Paris (CET)</option>
+                            <option value="Asia/Tokyo">Tokyo (JST)</option>
+                            <option value="Asia/Kolkata">India (IST)</option>
+                            <option value="Asia/Dubai">Dubai (GST)</option>
+                            <option value="Australia/Sydney">Sydney (AEDT)</option>
+                        </select>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
