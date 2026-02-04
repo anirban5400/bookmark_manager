@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bookmark Manager</title>
+    <meta name="description" content="A beautiful neumorphic bookmark manager to save and organize your favorite links.">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>Bookmark Manager</h1>
+            <div class="header-actions">
+                <!-- Add New Bookmark Toggle Button -->
+                <button class="btn-add-toggle" id="addToggleBtn" title="Add new bookmark">
+                    <span class="btn-icon">➕</span>
+                    <span class="btn-text">New</span>
+                </button>
+                <!-- Theme Toggle -->
+                <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+                    <span class="theme-icon" id="themeIcon">🌙</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Add Bookmark Form (Hidden by default) -->
+        <form id="addBookmarkForm" class="bookmark-form hidden">
+            <div class="form-header">
+                <span class="form-label">Add Bookmark</span>
+                <span class="fetch-status" id="fetchStatus"></span>
+            </div>
+            <div class="form-row">
+                <div class="input-group input-url-group">
+                    <div class="input-wrapper">
+                        <span class="icon">🔗</span>
+                        <input 
+                            type="url" 
+                            id="urlInput" 
+                            class="form-control" 
+                            placeholder="Paste URL and we'll fetch the details..." 
+                            required
+                            autocomplete="off"
+                        >
+                    </div>
+                </div>
+                <div class="input-group">
+                    <div class="input-wrapper">
+                        <span class="icon">📝</span>
+                        <input 
+                            type="text" 
+                            id="titleInput" 
+                            class="form-control" 
+                            placeholder="Title (auto-fetched if empty)" 
+                            autocomplete="off"
+                        >
+                    </div>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="input-group input-desc-group">
+                    <div class="input-wrapper">
+                        <span class="icon icon-top">📄</span>
+                        <textarea 
+                            id="descInput" 
+                            class="form-control form-textarea" 
+                            placeholder="Description (auto-fetched if empty)"
+                            rows="2"
+                        ></textarea>
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary">
+                    <span>➕</span>
+                    <span>Add</span>
+                </button>
+            </div>
+        </form>
+
+        <!-- Search Section with Count -->
+        <div class="search-section">
+            <div class="search-wrapper">
+                <span class="icon">🔍</span>
+                <input 
+                    type="text" 
+                    id="searchInput" 
+                    class="search-input" 
+                    placeholder="Search bookmarks..."
+                    autocomplete="off"
+                >
+                <!-- Bookmark Count inside search bar -->
+                <div class="stats-count" id="statsCount">
+                    <span id="bookmarkCount">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bookmark List -->
+        <div id="bookmarksContainer" class="bookmark-list">
+            <!-- Loading State -->
+            <div class="loading" id="loadingState">
+                <div class="spinner"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer"></div>
+
+    <!-- Scripts -->
+    <script src="db.js"></script>
+    <script src="popup.js"></script>
+</body>
+</html>

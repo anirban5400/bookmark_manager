@@ -1,0 +1,24 @@
+{
+    "manifest_version": 3,
+    "name": "Bookmark Manager",
+    "version": "1.2",
+    "description": "A beautiful neumorphic bookmark manager to save and organize your favorite links.",
+    "permissions": [],
+    "host_permissions": [
+        "<all_urls>"
+    ],
+    "background": {
+        "service_worker": "background.js"
+    },
+    "content_security_policy": {
+        "extension_pages": "script-src 'self'; object-src 'none';"
+    },
+    "chrome_url_overrides": {
+        "newtab": "popup.html"
+    },
+    "icons": {
+        "16": "icon16.png",
+        "48": "icon48.png",
+        "128": "icon128.png"
+    }
+}
