@@ -36,6 +36,16 @@
     /* Flat with subtle shadow */
     --neu-flat: 1px 1px 0px #a3b1c6, -1px -1px 0px var(--shadow-light);
     
+    /* Font Sizes */
+    --font-xs: 0.65rem;
+    --font-sm: 0.75rem;
+    --font-base: 0.85rem;
+    --font-md: 0.9rem;
+    --font-lg: 1rem;
+    --font-xl: 1.25rem;
+    --font-2xl: 1.5rem;
+    --font-3xl: 1.75rem;
+    
     /* Spacing */
     --container-padding: 2.5rem;
     --gap-sm: 0.75rem;
@@ -100,6 +110,88 @@ body {
 .hidden {
     display: none !important;
 }
+
+/* ============================================
+   UTILITY CLASSES - Reusable Patterns
+   ============================================ */
+
+/* Flex Center Utilities */
+.flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.flex-between {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.flex-start {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-sm);
+}
+
+/* Neumorphic Button Base */
+.neu-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-base);
+    border: none;
+    border-radius: var(--radius-full);
+    box-shadow: var(--neu-convex);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.neu-btn:hover {
+    box-shadow: var(--neu-flat);
+}
+
+.neu-btn:active {
+    box-shadow: var(--neu-concave);
+}
+
+/* Neumorphic Button Sizes */
+.neu-btn-sm {
+    width: 28px;
+    height: 28px;
+    font-size: var(--font-base);
+}
+
+.neu-btn-md {
+    width: 36px;
+    height: 36px;
+    font-size: var(--font-lg);
+}
+
+.neu-btn-lg {
+    width: 44px;
+    height: 44px;
+    font-size: var(--font-xl);
+}
+
+/* Text Size Utilities */
+.text-xs { font-size: var(--font-xs); }
+.text-sm { font-size: var(--font-sm); }
+.text-base { font-size: var(--font-base); }
+.text-md { font-size: var(--font-md); }
+.text-lg { font-size: var(--font-lg); }
+.text-xl { font-size: var(--font-xl); }
+
+/* Text Color Utilities */
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-muted { color: var(--text-muted); }
+.text-accent { color: var(--accent-color); }
+
+/* Font Weight Utilities */
+.font-medium { font-weight: 500; }
+.font-semibold { font-weight: 600; }
+.font-bold { font-weight: 700; }
 
 /* Main Container */
 .container {
@@ -1128,11 +1220,6 @@ body {
 
 .btn-primary span:first-child {
     font-size: 1.2rem;
-}
-
-/* Stats Bar - Now integrated into search bar, keeping for fallback */
-.stats-bar {
-    display: none;
 }
 
 /* Bookmark Grid */
