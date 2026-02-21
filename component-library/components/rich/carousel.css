@@ -1,0 +1,88 @@
+/* ============================================
+   NEU UI — Carousel
+   ============================================ */
+
+.neu-carousel {
+    position: relative;
+    overflow: hidden;
+    background: var(--neu-bg-base);
+    border-radius: var(--neu-radius-lg);
+    box-shadow: var(--neu-convex);
+}
+
+.neu-carousel-track {
+    display: flex;
+    transition: transform var(--neu-transition-slow);
+}
+
+.neu-carousel-slide {
+    min-width: 100%;
+    flex-shrink: 0;
+    padding: var(--neu-space-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Navigation Buttons */
+.neu-carousel-prev,
+.neu-carousel-next {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: var(--neu-bg-base);
+    border-radius: var(--neu-radius-circle);
+    box-shadow: var(--neu-convex-sm);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--neu-font-base);
+    color: var(--neu-text-secondary);
+    z-index: 2;
+    transition: all var(--neu-transition-fast);
+    padding: 0;
+    opacity: 0.85;
+}
+.neu-carousel-prev:hover,
+.neu-carousel-next:hover {
+    box-shadow: var(--neu-flat);
+    opacity: 1;
+    color: var(--neu-accent);
+}
+.neu-carousel-prev:active,
+.neu-carousel-next:active {
+    box-shadow: var(--neu-concave-sm);
+}
+.neu-carousel-prev { left: var(--neu-space-md); }
+.neu-carousel-next { right: var(--neu-space-md); }
+
+/* Dot Indicators */
+.neu-carousel-dots {
+    display: flex;
+    justify-content: center;
+    gap: var(--neu-space-sm);
+    padding: var(--neu-space-md);
+}
+
+.neu-carousel-dot {
+    width: 10px;
+    height: 10px;
+    border: none;
+    border-radius: var(--neu-radius-circle);
+    background: var(--neu-bg-base);
+    box-shadow: var(--neu-convex-sm);
+    cursor: pointer;
+    transition: all var(--neu-transition-fast);
+    padding: 0;
+}
+.neu-carousel-dot:hover {
+    box-shadow: var(--neu-flat);
+}
+.neu-carousel-dot.active {
+    box-shadow: var(--neu-concave-sm);
+    background: var(--neu-accent);
+}

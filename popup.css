@@ -369,10 +369,6 @@ body {
     transition: transform var(--transition-fast);
 }
 
-.theme-toggle:hover .theme-icon {
-    transform: rotate(15deg);
-}
-
 /* Status Indicators */
 .status-indicator {
     display: flex;
@@ -435,9 +431,7 @@ body {
     transition: transform var(--transition-fast);
 }
 
-.settings-toggle:hover .settings-icon {
-    transform: rotate(45deg);
-}
+
 
 /* Modal Overlay */
 .modal-overlay {
@@ -683,7 +677,7 @@ body {
     overflow: hidden;
 }
 
-/* Weather Refresh Button */
+/* Weather Refresh Button - Pop out on hover like delete-btn */
 .weather-refresh-btn {
     position: absolute;
     top: 0.5rem;
@@ -693,7 +687,7 @@ body {
     border: none;
     background: var(--bg-base);
     border-radius: 50%;
-    box-shadow: var(--neu-convex);
+    box-shadow: var(--neu-flat);
     cursor: pointer;
     font-size: 0.875rem;
     display: flex;
@@ -701,17 +695,23 @@ body {
     justify-content: center;
     z-index: 10;
     transition: all var(--transition-fast);
-    opacity: 0.7;
+    opacity: 0;
+    transform: scale(0.8);
+}
+
+.weather-card:hover .weather-refresh-btn {
+    opacity: 1;
+    transform: scale(1);
 }
 
 .weather-refresh-btn:hover {
-    opacity: 1;
     box-shadow: var(--neu-concave);
-    transform: rotate(180deg);
+    transform: scale(1.1) rotate(180deg);
+    color: var(--accent-color);
 }
 
 .weather-refresh-btn:active {
-    transform: rotate(360deg) scale(0.95);
+    transform: scale(0.95) rotate(360deg);
 }
 
 .weather-card::before {

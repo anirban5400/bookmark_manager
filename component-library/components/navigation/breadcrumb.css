@@ -1,0 +1,46 @@
+/* ============================================
+   NEU UI — Breadcrumb
+   ============================================ */
+
+.neu-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: var(--neu-space-sm);
+    padding: var(--neu-space-sm) var(--neu-space-md);
+    background: var(--neu-bg-base);
+    border-radius: var(--neu-radius-full);
+    box-shadow: var(--neu-concave);
+    font-size: var(--neu-font-sm);
+    overflow-x: auto;
+    white-space: nowrap;
+}
+
+.neu-breadcrumb-item {
+    color: var(--neu-text-muted);
+    cursor: pointer;
+    transition: color var(--neu-transition-fast);
+    font-weight: 500;
+}
+.neu-breadcrumb-item:hover {
+    color: var(--neu-accent);
+}
+.neu-breadcrumb-item.active {
+    color: var(--neu-text-primary);
+    font-weight: 600;
+    cursor: default;
+}
+
+/* Separator */
+.neu-breadcrumb-sep {
+    color: var(--neu-text-muted);
+    font-size: var(--neu-font-xs);
+    opacity: 0.6;
+    user-select: none;
+}
+
+/* ── Flat Variant ── */
+.neu-breadcrumb-flat {
+    box-shadow: none;
+    background: transparent;
+    padding: 0;
+}

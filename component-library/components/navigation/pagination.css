@@ -1,0 +1,76 @@
+/* ============================================
+   NEU UI — Pagination
+   ============================================ */
+
+.neu-pagination {
+    display: flex;
+    align-items: center;
+    gap: var(--neu-space-sm);
+}
+
+.neu-page-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+    padding: 0 0.5rem;
+    font-size: var(--neu-font-sm);
+    font-weight: 500;
+    color: var(--neu-text-secondary);
+    background: var(--neu-bg-base);
+    border: none;
+    border-radius: var(--neu-radius-md);
+    box-shadow: var(--neu-convex-sm);
+    cursor: pointer;
+    transition: all var(--neu-transition-fast);
+}
+.neu-page-item:hover {
+    box-shadow: var(--neu-flat);
+    color: var(--neu-accent);
+}
+.neu-page-item:active {
+    box-shadow: var(--neu-concave-sm);
+}
+.neu-page-item.active {
+    box-shadow: var(--neu-concave);
+    color: var(--neu-accent);
+    font-weight: 600;
+}
+.neu-page-item:disabled,
+.neu-page-item.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* Nav arrows */
+.neu-page-prev,
+.neu-page-next {
+    font-size: var(--neu-font-md);
+}
+
+/* Ellipsis */
+.neu-page-ellipsis {
+    box-shadow: none;
+    cursor: default;
+    color: var(--neu-text-muted);
+    pointer-events: none;
+}
+
+/* ── Rounded variant ── */
+.neu-pagination-rounded .neu-page-item {
+    border-radius: var(--neu-radius-circle);
+    min-width: 36px;
+    padding: 0;
+}
+
+/* ── Compact ── */
+.neu-pagination-compact {
+    gap: 0.25rem;
+}
+.neu-pagination-compact .neu-page-item {
+    min-width: 30px;
+    height: 30px;
+    font-size: var(--neu-font-xs);
+}

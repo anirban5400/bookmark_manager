@@ -1,0 +1,80 @@
+/* ============================================
+   NEU UI — Tabs
+   ============================================ */
+
+.neu-tabs {
+    display: flex;
+    flex-direction: column;
+    gap: var(--neu-space-md);
+}
+
+/* Tab Navigation */
+.neu-tab-nav {
+    display: flex;
+    gap: var(--neu-space-xs);
+    background: var(--neu-bg-base);
+    border-radius: var(--neu-radius-lg);
+    padding: 0.35rem;
+    box-shadow: var(--neu-concave);
+}
+
+.neu-tab-item {
+    flex: 1;
+    padding: 0.6rem 1rem;
+    font-size: var(--neu-font-sm);
+    font-weight: 500;
+    color: var(--neu-text-muted);
+    background: transparent;
+    border: none;
+    border-radius: var(--neu-radius-md);
+    cursor: pointer;
+    transition: all var(--neu-transition-fast);
+    text-align: center;
+    white-space: nowrap;
+}
+.neu-tab-item:hover {
+    color: var(--neu-text-secondary);
+}
+.neu-tab-item.active {
+    background: var(--neu-bg-base);
+    color: var(--neu-accent);
+    box-shadow: var(--neu-convex-sm);
+    font-weight: 600;
+}
+
+/* Tab Content */
+.neu-tab-panel {
+    display: none;
+}
+.neu-tab-panel.active {
+    display: block;
+    animation: neu-tab-fade 0.25s ease;
+}
+@keyframes neu-tab-fade {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Pill Variant ── */
+.neu-tab-nav-pills {
+    box-shadow: none;
+    background: transparent;
+    padding: 0;
+    gap: var(--neu-space-sm);
+}
+.neu-tab-nav-pills .neu-tab-item {
+    border-radius: var(--neu-radius-full);
+    box-shadow: var(--neu-convex-sm);
+}
+.neu-tab-nav-pills .neu-tab-item.active {
+    box-shadow: var(--neu-concave);
+}
+
+/* ── Vertical ── */
+.neu-tabs-vertical {
+    flex-direction: row;
+}
+.neu-tabs-vertical .neu-tab-nav {
+    flex-direction: column;
+    min-width: 160px;
+}

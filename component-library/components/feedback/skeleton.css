@@ -1,0 +1,80 @@
+/* ============================================
+   NEU UI — Skeleton Loader
+   ============================================ */
+
+.neu-skeleton {
+    background: var(--neu-bg-base);
+    box-shadow: var(--neu-concave-sm);
+    border-radius: var(--neu-radius-md);
+    position: relative;
+    overflow: hidden;
+}
+
+.neu-skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        var(--neu-shadow-light) 50%,
+        transparent 100%
+    );
+    animation: neu-skeleton-shimmer 1.5s ease infinite;
+}
+
+@keyframes neu-skeleton-shimmer {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* Shapes */
+.neu-skeleton-text {
+    height: 14px;
+    margin-bottom: var(--neu-space-sm);
+    border-radius: var(--neu-radius-sm);
+}
+.neu-skeleton-text:last-child {
+    width: 60%;
+}
+
+.neu-skeleton-heading {
+    height: 22px;
+    width: 50%;
+    margin-bottom: var(--neu-space-md);
+    border-radius: var(--neu-radius-sm);
+}
+
+.neu-skeleton-circle {
+    border-radius: var(--neu-radius-circle);
+}
+.neu-skeleton-circle-sm { width: 32px; height: 32px; }
+.neu-skeleton-circle-md { width: 44px; height: 44px; }
+.neu-skeleton-circle-lg { width: 56px; height: 56px; }
+
+.neu-skeleton-rect {
+    border-radius: var(--neu-radius-md);
+}
+
+.neu-skeleton-btn {
+    height: 40px;
+    width: 120px;
+    border-radius: var(--neu-radius-full);
+}
+
+/* Card skeleton layout */
+.neu-skeleton-card {
+    display: flex;
+    align-items: center;
+    gap: var(--neu-space-md);
+    padding: var(--neu-space-md);
+    background: var(--neu-bg-base);
+    border-radius: var(--neu-radius-lg);
+    box-shadow: var(--neu-convex-sm);
+}
+.neu-skeleton-card-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--neu-space-sm);
+}

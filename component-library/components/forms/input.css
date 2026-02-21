@@ -1,0 +1,98 @@
+/* ============================================
+   NEU UI — Input / Textarea
+   ============================================ */
+
+.neu-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--neu-space-xs);
+}
+
+.neu-input-label {
+    font-size: var(--neu-font-sm);
+    font-weight: 600;
+    color: var(--neu-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.neu-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.neu-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: var(--neu-font-base);
+    font-family: inherit;
+    background: var(--neu-bg-base);
+    border: none;
+    border-radius: var(--neu-radius-md);
+    color: var(--neu-text-primary);
+    box-shadow: var(--neu-concave);
+    outline: none;
+    transition: all var(--neu-transition-fast);
+}
+.neu-input:focus {
+    box-shadow: inset 3px 3px 6px var(--neu-shadow-dark), inset -3px -3px 6px var(--neu-shadow-light);
+}
+.neu-input::placeholder {
+    color: var(--neu-text-muted);
+}
+.neu-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* With icon */
+.neu-input-icon {
+    position: absolute;
+    left: 1rem;
+    color: var(--neu-text-muted);
+    font-size: var(--neu-font-md);
+    pointer-events: none;
+}
+.neu-input-wrapper.has-icon .neu-input {
+    padding-left: 2.75rem;
+}
+
+/* Sizes */
+.neu-input-sm { padding: 0.5rem 0.75rem; font-size: var(--neu-font-sm); }
+.neu-input-lg { padding: 1rem 1.25rem; font-size: var(--neu-font-md); }
+
+/* States */
+.neu-input-error { box-shadow: var(--neu-concave), 0 0 0 2px var(--neu-danger); }
+.neu-input-success { box-shadow: var(--neu-concave), 0 0 0 2px var(--neu-success); }
+
+.neu-input-hint {
+    font-size: var(--neu-font-xs);
+    color: var(--neu-text-muted);
+}
+.neu-input-hint.error { color: var(--neu-danger); }
+.neu-input-hint.success { color: var(--neu-success); }
+
+/* ── Textarea ── */
+.neu-textarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: var(--neu-font-base);
+    font-family: inherit;
+    background: var(--neu-bg-base);
+    border: none;
+    border-radius: var(--neu-radius-md);
+    color: var(--neu-text-primary);
+    box-shadow: var(--neu-concave);
+    outline: none;
+    resize: vertical;
+    min-height: 80px;
+    line-height: 1.5;
+    transition: all var(--neu-transition-fast);
+}
+.neu-textarea:focus {
+    box-shadow: inset 3px 3px 6px var(--neu-shadow-dark), inset -3px -3px 6px var(--neu-shadow-light);
+}
+.neu-textarea::placeholder {
+    color: var(--neu-text-muted);
+}

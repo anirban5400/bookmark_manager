@@ -1,0 +1,86 @@
+/* ============================================
+   NEU UI — Tree View
+   ============================================ */
+
+.neu-tree {
+    font-size: var(--neu-font-sm);
+    color: var(--neu-text-secondary);
+}
+
+.neu-tree-node {
+    padding-left: var(--neu-space-md);
+}
+
+.neu-tree-item {
+    display: flex;
+    align-items: center;
+    gap: var(--neu-space-sm);
+    padding: 0.4rem 0.65rem;
+    border-radius: var(--neu-radius-sm);
+    cursor: pointer;
+    transition: all var(--neu-transition-fast);
+    user-select: none;
+}
+.neu-tree-item:hover {
+    background: var(--neu-bg-base);
+    box-shadow: var(--neu-concave-sm);
+}
+.neu-tree-item.active {
+    color: var(--neu-accent);
+    font-weight: 600;
+}
+
+/* Toggle icon */
+.neu-tree-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    font-size: 0.6rem;
+    color: var(--neu-text-muted);
+    transition: transform var(--neu-transition-fast);
+    flex-shrink: 0;
+}
+.neu-tree-toggle.open {
+    transform: rotate(90deg);
+}
+
+/* No children — spacer */
+.neu-tree-leaf {
+    width: 18px;
+    flex-shrink: 0;
+}
+
+/* File/Folder icon */
+.neu-tree-icon {
+    flex-shrink: 0;
+    font-size: var(--neu-font-base);
+}
+
+/* Children container */
+.neu-tree-children {
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height var(--neu-transition);
+}
+.neu-tree-children.open {
+    max-height: 1000px;
+}
+
+/* Indent lines */
+.neu-tree-node {
+    position: relative;
+}
+.neu-tree-node::before {
+    content: '';
+    position: absolute;
+    left: 8px;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--neu-bg-dark);
+}
+.neu-tree > .neu-tree-node::before {
+    display: none;
+}

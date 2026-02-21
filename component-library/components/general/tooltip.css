@@ -1,0 +1,111 @@
+/* ============================================
+   NEU UI — Tooltip
+   ============================================ */
+
+.neu-tooltip {
+    position: relative;
+    display: inline-flex;
+}
+
+.neu-tooltip::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%) scale(0.9);
+    padding: 0.4rem 0.75rem;
+    font-size: var(--neu-font-xs);
+    font-weight: 500;
+    color: var(--neu-text-primary);
+    background: var(--neu-bg-base);
+    border-radius: var(--neu-radius-sm);
+    box-shadow: var(--neu-convex-sm);
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    z-index: var(--neu-z-tooltip);
+    transition: all var(--neu-transition-fast);
+}
+
+/* Arrow */
+.neu-tooltip::before {
+    content: '';
+    position: absolute;
+    bottom: calc(100% + 2px);
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: var(--neu-bg-base);
+    pointer-events: none;
+    opacity: 0;
+    z-index: var(--neu-z-tooltip);
+    transition: all var(--neu-transition-fast);
+}
+
+.neu-tooltip:hover::after,
+.neu-tooltip:hover::before {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+}
+.neu-tooltip:hover::before {
+    transform: translateX(-50%);
+}
+
+/* ── Positions ── */
+/* Bottom */
+.neu-tooltip-bottom::after {
+    bottom: auto;
+    top: calc(100% + 8px);
+}
+.neu-tooltip-bottom::before {
+    bottom: auto;
+    top: calc(100% + 2px);
+    border-top-color: transparent;
+    border-bottom-color: var(--neu-bg-base);
+}
+
+/* Left */
+.neu-tooltip-left::after {
+    bottom: auto;
+    top: 50%;
+    left: auto;
+    right: calc(100% + 8px);
+    transform: translateY(-50%) scale(0.9);
+}
+.neu-tooltip-left::before {
+    bottom: auto;
+    top: 50%;
+    left: auto;
+    right: calc(100% + 2px);
+    transform: translateY(-50%);
+    border-top-color: transparent;
+    border-left-color: var(--neu-bg-base);
+}
+.neu-tooltip-left:hover::after {
+    transform: translateY(-50%) scale(1);
+}
+.neu-tooltip-left:hover::before {
+    transform: translateY(-50%);
+}
+
+/* Right */
+.neu-tooltip-right::after {
+    bottom: auto;
+    top: 50%;
+    left: calc(100% + 8px);
+    transform: translateY(-50%) scale(0.9);
+}
+.neu-tooltip-right::before {
+    bottom: auto;
+    top: 50%;
+    left: calc(100% + 2px);
+    transform: translateY(-50%);
+    border-top-color: transparent;
+    border-right-color: var(--neu-bg-base);
+}
+.neu-tooltip-right:hover::after {
+    transform: translateY(-50%) scale(1);
+}
+.neu-tooltip-right:hover::before {
+    transform: translateY(-50%);
+}

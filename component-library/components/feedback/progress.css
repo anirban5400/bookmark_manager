@@ -1,0 +1,77 @@
+/* ============================================
+   NEU UI — Progress Bar
+   ============================================ */
+
+.neu-progress {
+    width: 100%;
+    height: 12px;
+    background: var(--neu-bg-base);
+    border-radius: var(--neu-radius-full);
+    box-shadow: var(--neu-concave);
+    overflow: hidden;
+}
+
+.neu-progress-bar {
+    height: 100%;
+    border-radius: var(--neu-radius-full);
+    background: linear-gradient(90deg, var(--neu-accent), var(--neu-accent-light));
+    box-shadow: 2px 0 6px rgba(108, 92, 231, 0.3);
+    transition: width var(--neu-transition-slow);
+    min-width: 0;
+}
+
+/* Variants */
+.neu-progress-success .neu-progress-bar {
+    background: linear-gradient(90deg, var(--neu-success), var(--neu-success-light));
+    box-shadow: 2px 0 6px rgba(0, 184, 148, 0.3);
+}
+.neu-progress-warning .neu-progress-bar {
+    background: linear-gradient(90deg, var(--neu-warning-dark), var(--neu-warning));
+    box-shadow: 2px 0 6px rgba(253, 203, 110, 0.3);
+}
+.neu-progress-danger .neu-progress-bar {
+    background: linear-gradient(90deg, var(--neu-danger), var(--neu-danger-light));
+    box-shadow: 2px 0 6px rgba(231, 76, 60, 0.3);
+}
+
+/* Sizes */
+.neu-progress-sm { height: 6px; }
+.neu-progress-lg { height: 18px; }
+
+/* Striped / Animated */
+.neu-progress-striped .neu-progress-bar {
+    background-image: linear-gradient(
+        45deg,
+        rgba(255,255,255,0.15) 25%,
+        transparent 25%,
+        transparent 50%,
+        rgba(255,255,255,0.15) 50%,
+        rgba(255,255,255,0.15) 75%,
+        transparent 75%
+    );
+    background-size: 1rem 1rem;
+}
+.neu-progress-animated .neu-progress-bar {
+    animation: neu-progress-stripes 1s linear infinite;
+}
+@keyframes neu-progress-stripes {
+    from { background-position: 1rem 0; }
+    to   { background-position: 0 0; }
+}
+
+/* With label */
+.neu-progress-labeled {
+    position: relative;
+    height: 20px;
+}
+.neu-progress-labeled .neu-progress-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.neu-progress-label {
+    font-size: var(--neu-font-xs);
+    font-weight: 600;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}

@@ -1,0 +1,68 @@
+/* ============================================
+   NEU UI — Badge
+   ============================================ */
+
+.neu-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.15rem 0.6rem;
+    font-size: var(--neu-font-xs);
+    font-weight: 600;
+    line-height: 1.4;
+    border-radius: var(--neu-radius-full);
+    background: var(--neu-bg-base);
+    color: var(--neu-text-secondary);
+    box-shadow: var(--neu-flat);
+    white-space: nowrap;
+}
+
+/* Variants */
+.neu-badge-accent  { color: var(--neu-accent); }
+.neu-badge-success { color: var(--neu-success); }
+.neu-badge-warning { color: var(--neu-warning-dark); }
+.neu-badge-danger  { color: var(--neu-danger); }
+.neu-badge-info    { color: var(--neu-info-dark); }
+
+/* Filled variants */
+.neu-badge-filled {
+    box-shadow: none;
+}
+.neu-badge-filled.neu-badge-accent {
+    background: var(--neu-accent);
+    color: #fff;
+}
+.neu-badge-filled.neu-badge-success {
+    background: var(--neu-success);
+    color: #fff;
+}
+.neu-badge-filled.neu-badge-warning {
+    background: var(--neu-warning);
+    color: #333;
+}
+.neu-badge-filled.neu-badge-danger {
+    background: var(--neu-danger);
+    color: #fff;
+}
+.neu-badge-filled.neu-badge-info {
+    background: var(--neu-info-dark);
+    color: #fff;
+}
+
+/* Dot badge */
+.neu-badge-dot {
+    padding: 0;
+    width: 10px;
+    height: 10px;
+    border-radius: var(--neu-radius-circle);
+    font-size: 0;
+}
+
+/* Badge with number — e.g. notification count */
+.neu-badge-count {
+    min-width: 20px;
+    height: 20px;
+    padding: 0 0.35rem;
+    border-radius: var(--neu-radius-circle);
+    font-size: 0.6rem;
+}

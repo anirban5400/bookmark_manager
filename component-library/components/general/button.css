@@ -1,0 +1,181 @@
+/* ============================================
+   NEU UI — Button
+   ============================================ */
+
+.neu-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--neu-space-sm);
+    background: var(--neu-bg-base);
+    color: var(--neu-text-primary);
+    border: none;
+    border-radius: var(--neu-radius-full);
+    box-shadow: var(--neu-convex);
+    cursor: pointer;
+    font-weight: 500;
+    font-family: inherit;
+    white-space: nowrap;
+    transition: all var(--neu-transition-fast);
+    user-select: none;
+    outline: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.neu-btn:hover {
+    box-shadow: var(--neu-flat);
+}
+.neu-btn:active {
+    box-shadow: var(--neu-concave);
+    transform: scale(0.98);
+}
+.neu-btn:focus-visible {
+    outline: 2px solid var(--neu-accent);
+    outline-offset: 3px;
+}
+.neu-btn:disabled,
+.neu-btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* ── Sizes ── */
+.neu-btn-xs {
+    padding: 0.35rem 0.75rem;
+    font-size: var(--neu-font-xs);
+    border-radius: var(--neu-radius-sm);
+}
+.neu-btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: var(--neu-font-sm);
+}
+.neu-btn-md {
+    padding: 0.65rem 1.5rem;
+    font-size: var(--neu-font-base);
+}
+.neu-btn-lg {
+    padding: 0.85rem 2rem;
+    font-size: var(--neu-font-md);
+}
+.neu-btn-xl {
+    padding: 1rem 2.5rem;
+    font-size: var(--neu-font-lg);
+}
+
+/* ── Variants ── */
+.neu-btn-primary {
+    color: var(--neu-accent);
+}
+.neu-btn-primary:hover {
+    color: var(--neu-accent-dark);
+}
+
+.neu-btn-accent {
+    background: var(--neu-accent);
+    color: #fff;
+    box-shadow: 4px 4px 10px var(--neu-shadow-dark), -2px -2px 8px var(--neu-accent-light);
+}
+.neu-btn-accent:hover {
+    box-shadow: 2px 2px 6px var(--neu-shadow-dark), -1px -1px 4px var(--neu-accent-light);
+}
+.neu-btn-accent:active {
+    box-shadow: inset 3px 3px 6px var(--neu-accent-dark), inset -3px -3px 6px var(--neu-accent-light);
+}
+
+.neu-btn-success {
+    color: var(--neu-success);
+}
+.neu-btn-danger {
+    color: var(--neu-danger);
+}
+.neu-btn-warning {
+    color: var(--neu-warning-dark);
+}
+
+/* ── Ghost ── */
+.neu-btn-ghost {
+    box-shadow: none;
+    background: transparent;
+}
+.neu-btn-ghost:hover {
+    box-shadow: var(--neu-flat);
+    background: var(--neu-bg-base);
+}
+.neu-btn-ghost:active {
+    box-shadow: var(--neu-concave);
+}
+
+/* ── Outline ── */
+.neu-btn-outline {
+    box-shadow: none;
+    border: 2px solid var(--neu-shadow-dark);
+}
+.neu-btn-outline:hover {
+    box-shadow: var(--neu-flat);
+}
+.neu-btn-outline:active {
+    box-shadow: var(--neu-concave);
+}
+
+/* ── Icon Only ── */
+.neu-btn-icon {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border-radius: var(--neu-radius-circle);
+    font-size: var(--neu-font-lg);
+}
+.neu-btn-icon.neu-btn-sm {
+    width: 32px;
+    height: 32px;
+    font-size: var(--neu-font-base);
+}
+.neu-btn-icon.neu-btn-lg {
+    width: 48px;
+    height: 48px;
+    font-size: var(--neu-font-xl);
+}
+
+/* ── Loading ── */
+.neu-btn-loading {
+    pointer-events: none;
+    opacity: 0.75;
+}
+.neu-btn-loading::after {
+    content: '';
+    width: 16px;
+    height: 16px;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: var(--neu-radius-circle);
+    animation: neu-btn-spin 0.6s linear infinite;
+}
+@keyframes neu-btn-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ── Block (Full Width) ── */
+.neu-btn-block {
+    width: 100%;
+}
+
+/* ── Button Group ── */
+.neu-btn-group {
+    display: inline-flex;
+}
+.neu-btn-group .neu-btn {
+    border-radius: 0;
+    box-shadow: var(--neu-flat);
+}
+.neu-btn-group .neu-btn:first-child {
+    border-radius: var(--neu-radius-full) 0 0 var(--neu-radius-full);
+}
+.neu-btn-group .neu-btn:last-child {
+    border-radius: 0 var(--neu-radius-full) var(--neu-radius-full) 0;
+}
+.neu-btn-group .neu-btn.active {
+    box-shadow: var(--neu-concave);
+    color: var(--neu-accent);
+}

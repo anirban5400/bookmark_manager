@@ -1,0 +1,110 @@
+/* ============================================
+   NEU UI — Drawer
+   ============================================ */
+
+.neu-drawer-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(3px);
+    z-index: var(--neu-z-modal);
+    opacity: 0;
+    visibility: hidden;
+    transition: all var(--neu-transition);
+}
+.neu-drawer-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.neu-drawer {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    width: 320px;
+    max-width: 85vw;
+    background: var(--neu-bg-base);
+    box-shadow: var(--neu-convex);
+    z-index: calc(var(--neu-z-modal) + 1);
+    display: flex;
+    flex-direction: column;
+    transition: transform var(--neu-transition);
+}
+
+/* Right (default) */
+.neu-drawer-right {
+    right: 0;
+    transform: translateX(100%);
+}
+.neu-drawer-right.active {
+    transform: translateX(0);
+}
+
+/* Left */
+.neu-drawer-left {
+    left: 0;
+    transform: translateX(-100%);
+}
+.neu-drawer-left.active {
+    transform: translateX(0);
+}
+
+/* Sizes */
+.neu-drawer-sm  { width: 260px; }
+.neu-drawer-lg  { width: 440px; }
+.neu-drawer-xl  { width: 600px; }
+
+/* Header */
+.neu-drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--neu-space-lg);
+    border-bottom: 1px solid var(--neu-bg-dark);
+    flex-shrink: 0;
+}
+.neu-drawer-title {
+    font-size: var(--neu-font-lg);
+    font-weight: 600;
+    color: var(--neu-text-primary);
+}
+.neu-drawer-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: var(--neu-bg-base);
+    border-radius: var(--neu-radius-circle);
+    box-shadow: var(--neu-flat);
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--neu-text-muted);
+    transition: all var(--neu-transition-fast);
+    padding: 0;
+}
+.neu-drawer-close:hover {
+    box-shadow: var(--neu-concave-sm);
+    color: var(--neu-danger);
+}
+
+/* Body */
+.neu-drawer-body {
+    flex: 1;
+    padding: var(--neu-space-lg);
+    overflow-y: auto;
+    font-size: var(--neu-font-base);
+    color: var(--neu-text-secondary);
+}
+
+/* Footer */
+.neu-drawer-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--neu-space-sm);
+    padding: var(--neu-space-md) var(--neu-space-lg);
+    border-top: 1px solid var(--neu-bg-dark);
+    flex-shrink: 0;
+}

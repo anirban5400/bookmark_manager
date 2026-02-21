@@ -1,0 +1,76 @@
+/* ============================================
+   NEU UI — Alert
+   ============================================ */
+
+.neu-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--neu-space-sm);
+    padding: var(--neu-space-md) var(--neu-space-lg);
+    background: var(--neu-bg-base);
+    border-radius: var(--neu-radius-md);
+    box-shadow: var(--neu-concave);
+    font-size: var(--neu-font-sm);
+    color: var(--neu-text-secondary);
+    line-height: 1.5;
+}
+
+.neu-alert-icon {
+    font-size: var(--neu-font-lg);
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.neu-alert-content {
+    flex: 1;
+}
+.neu-alert-title {
+    font-weight: 600;
+    color: var(--neu-text-primary);
+    margin-bottom: 2px;
+    font-size: var(--neu-font-base);
+}
+
+/* Close */
+.neu-alert-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: var(--neu-bg-base);
+    border-radius: var(--neu-radius-circle);
+    box-shadow: var(--neu-flat);
+    cursor: pointer;
+    font-size: 0.6rem;
+    color: var(--neu-text-muted);
+    transition: all var(--neu-transition-fast);
+    flex-shrink: 0;
+    padding: 0;
+}
+.neu-alert-close:hover {
+    box-shadow: var(--neu-concave-sm);
+    color: var(--neu-danger);
+}
+
+/* Variants */
+.neu-alert-info {
+    border-left: 4px solid var(--neu-info-dark);
+}
+.neu-alert-info .neu-alert-icon { color: var(--neu-info-dark); }
+
+.neu-alert-success {
+    border-left: 4px solid var(--neu-success);
+}
+.neu-alert-success .neu-alert-icon { color: var(--neu-success); }
+
+.neu-alert-warning {
+    border-left: 4px solid var(--neu-warning);
+}
+.neu-alert-warning .neu-alert-icon { color: var(--neu-warning-dark); }
+
+.neu-alert-danger {
+    border-left: 4px solid var(--neu-danger);
+}
+.neu-alert-danger .neu-alert-icon { color: var(--neu-danger); }

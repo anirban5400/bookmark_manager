@@ -1,0 +1,59 @@
+/* ============================================
+   NEU UI — Tag
+   ============================================ */
+
+.neu-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.85rem;
+    font-size: var(--neu-font-sm);
+    font-weight: 500;
+    border-radius: var(--neu-radius-full);
+    background: var(--neu-bg-base);
+    color: var(--neu-text-secondary);
+    box-shadow: var(--neu-convex-sm);
+    transition: all var(--neu-transition-fast);
+    white-space: nowrap;
+}
+
+/* Variants */
+.neu-tag-accent  { color: var(--neu-accent); }
+.neu-tag-success { color: var(--neu-success); }
+.neu-tag-warning { color: var(--neu-warning-dark); }
+.neu-tag-danger  { color: var(--neu-danger); }
+.neu-tag-info    { color: var(--neu-info-dark); }
+
+/* Close icon inside tag */
+.neu-tag-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: var(--neu-radius-circle);
+    background: var(--neu-bg-base);
+    border: none;
+    box-shadow: var(--neu-concave-sm);
+    cursor: pointer;
+    font-size: 0.6rem;
+    color: var(--neu-text-muted);
+    transition: all var(--neu-transition-fast);
+    padding: 0;
+    line-height: 1;
+}
+.neu-tag-close:hover {
+    color: var(--neu-danger);
+    box-shadow: var(--neu-flat);
+}
+
+/* Large tags */
+.neu-tag-lg {
+    padding: 0.45rem 1.1rem;
+    font-size: var(--neu-font-base);
+}
+.neu-tag-lg .neu-tag-close {
+    width: 22px;
+    height: 22px;
+    font-size: 0.7rem;
+}

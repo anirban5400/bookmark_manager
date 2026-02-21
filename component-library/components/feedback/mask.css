@@ -1,0 +1,35 @@
+/* ============================================
+   NEU UI — Mask / Overlay
+   ============================================ */
+
+.neu-mask {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    z-index: var(--neu-z-overlay);
+    opacity: 0;
+    visibility: hidden;
+    transition: all var(--neu-transition);
+}
+.neu-mask.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Lighter overlay */
+.neu-mask-light {
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(2px);
+}
+
+/* Heavier overlay */
+.neu-mask-heavy {
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+}
+
+/* No blur */
+.neu-mask-flat {
+    backdrop-filter: none;
+}

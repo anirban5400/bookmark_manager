@@ -1,0 +1,120 @@
+/* ============================================
+   NEU UI — Charts (CSS/SVG)
+   ============================================ */
+
+/* ── Bar Chart ── */
+.neu-chart-bar {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--neu-space-sm);
+    height: 160px;
+    padding: var(--neu-space-md);
+    background: var(--neu-bg-base);
+    border-radius: var(--neu-radius-md);
+    box-shadow: var(--neu-concave);
+}
+
+.neu-bar {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--neu-space-xs);
+    height: 100%;
+    justify-content: flex-end;
+}
+
+.neu-bar-fill {
+    width: 100%;
+    max-width: 40px;
+    border-radius: var(--neu-radius-sm) var(--neu-radius-sm) 0 0;
+    background: linear-gradient(180deg, var(--neu-accent), var(--neu-accent-light));
+    box-shadow: var(--neu-convex-sm);
+    transition: height var(--neu-transition-slow);
+    min-height: 4px;
+}
+
+.neu-bar-label {
+    font-size: var(--neu-font-xs);
+    color: var(--neu-text-muted);
+    font-weight: 500;
+}
+.neu-bar-value {
+    font-size: var(--neu-font-xs);
+    font-weight: 600;
+    color: var(--neu-text-primary);
+}
+
+/* Color variants for bars */
+.neu-bar-fill.success { background: linear-gradient(180deg, var(--neu-success), var(--neu-success-light)); }
+.neu-bar-fill.warning { background: linear-gradient(180deg, var(--neu-warning-dark), var(--neu-warning)); }
+.neu-bar-fill.danger  { background: linear-gradient(180deg, var(--neu-danger), var(--neu-danger-light)); }
+.neu-bar-fill.info    { background: linear-gradient(180deg, var(--neu-info-dark), var(--neu-info)); }
+
+/* ── Donut Chart ── */
+.neu-chart-donut {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.neu-chart-donut svg {
+    transform: rotate(-90deg);
+}
+
+.neu-chart-donut circle {
+    fill: none;
+    stroke-width: 10;
+    stroke-linecap: round;
+    transition: stroke-dashoffset var(--neu-transition-slow);
+}
+
+.neu-chart-donut-bg {
+    stroke: var(--neu-bg-dark);
+}
+
+.neu-chart-donut-center {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--neu-radius-circle);
+    background: var(--neu-bg-base);
+    box-shadow: var(--neu-concave);
+}
+
+.neu-chart-donut-value {
+    font-size: var(--neu-font-xl);
+    font-weight: 700;
+    color: var(--neu-text-primary);
+}
+.neu-chart-donut-label {
+    font-size: var(--neu-font-xs);
+    color: var(--neu-text-muted);
+}
+
+/* ── Sparkline (mini line) ── */
+.neu-chart-sparkline {
+    padding: var(--neu-space-sm);
+    background: var(--neu-bg-base);
+    border-radius: var(--neu-radius-sm);
+    box-shadow: var(--neu-concave-sm);
+    display: inline-flex;
+}
+.neu-chart-sparkline svg {
+    display: block;
+}
+.neu-chart-sparkline polyline {
+    fill: none;
+    stroke: var(--neu-accent);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.neu-chart-sparkline .area {
+    fill: var(--neu-accent-light);
+    opacity: 0.15;
+    stroke: none;
+}

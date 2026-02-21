@@ -1,0 +1,134 @@
+/* ============================================
+   NEU UI — Steps
+   ============================================ */
+
+.neu-steps {
+    display: flex;
+    align-items: flex-start;
+    gap: 0;
+    counter-reset: step;
+}
+
+.neu-step {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    position: relative;
+}
+
+/* Connecting line between steps */
+.neu-step::before {
+    content: '';
+    position: absolute;
+    top: 18px;
+    left: calc(-50% + 20px);
+    right: calc(50% + 20px);
+    height: 3px;
+    background: var(--neu-bg-base);
+    box-shadow: inset 1px 1px 2px var(--neu-shadow-dark), inset -1px -1px 2px var(--neu-shadow-light);
+    border-radius: 3px;
+}
+.neu-step:first-child::before {
+    display: none;
+}
+
+/* Step circle */
+.neu-step-indicator {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--neu-radius-circle);
+    background: var(--neu-bg-base);
+    box-shadow: var(--neu-convex-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--neu-font-sm);
+    font-weight: 600;
+    color: var(--neu-text-muted);
+    position: relative;
+    z-index: 1;
+    transition: all var(--neu-transition);
+    counter-increment: step;
+}
+
+/* Default number from counter */
+.neu-step-indicator::after {
+    content: counter(step);
+}
+
+/* When icon is provided, hide counter */
+.neu-step-indicator > * {
+    position: relative;
+    z-index: 1;
+}
+.neu-step-indicator:not(:empty)::after {
+    display: none;
+}
+
+/* Labels */
+.neu-step-label {
+    margin-top: var(--neu-space-sm);
+    font-size: var(--neu-font-sm);
+    font-weight: 500;
+    color: var(--neu-text-muted);
+    transition: color var(--neu-transition);
+}
+.neu-step-desc {
+    font-size: var(--neu-font-xs);
+    color: var(--neu-text-muted);
+    margin-top: 2px;
+}
+
+/* ── States ── */
+/* Active */
+.neu-step.active .neu-step-indicator {
+    box-shadow: var(--neu-concave);
+    color: var(--neu-accent);
+}
+.neu-step.active .neu-step-label {
+    color: var(--neu-accent);
+    font-weight: 600;
+}
+
+/* Completed */
+.neu-step.completed .neu-step-indicator {
+    background: var(--neu-accent);
+    color: #fff;
+    box-shadow: 3px 3px 6px var(--neu-shadow-dark), -3px -3px 6px var(--neu-accent-light);
+}
+.neu-step.completed .neu-step-indicator::after {
+    content: '✓';
+}
+.neu-step.completed .neu-step-label {
+    color: var(--neu-text-primary);
+}
+.neu-step.completed::before {
+    background: var(--neu-accent);
+    box-shadow: none;
+}
+
+/* ── Vertical ── */
+.neu-steps-vertical {
+    flex-direction: column;
+    gap: var(--neu-space-lg);
+}
+.neu-steps-vertical .neu-step {
+    flex-direction: row;
+    align-items: flex-start;
+    text-align: left;
+}
+.neu-steps-vertical .neu-step::before {
+    top: auto;
+    left: 17px;
+    right: auto;
+    width: 3px;
+    height: calc(100% + var(--neu-space-lg));
+    bottom: calc(100%);
+    top: calc(-1 * var(--neu-space-lg));
+}
+.neu-steps-vertical .neu-step-label {
+    margin-top: 0;
+    margin-left: var(--neu-space-md);
+}

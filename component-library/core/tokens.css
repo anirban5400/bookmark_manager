@@ -1,0 +1,133 @@
+/* ============================================
+   NEU UI — Design Tokens
+   Neumorphic CSS Custom Properties
+   ============================================ */
+
+:root {
+    /* ── Base Colors ── */
+    --neu-bg-base: #e0e5ec;
+    --neu-bg-light: #f0f5fc;
+    --neu-bg-dark: #c8ccd4;
+
+    /* ── Text Colors ── */
+    --neu-text-primary: #2d3436;
+    --neu-text-secondary: #636e72;
+    --neu-text-muted: #a4b0be;
+
+    /* ── Accent Colors ── */
+    --neu-accent: #6c5ce7;
+    --neu-accent-light: #a29bfe;
+    --neu-accent-dark: #5541d1;
+
+    /* ── Semantic Colors ── */
+    --neu-success: #00b894;
+    --neu-success-light: #55efc4;
+    --neu-warning: #fdcb6e;
+    --neu-warning-dark: #e17055;
+    --neu-danger: #e74c3c;
+    --neu-danger-light: #fab1a0;
+    --neu-info: #74b9ff;
+    --neu-info-dark: #0984e3;
+
+    /* ── Shadow Colors ── */
+    --neu-shadow-light: #ffffff;
+    --neu-shadow-dark: #a3b1c6;
+
+    /* ══════════════════════════════════════════════
+       Neumorphic Shadows — uncomment ONE version
+       ══════════════════════════════════════════════ */
+
+    /* ── V1: Bold (original deep shadows) ── */
+    /* --neu-convex: 6px 6px 12px var(--neu-shadow-dark), -6px -6px 12px var(--neu-shadow-light); */
+    /* --neu-concave: inset 4px 4px 8px var(--neu-shadow-dark), inset -4px -4px 8px var(--neu-shadow-light); */
+    /* --neu-flat: 3px 3px 6px var(--neu-shadow-dark), -3px -3px 6px var(--neu-shadow-light); */
+    /* --neu-convex-sm: 3px 3px 6px var(--neu-shadow-dark), -3px -3px 6px var(--neu-shadow-light); */
+    /* --neu-concave-sm: inset 2px 2px 4px var(--neu-shadow-dark), inset -2px -2px 4px var(--neu-shadow-light); */
+    /* --neu-pressed: inset 3px 3px 6px var(--neu-shadow-dark), inset -3px -3px 6px var(--neu-shadow-light); */
+
+    /* ── V2: Tight (minimal offset) ── */
+    /* --neu-convex: 2px 2px 2px var(--neu-shadow-dark), -2px -2px 0px var(--neu-shadow-light); */
+    /* --neu-concave: inset 0px 0px 6px var(--neu-shadow-dark), inset 0px 0px 6px var(--neu-shadow-light); */
+    /* --neu-flat: 2px 2px 2px var(--neu-shadow-dark), -2px -2px 2px var(--neu-shadow-light); */
+    /* --neu-convex-sm: 2px 2px 2px var(--neu-shadow-dark), -2px -2px 2px var(--neu-shadow-light); */
+    /* --neu-concave-sm: inset 2px 2px 2px var(--neu-shadow-dark), inset -2px -2px 2px var(--neu-shadow-light); */
+    /* --neu-pressed: inset 2px 2px 2px var(--neu-shadow-dark), inset -2px -2px 2px var(--neu-shadow-light); */
+
+    /* ── V3: Subtle (balanced, medium depth) ── */
+    /* --neu-convex: 3px 3px 5px var(--neu-shadow-dark), -3px -3px 5px var(--neu-shadow-light);
+    --neu-concave: inset 2px 2px 5px var(--neu-shadow-dark), inset -2px -2px 5px var(--neu-shadow-light);
+    --neu-flat: 2px 2px 4px var(--neu-shadow-dark), -2px -2px 4px var(--neu-shadow-light);
+    --neu-convex-sm: 2px 2px 3px var(--neu-shadow-dark), -2px -2px 3px var(--neu-shadow-light);
+    --neu-concave-sm: inset 1px 1px 3px var(--neu-shadow-dark), inset -1px -1px 3px var(--neu-shadow-light);
+    --neu-pressed: inset 2px 2px 4px var(--neu-shadow-dark), inset -2px -2px 4px var(--neu-shadow-light); */
+
+    /* ── V4: Soft Glow (diffused, cloud-like) ── */
+    /* --neu-convex: 4px 4px 10px var(--neu-shadow-dark), -4px -4px 10px var(--neu-shadow-light); 
+    --neu-concave: inset 3px 3px 7px var(--neu-shadow-dark), inset -3px -3px 7px var(--neu-shadow-light); 
+    --neu-flat: 2px 2px 6px var(--neu-shadow-dark), -2px -2px 6px var(--neu-shadow-light); 
+    --neu-convex-sm: 2px 2px 5px var(--neu-shadow-dark), -2px -2px 5px var(--neu-shadow-light); 
+    --neu-concave-sm: inset 2px 2px 5px var(--neu-shadow-dark), inset -2px -2px 5px var(--neu-shadow-light); 
+    --neu-pressed: inset 3px 3px 6px var(--neu-shadow-dark), inset -3px -3px 6px var(--neu-shadow-light);  */
+
+    /* ── V5: Crisp (sharp edges, popup.css style) ── */
+    --neu-convex: 2px 2px 0px var(--neu-shadow-dark), -2px -2px 0px var(--neu-shadow-light); 
+    --neu-concave: inset 2px 2px 2px var(--neu-shadow-dark), inset -2px -2px 2px var(--neu-shadow-light); 
+    --neu-flat: 1px 1px 0px var(--neu-shadow-dark), -1px -1px 0px var(--neu-shadow-light); 
+    --neu-convex-sm: 1px 1px 0px var(--neu-shadow-dark), -1px -1px 0px var(--neu-shadow-light); 
+    --neu-concave-sm: inset 1px 1px 2px var(--neu-shadow-dark), inset -1px -1px 2px var(--neu-shadow-light); 
+    --neu-pressed: inset 2px 2px 2px var(--neu-shadow-dark), inset -2px -2px 2px var(--neu-shadow-light); 
+
+    /* ── Font Sizes ── */
+    --neu-font-xs: 0.65rem;
+    --neu-font-sm: 0.75rem;
+    --neu-font-base: 0.875rem;
+    --neu-font-md: 1rem;
+    --neu-font-lg: 1.125rem;
+    --neu-font-xl: 1.25rem;
+    --neu-font-2xl: 1.5rem;
+    --neu-font-3xl: 1.875rem;
+    --neu-font-4xl: 2.25rem;
+
+    /* ── Spacing ── */
+    --neu-space-xs: 0.25rem;
+    --neu-space-sm: 0.5rem;
+    --neu-space-md: 1rem;
+    --neu-space-lg: 1.5rem;
+    --neu-space-xl: 2rem;
+    --neu-space-2xl: 3rem;
+
+    /* ── Border Radius ── */
+    --neu-radius-sm: 8px;
+    --neu-radius-md: 12px;
+    --neu-radius-lg: 20px;
+    --neu-radius-xl: 30px;
+    --neu-radius-full: 50px;
+    --neu-radius-circle: 50%;
+
+    /* ── Transitions ── */
+    --neu-transition-fast: 0.15s ease;
+    --neu-transition: 0.25s ease;
+    --neu-transition-slow: 0.4s ease;
+
+    /* ── Z-Index Layers ── */
+    --neu-z-dropdown: 100;
+    --neu-z-sticky: 200;
+    --neu-z-overlay: 500;
+    --neu-z-modal: 1000;
+    --neu-z-toast: 1100;
+    --neu-z-tooltip: 1200;
+}
+
+/* ── Dark Theme ── */
+[data-theme="dark"] {
+    --neu-bg-base: #2d3436;
+    --neu-bg-light: #3d4448;
+    --neu-bg-dark: #1e2426;
+
+    --neu-text-primary: #ffffff;
+    --neu-text-secondary: #b2bec3;
+    --neu-text-muted: #636e72;
+
+    --neu-shadow-light: #3d4448;
+    --neu-shadow-dark: #1e2426;
+}

@@ -1,0 +1,75 @@
+/* ============================================
+   NEU UI — Slider / Range
+   ============================================ */
+
+.neu-slider {
+    display: flex;
+    flex-direction: column;
+    gap: var(--neu-space-xs);
+}
+
+.neu-slider input[type="range"] {
+    appearance: none;
+    width: 100%;
+    height: 8px;
+    background: var(--neu-bg-base);
+    border-radius: var(--neu-radius-full);
+    box-shadow: var(--neu-concave-sm);
+    outline: none;
+    cursor: pointer;
+}
+
+/* Thumb — WebKit */
+.neu-slider input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
+    width: 24px;
+    height: 24px;
+    border-radius: var(--neu-radius-circle);
+    background: var(--neu-bg-base);
+    box-shadow: var(--neu-convex-sm);
+    cursor: pointer;
+    transition: all var(--neu-transition-fast);
+    border: none;
+}
+.neu-slider input[type="range"]::-webkit-slider-thumb:hover {
+    box-shadow: var(--neu-convex);
+    transform: scale(1.1);
+}
+.neu-slider input[type="range"]::-webkit-slider-thumb:active {
+    box-shadow: var(--neu-concave-sm);
+}
+
+/* Thumb — Mozilla */
+.neu-slider input[type="range"]::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+    border-radius: var(--neu-radius-circle);
+    background: var(--neu-bg-base);
+    box-shadow: var(--neu-convex-sm);
+    cursor: pointer;
+    border: none;
+}
+
+/* Track — Mozilla */
+.neu-slider input[type="range"]::-moz-range-track {
+    height: 8px;
+    background: var(--neu-bg-base);
+    border-radius: var(--neu-radius-full);
+    box-shadow: var(--neu-concave-sm);
+    border: none;
+}
+
+/* Labels */
+.neu-slider-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--neu-font-xs);
+    color: var(--neu-text-muted);
+}
+
+.neu-slider-value {
+    font-size: var(--neu-font-sm);
+    font-weight: 600;
+    color: var(--neu-accent);
+    text-align: center;
+}

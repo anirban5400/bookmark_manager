@@ -1,0 +1,50 @@
+/* ============================================
+   NEU UI — Legend
+   ============================================ */
+
+.neu-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--neu-space-md);
+    padding: var(--neu-space-sm);
+}
+
+.neu-legend-item {
+    display: flex;
+    align-items: center;
+    gap: var(--neu-space-sm);
+    font-size: var(--neu-font-sm);
+    color: var(--neu-text-secondary);
+    font-weight: 500;
+}
+
+.neu-legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: var(--neu-radius-circle);
+    background: var(--neu-accent);
+    box-shadow: var(--neu-convex-sm);
+    flex-shrink: 0;
+}
+
+/* Color variants */
+.neu-legend-dot.accent  { background: var(--neu-accent); }
+.neu-legend-dot.success { background: var(--neu-success); }
+.neu-legend-dot.warning { background: var(--neu-warning); }
+.neu-legend-dot.danger  { background: var(--neu-danger); }
+.neu-legend-dot.info    { background: var(--neu-info-dark); }
+.neu-legend-dot.muted   { background: var(--neu-text-muted); }
+
+/* Vertical layout */
+.neu-legend-vertical {
+    flex-direction: column;
+    gap: var(--neu-space-sm);
+}
+
+/* Inside card variant */
+.neu-legend-card {
+    background: var(--neu-bg-base);
+    border-radius: var(--neu-radius-md);
+    box-shadow: var(--neu-concave);
+    padding: var(--neu-space-md);
+}

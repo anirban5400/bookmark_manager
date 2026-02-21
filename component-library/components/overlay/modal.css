@@ -1,0 +1,97 @@
+/* ============================================
+   NEU UI — Modal
+   ============================================ */
+
+.neu-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: var(--neu-z-modal);
+    opacity: 0;
+    visibility: hidden;
+    transition: all var(--neu-transition);
+}
+.neu-modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.neu-modal {
+    background: var(--neu-bg-base);
+    border-radius: var(--neu-radius-lg);
+    box-shadow: var(--neu-convex);
+    width: 90%;
+    max-width: 480px;
+    max-height: 85vh;
+    overflow: hidden;
+    transform: scale(0.95) translateY(10px);
+    transition: transform var(--neu-transition);
+}
+.neu-modal-overlay.active .neu-modal {
+    transform: scale(1) translateY(0);
+}
+
+/* Sizes */
+.neu-modal-sm { max-width: 360px; }
+.neu-modal-lg { max-width: 640px; }
+.neu-modal-xl { max-width: 900px; }
+.neu-modal-full { max-width: 95vw; max-height: 95vh; }
+
+/* Header */
+.neu-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--neu-space-lg);
+    border-bottom: 1px solid var(--neu-bg-dark);
+}
+.neu-modal-title {
+    font-size: var(--neu-font-lg);
+    font-weight: 600;
+    color: var(--neu-text-primary);
+}
+
+.neu-modal-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: var(--neu-bg-base);
+    border-radius: var(--neu-radius-circle);
+    box-shadow: var(--neu-flat);
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--neu-text-muted);
+    transition: all var(--neu-transition-fast);
+    padding: 0;
+}
+.neu-modal-close:hover {
+    box-shadow: var(--neu-concave-sm);
+    color: var(--neu-danger);
+}
+
+/* Body */
+.neu-modal-body {
+    padding: var(--neu-space-lg);
+    overflow-y: auto;
+    max-height: 60vh;
+    font-size: var(--neu-font-base);
+    color: var(--neu-text-secondary);
+    line-height: 1.6;
+}
+
+/* Footer */
+.neu-modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--neu-space-sm);
+    padding: var(--neu-space-md) var(--neu-space-lg);
+    border-top: 1px solid var(--neu-bg-dark);
+}

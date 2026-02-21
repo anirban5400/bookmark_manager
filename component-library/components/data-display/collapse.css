@@ -1,0 +1,54 @@
+/* ============================================
+   NEU UI — Collapse
+   ============================================ */
+
+.neu-collapse {
+    background: var(--neu-bg-base);
+    border-radius: var(--neu-radius-md);
+    box-shadow: var(--neu-convex);
+    overflow: hidden;
+}
+
+.neu-collapse-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: var(--neu-space-md) var(--neu-space-lg);
+    font-size: var(--neu-font-base);
+    font-weight: 600;
+    color: var(--neu-text-primary);
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: all var(--neu-transition-fast);
+    text-align: left;
+}
+.neu-collapse-trigger:hover {
+    color: var(--neu-accent);
+}
+
+.neu-collapse-arrow {
+    font-size: 0.65rem;
+    color: var(--neu-text-muted);
+    transition: transform var(--neu-transition);
+}
+.neu-collapse.open .neu-collapse-arrow {
+    transform: rotate(180deg);
+}
+
+.neu-collapse-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height var(--neu-transition);
+}
+.neu-collapse.open .neu-collapse-body {
+    max-height: 500px;
+}
+
+.neu-collapse-inner {
+    padding: 0 var(--neu-space-lg) var(--neu-space-lg);
+    font-size: var(--neu-font-sm);
+    color: var(--neu-text-secondary);
+    line-height: 1.6;
+}

@@ -1,0 +1,102 @@
+/* ============================================
+   NEU UI — Base Styles & Utilities
+   ============================================ */
+
+/* Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+body {
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--neu-bg-base);
+    color: var(--neu-text-primary);
+    line-height: 1.6;
+    transition: background-color var(--neu-transition), color var(--neu-transition);
+}
+
+/* ── Selection ── */
+::selection {
+    background: var(--neu-accent-light);
+    color: #fff;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: var(--neu-bg-base);
+    border-radius: 8px;
+}
+::-webkit-scrollbar-thumb {
+    background: var(--neu-bg-base);
+    border-radius: 8px;
+    box-shadow: var(--neu-convex-sm);
+}
+::-webkit-scrollbar-thumb:hover {
+    box-shadow: var(--neu-flat);
+}
+
+/* ── Layout Utilities ── */
+.neu-hidden      { display: none !important; }
+.neu-flex        { display: flex; }
+.neu-flex-col    { display: flex; flex-direction: column; }
+.neu-flex-center { display: flex; align-items: center; justify-content: center; }
+.neu-flex-between { display: flex; align-items: center; justify-content: space-between; }
+.neu-flex-start  { display: flex; align-items: center; gap: var(--neu-space-sm); }
+.neu-flex-wrap   { flex-wrap: wrap; }
+.neu-gap-xs      { gap: var(--neu-space-xs); }
+.neu-gap-sm      { gap: var(--neu-space-sm); }
+.neu-gap-md      { gap: var(--neu-space-md); }
+.neu-gap-lg      { gap: var(--neu-space-lg); }
+.neu-gap-xl      { gap: var(--neu-space-xl); }
+
+/* ── Text Utilities ── */
+.neu-text-xs        { font-size: var(--neu-font-xs); }
+.neu-text-sm        { font-size: var(--neu-font-sm); }
+.neu-text-base      { font-size: var(--neu-font-base); }
+.neu-text-md        { font-size: var(--neu-font-md); }
+.neu-text-lg        { font-size: var(--neu-font-lg); }
+.neu-text-xl        { font-size: var(--neu-font-xl); }
+.neu-text-2xl       { font-size: var(--neu-font-2xl); }
+.neu-text-primary   { color: var(--neu-text-primary); }
+.neu-text-secondary { color: var(--neu-text-secondary); }
+.neu-text-muted     { color: var(--neu-text-muted); }
+.neu-text-accent    { color: var(--neu-accent); }
+.neu-text-success   { color: var(--neu-success); }
+.neu-text-danger    { color: var(--neu-danger); }
+.neu-text-center    { text-align: center; }
+.neu-text-right     { text-align: right; }
+
+/* ── Font Weight ── */
+.neu-font-light     { font-weight: 300; }
+.neu-font-normal    { font-weight: 400; }
+.neu-font-medium    { font-weight: 500; }
+.neu-font-semibold  { font-weight: 600; }
+.neu-font-bold      { font-weight: 700; }
+
+/* ── Spacing Utilities ── */
+.neu-p-sm  { padding: var(--neu-space-sm); }
+.neu-p-md  { padding: var(--neu-space-md); }
+.neu-p-lg  { padding: var(--neu-space-lg); }
+.neu-p-xl  { padding: var(--neu-space-xl); }
+.neu-m-sm  { margin: var(--neu-space-sm); }
+.neu-m-md  { margin: var(--neu-space-md); }
+.neu-m-lg  { margin: var(--neu-space-lg); }
+.neu-mb-sm { margin-bottom: var(--neu-space-sm); }
+.neu-mb-md { margin-bottom: var(--neu-space-md); }
+.neu-mb-lg { margin-bottom: var(--neu-space-lg); }
+.neu-mt-sm { margin-top: var(--neu-space-sm); }
+.neu-mt-md { margin-top: var(--neu-space-md); }
+.neu-mt-lg { margin-top: var(--neu-space-lg); }
+
+/* ── Width ── */
+.neu-w-full  { width: 100%; }
+.neu-w-auto  { width: auto; }
+
+/* ── Container ── */
+.neu-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: var(--neu-space-xl);
+}

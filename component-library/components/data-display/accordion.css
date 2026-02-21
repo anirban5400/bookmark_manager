@@ -1,0 +1,16 @@
+/* ============================================
+   NEU UI — Accordion (Multi-panel Collapse)
+   ============================================ */
+
+.neu-accordion {
+    display: flex;
+    flex-direction: column;
+    gap: var(--neu-space-sm);
+}
+
+.neu-accordion .neu-collapse {
+    box-shadow: var(--neu-convex-sm);
+}
+.neu-accordion .neu-collapse.open {
+    box-shadow: var(--neu-convex);
+}

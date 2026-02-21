@@ -1,0 +1,46 @@
+/* ============================================
+   NEU UI — Select
+   ============================================ */
+
+.neu-select-wrapper {
+    position: relative;
+    display: inline-flex;
+}
+
+.neu-select {
+    appearance: none;
+    width: 100%;
+    padding: 0.75rem 2.5rem 0.75rem 1rem;
+    font-size: var(--neu-font-base);
+    font-family: inherit;
+    background: var(--neu-bg-base);
+    border: none;
+    border-radius: var(--neu-radius-md);
+    color: var(--neu-text-primary);
+    box-shadow: var(--neu-concave);
+    outline: none;
+    cursor: pointer;
+    transition: all var(--neu-transition-fast);
+}
+.neu-select:focus {
+    box-shadow: var(--neu-convex);
+}
+
+/* Custom arrow */
+.neu-select-wrapper::after {
+    content: '';
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 6px solid var(--neu-text-muted);
+    pointer-events: none;
+}
+
+/* Sizes */
+.neu-select-sm { padding: 0.5rem 2.25rem 0.5rem 0.75rem; font-size: var(--neu-font-sm); }
+.neu-select-lg { padding: 1rem 2.75rem 1rem 1.25rem; font-size: var(--neu-font-md); }

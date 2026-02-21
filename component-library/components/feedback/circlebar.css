@@ -1,0 +1,65 @@
+/* ============================================
+   NEU UI — Circle Bar (Radial Progress)
+   ============================================ */
+
+.neu-circlebar {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.neu-circlebar-track {
+    fill: none;
+    stroke: var(--neu-bg-dark);
+    stroke-width: 8;
+}
+
+.neu-circlebar-fill {
+    fill: none;
+    stroke: var(--neu-accent);
+    stroke-width: 8;
+    stroke-linecap: round;
+    transform: rotate(-90deg);
+    transform-origin: center;
+    transition: stroke-dashoffset 0.6s ease;
+}
+
+/* Glow */
+.neu-circlebar-glow .neu-circlebar-fill {
+    filter: drop-shadow(0 0 4px var(--neu-accent-light));
+}
+
+/* Inner shadow for neumorphic feel */
+.neu-circlebar-bg {
+    position: absolute;
+    inset: 8px;
+    border-radius: var(--neu-radius-circle);
+    background: var(--neu-bg-base);
+    box-shadow: var(--neu-concave);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.neu-circlebar-value {
+    font-size: var(--neu-font-lg);
+    font-weight: 700;
+    color: var(--neu-text-primary);
+}
+.neu-circlebar-label {
+    font-size: var(--neu-font-xs);
+    color: var(--neu-text-muted);
+}
+
+/* Sizes */
+.neu-circlebar-sm { width: 64px; height: 64px; }
+.neu-circlebar-sm .neu-circlebar-value { font-size: var(--neu-font-sm); }
+.neu-circlebar-md { width: 100px; height: 100px; }
+.neu-circlebar-lg { width: 140px; height: 140px; }
+.neu-circlebar-lg .neu-circlebar-value { font-size: var(--neu-font-2xl); }
+
+/* Color variants */
+.neu-circlebar-success .neu-circlebar-fill { stroke: var(--neu-success); }
+.neu-circlebar-warning .neu-circlebar-fill { stroke: var(--neu-warning); }
+.neu-circlebar-danger  .neu-circlebar-fill { stroke: var(--neu-danger); }

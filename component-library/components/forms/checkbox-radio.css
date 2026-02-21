@@ -1,0 +1,101 @@
+/* ============================================
+   NEU UI — Checkbox & Radio
+   ============================================ */
+
+/* ── Checkbox ── */
+.neu-checkbox {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--neu-space-sm);
+    cursor: pointer;
+    font-size: var(--neu-font-base);
+    color: var(--neu-text-secondary);
+    user-select: none;
+}
+
+.neu-checkbox input {
+    appearance: none;
+    width: 22px;
+    height: 22px;
+    background: var(--neu-bg-base);
+    border-radius: var(--neu-radius-sm);
+    box-shadow: var(--neu-concave-sm);
+    cursor: pointer;
+    position: relative;
+    transition: all var(--neu-transition-fast);
+    flex-shrink: 0;
+}
+.neu-checkbox input:checked {
+    background: var(--neu-accent);
+    box-shadow: 2px 2px 4px var(--neu-shadow-dark), -2px -2px 4px var(--neu-accent-light);
+}
+.neu-checkbox input:checked::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+.neu-checkbox input:focus-visible {
+    outline: 2px solid var(--neu-accent);
+    outline-offset: 2px;
+}
+
+/* ── Radio ── */
+.neu-radio {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--neu-space-sm);
+    cursor: pointer;
+    font-size: var(--neu-font-base);
+    color: var(--neu-text-secondary);
+    user-select: none;
+}
+
+.neu-radio input {
+    appearance: none;
+    width: 22px;
+    height: 22px;
+    background: var(--neu-bg-base);
+    border-radius: var(--neu-radius-circle);
+    box-shadow: var(--neu-concave-sm);
+    cursor: pointer;
+    position: relative;
+    transition: all var(--neu-transition-fast);
+    flex-shrink: 0;
+}
+.neu-radio input:checked {
+    box-shadow: var(--neu-concave);
+}
+.neu-radio input:checked::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 10px;
+    height: 10px;
+    border-radius: var(--neu-radius-circle);
+    background: var(--neu-accent);
+    box-shadow: 0 0 4px var(--neu-accent-light);
+}
+.neu-radio input:focus-visible {
+    outline: 2px solid var(--neu-accent);
+    outline-offset: 2px;
+}
+
+/* ── Group ── */
+.neu-checkbox-group,
+.neu-radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--neu-space-sm);
+}
+.neu-checkbox-group-inline,
+.neu-radio-group-inline {
+    flex-direction: row;
+    gap: var(--neu-space-lg);
+}

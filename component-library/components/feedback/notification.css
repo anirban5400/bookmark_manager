@@ -1,0 +1,102 @@
+/* ============================================
+   NEU UI — Notification / Toast
+   ============================================ */
+
+/* Toast container — stacks toasts */
+.neu-toast-container {
+    position: fixed;
+    bottom: var(--neu-space-xl);
+    right: var(--neu-space-xl);
+    display: flex;
+    flex-direction: column-reverse;
+    gap: var(--neu-space-sm);
+    z-index: var(--neu-z-toast);
+    pointer-events: none;
+}
+
+/* Top-right variant */
+.neu-toast-container-top {
+    bottom: auto;
+    top: var(--neu-space-xl);
+    flex-direction: column;
+}
+
+.neu-toast {
+    display: flex;
+    align-items: center;
+    gap: var(--neu-space-sm);
+    padding: var(--neu-space-md) var(--neu-space-lg);
+    background: var(--neu-bg-base);
+    border-radius: var(--neu-radius-lg);
+    box-shadow: var(--neu-convex);
+    font-size: var(--neu-font-sm);
+    font-weight: 500;
+    color: var(--neu-text-primary);
+    min-width: 280px;
+    max-width: 400px;
+    pointer-events: auto;
+    animation: neu-toast-in 0.3s ease, neu-toast-out 0.3s ease 2.7s forwards;
+}
+
+@keyframes neu-toast-in {
+    from { opacity: 0; transform: translateX(100px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes neu-toast-out {
+    to { opacity: 0; transform: translateX(100px); }
+}
+
+/* Icon */
+.neu-toast-icon {
+    font-size: var(--neu-font-lg);
+    flex-shrink: 0;
+}
+
+/* Content */
+.neu-toast-content {
+    flex: 1;
+}
+.neu-toast-title {
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+.neu-toast-message {
+    font-size: var(--neu-font-xs);
+    color: var(--neu-text-secondary);
+}
+
+/* Close */
+.neu-toast-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: var(--neu-bg-base);
+    border-radius: var(--neu-radius-circle);
+    box-shadow: var(--neu-flat);
+    cursor: pointer;
+    font-size: 0.6rem;
+    color: var(--neu-text-muted);
+    transition: all var(--neu-transition-fast);
+    flex-shrink: 0;
+    padding: 0;
+}
+.neu-toast-close:hover {
+    box-shadow: var(--neu-concave-sm);
+    color: var(--neu-danger);
+}
+
+/* Variants */
+.neu-toast-success { border-left: 4px solid var(--neu-success); }
+.neu-toast-success .neu-toast-icon { color: var(--neu-success); }
+
+.neu-toast-danger { border-left: 4px solid var(--neu-danger); }
+.neu-toast-danger .neu-toast-icon { color: var(--neu-danger); }
+
+.neu-toast-warning { border-left: 4px solid var(--neu-warning); }
+.neu-toast-warning .neu-toast-icon { color: var(--neu-warning-dark); }
+
+.neu-toast-info { border-left: 4px solid var(--neu-info-dark); }
+.neu-toast-info .neu-toast-icon { color: var(--neu-info-dark); }

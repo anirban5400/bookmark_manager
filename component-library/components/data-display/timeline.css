@@ -1,0 +1,73 @@
+/* ============================================
+   NEU UI — Timeline
+   ============================================ */
+
+.neu-timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+/* Vertical line */
+.neu-timeline::before {
+    content: '';
+    position: absolute;
+    left: 14px;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--neu-bg-base);
+    box-shadow: inset 1px 1px 2px var(--neu-shadow-dark), inset -1px -1px 2px var(--neu-shadow-light);
+    border-radius: 3px;
+}
+
+.neu-timeline-item {
+    position: relative;
+    padding-bottom: var(--neu-space-xl);
+}
+.neu-timeline-item:last-child {
+    padding-bottom: 0;
+}
+
+/* Dot */
+.neu-timeline-dot {
+    position: absolute;
+    left: -22px;
+    top: 4px;
+    width: 20px;
+    height: 20px;
+    border-radius: var(--neu-radius-circle);
+    background: var(--neu-bg-base);
+    box-shadow: var(--neu-convex-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.55rem;
+    z-index: 1;
+}
+.neu-timeline-dot.accent  { background: var(--neu-accent); color: #fff; box-shadow: none; }
+.neu-timeline-dot.success { background: var(--neu-success); color: #fff; box-shadow: none; }
+.neu-timeline-dot.danger  { background: var(--neu-danger); color: #fff; box-shadow: none; }
+
+/* Content */
+.neu-timeline-content {
+    background: var(--neu-bg-base);
+    border-radius: var(--neu-radius-md);
+    padding: var(--neu-space-md);
+    box-shadow: var(--neu-convex-sm);
+}
+.neu-timeline-title {
+    font-size: var(--neu-font-base);
+    font-weight: 600;
+    color: var(--neu-text-primary);
+    margin-bottom: 0.2rem;
+}
+.neu-timeline-time {
+    font-size: var(--neu-font-xs);
+    color: var(--neu-text-muted);
+    margin-bottom: var(--neu-space-sm);
+}
+.neu-timeline-body {
+    font-size: var(--neu-font-sm);
+    color: var(--neu-text-secondary);
+    line-height: 1.5;
+}

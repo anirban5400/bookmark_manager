@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEU UI — Neumorphic Component Library</title>
+    <meta name="description" content="A comprehensive neumorphic component library with 35+ components, dark mode, and vanilla CSS/JS.">
+    <link rel="stylesheet" href="neu-all.css">
+    <style>
+        .showcase { max-width: 1100px; margin: 0 auto; padding: var(--neu-space-xl); }
+        .showcase-header { text-align: center; margin-bottom: var(--neu-space-2xl); }
+        .showcase-header h1 { font-size: var(--neu-font-4xl); font-weight: 700; letter-spacing: -1px; margin-bottom: var(--neu-space-sm); }
+        .showcase-header p { font-size: var(--neu-font-lg); color: var(--neu-text-secondary); font-weight: 300; }
+        .showcase-nav { position: sticky; top: 0; z-index: 50; background: var(--neu-bg-base); padding: var(--neu-space-sm); border-radius: var(--neu-radius-lg); box-shadow: var(--neu-convex); margin-bottom: var(--neu-space-2xl); display: flex; flex-wrap: wrap; gap: var(--neu-space-xs); justify-content: center; }
+        .showcase-nav a { padding: 0.4rem 0.8rem; font-size: var(--neu-font-sm); font-weight: 500; color: var(--neu-text-muted); border-radius: var(--neu-radius-full); transition: all var(--neu-transition-fast); }
+        .showcase-nav a:hover { color: var(--neu-accent); box-shadow: var(--neu-concave-sm); }
+        .section { margin-bottom: var(--neu-space-2xl); scroll-margin-top: 80px; }
+        .section-title { font-size: var(--neu-font-2xl); font-weight: 600; color: var(--neu-text-primary); margin-bottom: var(--neu-space-xs); }
+        .section-desc { font-size: var(--neu-font-sm); color: var(--neu-text-muted); margin-bottom: var(--neu-space-lg); }
+        .demo-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--neu-space-md); margin-bottom: var(--neu-space-lg); }
+        .demo-row-start { align-items: flex-start; }
+        .demo-col { display: flex; flex-direction: column; gap: var(--neu-space-md); }
+        .demo-label { font-size: var(--neu-font-xs); color: var(--neu-text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: var(--neu-space-xs); }
+        .demo-box { background: var(--neu-bg-base); padding: var(--neu-space-lg); border-radius: var(--neu-radius-lg); box-shadow: var(--neu-concave); }
+        .top-bar { display: flex; justify-content: flex-end; gap: var(--neu-space-sm); margin-bottom: var(--neu-space-lg); }
+    </style>
+</head>
+<body>
+    <div class="showcase">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <button class="neu-btn neu-btn-md neu-btn-icon" data-neu-theme-toggle>🌙</button>
+        </div>
+
+        <!-- Header -->
+        <div class="showcase-header">
+            <h1>✨ NEU UI</h1>
+            <p>A Neumorphic Component Library — 35+ Components, Light & Dark Mode</p>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="showcase-nav">
+            <a href="#avatars">Avatar</a>
+            <a href="#buttons">Button</a>
+            <a href="#badges">Badge</a>
+            <a href="#tags">Tag</a>
+            <a href="#dividers">Divider</a>
+            <a href="#typography">Typography</a>
+            <a href="#box">Box</a>
+            <a href="#tooltip">Tooltip</a>
+            <a href="#popover">Popover</a>
+            <a href="#tabs">Tab</a>
+            <a href="#dropdown">Dropdown</a>
+            <a href="#steps">Steps</a>
+            <a href="#pagination">Pagination</a>
+            <a href="#menu">Menu</a>
+            <a href="#breadcrumb">Breadcrumb</a>
+            <a href="#timeline">Timeline</a>
+            <a href="#accordion">Accordion</a>
+            <a href="#table">Table</a>
+            <a href="#datatable">Data Table</a>
+            <a href="#progress">Progress</a>
+            <a href="#circlebar">Circle Bar</a>
+            <a href="#skeleton">Skeleton</a>
+            <a href="#spinner">Spinner</a>
+            <a href="#alerts">Alert</a>
+            <a href="#toast">Toast</a>
+            <a href="#modal">Modal</a>
+            <a href="#drawer">Drawer</a>
+            <a href="#carousel">Carousel</a>
+            <a href="#charts">Charts</a>
+            <a href="#forms">Forms</a>
+        </nav>
+
+        <!-- ═══════════════════════════════════════ -->
+        <!-- AVATARS -->
+        <!-- ═══════════════════════════════════════ -->
+        <section class="section" id="avatars">
+            <h2 class="section-title">Avatar</h2>
+            <p class="section-desc">Circular identity indicators with sizes, status dots, and grouping.</p>
+            <div class="demo-row">
+                <span class="demo-label">Sizes:</span>
+                <div class="neu-avatar neu-avatar-sm">S</div>
+                <div class="neu-avatar neu-avatar-md">M</div>
+                <div class="neu-avatar neu-avatar-lg">L</div>
+                <div class="neu-avatar neu-avatar-xl">XL</div>
+            </div>
+            <div class="demo-row">
+                <span class="demo-label">With Status:</span>
+                <div class="neu-avatar-wrapper">
+                    <div class="neu-avatar neu-avatar-lg">AC</div>
+                    <span class="neu-avatar-status online"></span>
+                </div>
+                <div class="neu-avatar-wrapper">
+                    <div class="neu-avatar neu-avatar-lg">BK</div>
+                    <span class="neu-avatar-status away"></span>
+                </div>
+                <div class="neu-avatar-wrapper">
+                    <div class="neu-avatar neu-avatar-lg">CD</div>
+                    <span class="neu-avatar-status offline"></span>
+                </div>
+            </div>
+            <div class="demo-row">
+                <span class="demo-label">Group:</span>
+                <div class="neu-avatar-group">
+                    <div class="neu-avatar neu-avatar-md">A</div>
+                    <div class="neu-avatar neu-avatar-md">B</div>
+                    <div class="neu-avatar neu-avatar-md">C</div>
+                    <div class="neu-avatar neu-avatar-md">+3</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════ -->
+        <!-- BUTTONS -->
+        <!-- ═══════════════════════════════════════ -->
+        <section class="section" id="buttons">
+            <h2 class="section-title">Button</h2>
+            <p class="section-desc">Neumorphic buttons with variants, sizes, icon-only, loading, and groups.</p>
+            <div class="demo-row">
+                <button class="neu-btn neu-btn-md">Default</button>
+                <button class="neu-btn neu-btn-md neu-btn-primary">Primary</button>
+                <button class="neu-btn neu-btn-md neu-btn-accent">Accent</button>
+                <button class="neu-btn neu-btn-md neu-btn-success">Success</button>
+                <button class="neu-btn neu-btn-md neu-btn-danger">Danger</button>
+                <button class="neu-btn neu-btn-md neu-btn-ghost">Ghost</button>
+                <button class="neu-btn neu-btn-md neu-btn-outline">Outline</button>
+            </div>
+            <div class="demo-row">
+                <span class="demo-label">Sizes:</span>
+                <button class="neu-btn neu-btn-xs">XS</button>
+                <button class="neu-btn neu-btn-sm">Small</button>
+                <button class="neu-btn neu-btn-md">Medium</button>
+                <button class="neu-btn neu-btn-lg">Large</button>
+                <button class="neu-btn neu-btn-xl">XLarge</button>
+            </div>
+            <div class="demo-row">
+                <span class="demo-label">Icon:</span>
+                <button class="neu-btn neu-btn-icon neu-btn-sm">⚙️</button>
+                <button class="neu-btn neu-btn-icon">❤️</button>
+                <button class="neu-btn neu-btn-icon neu-btn-lg">🔔</button>
+                <span class="demo-label">Loading:</span>
+                <button class="neu-btn neu-btn-md neu-btn-loading neu-btn-primary">Saving</button>
+                <span class="demo-label">Disabled:</span>
+                <button class="neu-btn neu-btn-md" disabled>Disabled</button>
+            </div>
+            <div class="demo-row">
+                <span class="demo-label">Group:</span>
+                <div class="neu-btn-group">
+                    <button class="neu-btn neu-btn-md active">Left</button>
+                    <button class="neu-btn neu-btn-md">Center</button>
+                    <button class="neu-btn neu-btn-md">Right</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════ -->
+        <!-- BADGES -->
+        <!-- ═══════════════════════════════════════ -->
+        <section class="section" id="badges">
+            <h2 class="section-title">Badge</h2>
+            <p class="section-desc">Small status indicators and counters.</p>
+            <div class="demo-row">
+                <span class="neu-badge">Default</span>
+                <span class="neu-badge neu-badge-accent">Accent</span>
+                <span class="neu-badge neu-badge-success">Success</span>
+                <span class="neu-badge neu-badge-warning">Warning</span>
+                <span class="neu-badge neu-badge-danger">Danger</span>
+                <span class="neu-badge neu-badge-info">Info</span>
+            </div>
+            <div class="demo-row">
+                <span class="demo-label">Filled:</span>
+                <span class="neu-badge neu-badge-filled neu-badge-accent">Accent</span>
+                <span class="neu-badge neu-badge-filled neu-badge-success">Success</span>
+                <span class="neu-badge neu-badge-filled neu-badge-danger">Danger</span>
+                <span class="demo-label">Dot:</span>
+                <span class="neu-badge neu-badge-dot neu-badge-filled neu-badge-success"></span>
+                <span class="neu-badge neu-badge-dot neu-badge-filled neu-badge-danger"></span>
+                <span class="demo-label">Count:</span>
+                <span class="neu-badge neu-badge-count neu-badge-filled neu-badge-danger">5</span>
+                <span class="neu-badge neu-badge-count neu-badge-filled neu-badge-accent">99+</span>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════ -->
+        <!-- TAGS -->
+        <!-- ═══════════════════════════════════════ -->
+        <section class="section" id="tags">
+            <h2 class="section-title">Tag</h2>
+            <p class="section-desc">Removable labels with close button.</p>
+            <div class="demo-row">
+                <span class="neu-tag">Default <button class="neu-tag-close">✕</button></span>
+                <span class="neu-tag neu-tag-accent">Design <button class="neu-tag-close">✕</button></span>
+                <span class="neu-tag neu-tag-success">Active <button class="neu-tag-close">✕</button></span>
+                <span class="neu-tag neu-tag-danger">Bug <button class="neu-tag-close">✕</button></span>
+                <span class="neu-tag neu-tag-lg">Large Tag <button class="neu-tag-close">✕</button></span>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════ -->
+        <!-- DIVIDER -->
+        <!-- ═══════════════════════════════════════ -->
+        <section class="section" id="dividers">
+            <h2 class="section-title">Divider</h2>
+            <p class="section-desc">Visual separators with neumorphic inset shadow.</p>
+            <hr class="neu-divider">
+            <div class="neu-divider-label">Section Break</div>
+            <hr class="neu-divider-sm">
+        </section>
+
+        <!-- ═══════════════════════════════════════ -->
+        <!-- TYPOGRAPHY -->
+        <!-- ═══════════════════════════════════════ -->
+        <section class="section" id="typography">
+            <h2 class="section-title">Typography</h2>
+            <p class="section-desc">Headings, text, links, code, and blockquotes.</p>
+            <h1 class="neu-h1">Heading 1</h1>
+            <h2 class="neu-h2">Heading 2</h2>
+            <h3 class="neu-h3">Heading 3</h3>
+            <h4 class="neu-h4">Heading 4</h4>
+            <p class="neu-p">This is a regular paragraph with neumorphic-friendly typography for reading.</p>
+            <p class="neu-lead">Lead text for introductions and hero sections.</p>
+            <p><a href="#" class="neu-link">This is a link</a> · <span class="neu-small">Small text</span> · <span class="neu-caption">Caption Label</span></p>
+            <p>Inline <span class="neu-code">code snippet</span> and <span class="neu-mark">highlighted</span> text.</p>
+            <blockquote class="neu-blockquote">Neumorphism creates a soft, elegant look using subtle shadows to simulate depth and dimension.</blockquote>
+            <pre class="neu-pre">const theme = document.documentElement.getAttribute('data-theme');
+console.log('Current theme:', theme);</pre>
+        </section>
+
+        <!-- ═══════════════════════════════════════ -->
+        <!-- BOX -->
+        <!-- ═══════════════════════════════════════ -->
+        <section class="section" id="box">
+            <h2 class="section-title">Box / Card</h2>
+            <p class="section-desc">Container with header, body, footer structure.</p>
+            <div class="demo-row demo-row-start">
+                <div class="neu-box" style="flex:1; min-width:250px;">
+                    <div class="neu-box-header">
+                        <div><div class="neu-box-title">Card Title</div><div class="neu-box-subtitle">Subtitle text</div></div>
+                        <span class="neu-badge neu-badge-accent">New</span>
+                    </div>
+                    <div class="neu-box-body">Content goes here. This is a standard box component with header, body, and footer.</div>
+                    <div class="neu-box-footer">
+                        <button class="neu-btn neu-btn-sm neu-btn-ghost">Cancel</button>
+                        <button class="neu-btn neu-btn-sm neu-btn-primary">Save</button>
+                    </div>
+                </div>
+                <div class="neu-box neu-box-interactive" style="flex:1; min-width:200px;">
+                    <div class="neu-box-title">Interactive Card</div>
+                    <div class="neu-box-body">Hover me! I lift up on hover and press on click.</div>
+                </div>
+                <div class="neu-box neu-box-concave" style="flex:1; min-width:200px;">
+                    <div class="neu-box-title">Concave Card</div>
+                    <div class="neu-box-body">Pressed, inset appearance.</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════ -->
+        <!-- TOOLTIP -->
+        <!-- ═══════════════════════════════════════ -->
+        <section class="section" id="tooltip">
+            <h2 class="section-title">Tooltip</h2>
+            <p class="section-desc">CSS-only hover tooltips with 4 positions.</p>
+            <div class="demo-row">
+                <span class="neu-tooltip" data-tooltip="Top tooltip"><button class="neu-btn neu-btn-sm">Top</button></span>
+                <span class="neu-tooltip neu-tooltip-bottom" data-tooltip="Bottom tooltip"><button class="neu-btn neu-btn-sm">Bottom</button></span>
+                <span class="neu-tooltip neu-tooltip-left" data-tooltip="Left tooltip"><button class="neu-btn neu-btn-sm">Left</button></span>
+                <span class="neu-tooltip neu-tooltip-right" data-tooltip="Right tooltip"><button class="neu-btn neu-btn-sm">Right</button></span>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════ -->
+        <!-- POPOVER -->
+        <!-- ═══════════════════════════════════════ -->
+        <section class="section" id="popover">
+            <h2 class="section-title">Popover</h2>
+            <p class="section-desc">Click-triggered floating content panel.</p>
+            <div class="demo-row">
+                <div class="neu-popover">
+                    <button class="neu-btn neu-btn-sm neu-btn-primary" data-neu-popover-trigger>Click Me</button>
+                    <div class="neu-popover-content">
+                        <button class="neu-popover-close">✕</button>
+                        <div class="neu-popover-title">Popover Title</div>
+                        <div class="neu-popover-body">This is a popover with rich content. It closes when you click outside or press the X button.</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════ -->
+        <!-- TABS -->
+        <!-- ═══════════════════════════════════════ -->
+        <section class="section" id="tabs">
+            <h2 class="section-title">Tabs</h2>
+            <p class="section-desc">Tab navigation with panel switching.</p>
+            <div data-neu-tabs>
+                <div class="neu-tab-nav">
+                    <button class="neu-tab-item active" data-tab="t1">Overview</button>
+                    <button class="neu-tab-item" data-tab="t2">Features</button>
+                    <button class="neu-tab-item" data-tab="t3">Settings</button>
+                </div>
+                <div class="neu-tab-panel active" data-tab-panel="t1">
+                    <div class="neu-box neu-box-compact"><p class="neu-p">This is the Overview tab content. Click other tabs to switch.</p></div>
+                </div>
+                <div class="neu-tab-panel" data-tab-panel="t2">
+                    <div class="neu-box neu-box-compact"><p class="neu-p">Features tab — list your product features here.</p></div>
+                </div>
+                <div class="neu-tab-panel" data-tab-panel="t3">
+                    <div class="neu-box neu-box-compact"><p class="neu-p">Settings tab — configuration options go here.</p></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════ -->
+        <!-- DROPDOWN -->
+        <!-- ═══════════════════════════════════════ -->
+        <section class="section" id="dropdown">
+            <h2 class="section-title">Dropdown</h2>
+            <p class="section-desc">Click-triggered menu with items, dividers, and group headers.</p>
+            <div class="demo-row">
+                <div class="neu-dropdown">
+                    <button class="neu-dropdown-trigger">Options <span class="neu-dropdown-caret"></span></button>
+                    <div class="neu-dropdown-menu">
+                        <div class="neu-dropdown-label">Actions</div>
+                        <button class="neu-dropdown-item">📝 Edit</button>
+                        <button class="neu-dropdown-item">📋 Duplicate</button>
+                        <div class="neu-dropdown-divider"></div>
+                        <button class="neu-dropdown-item danger">🗑️ Delete</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════ -->
+        <!-- STEPS -->
+        <!-- ═══════════════════════════════════════ -->
+        <section class="section" id="steps">
+            <h2 class="section-title">Steps</h2>
+            <p class="section-desc">Multi-step progress indicator.</p>
+            <div class="neu-steps">
+                <div class="neu-step completed">
+                    <div class="neu-step-indicator"></div>
+                    <span class="neu-step-label">Account</span>
+                </div>
+                <div class="neu-step completed">
+                    <div class="neu-step-indicator"></div>
+                    <span class="neu-step-label">Profile</span>
+                </div>
+                <div class="neu-step active">
+                    <div class="neu-step-indicator"></div>
+                    <span class="neu-step-label">Payment</span>
+                </div>
+                <div class="neu-step">
+                    <div class="neu-step-indicator"></div>
+                    <span class="neu-step-label">Done</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════ -->
+        <!-- PAGINATION -->
+        <!-- ═══════════════════════════════════════ -->
+        <section class="section" id="pagination">
+            <h2 class="section-title">Pagination</h2>
+            <p class="section-desc">Page navigation with rounded and compact variants.</p>
+            <div class="demo-row">
+                <nav class="neu-pagination">
+                    <button class="neu-page-item neu-page-prev">‹</button>
+                    <button class="neu-page-item">1</button>
+                    <button class="neu-page-item active">2</button>
+                    <button class="neu-page-item">3</button>
+                    <button class="neu-page-item neu-page-ellipsis">…</button>
+                    <button class="neu-page-item">10</button>
+                    <button class="neu-page-item neu-page-next">›</button>
+                </nav>
+            </div>
+            <div class="demo-row">
+                <span class="demo-label">Rounded:</span>
+                <nav class="neu-pagination neu-pagination-rounded">
+                    <button class="neu-page-item neu-page-prev">‹</button>
+                    <button class="neu-page-item active">1</button>
+                    <button class="neu-page-item">2</button>
+                    <button class="neu-page-item">3</button>
+                    <button class="neu-page-item neu-page-next">›</button>
+                </nav>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════ -->
+        <!-- MENU -->
+        <!-- ═══════════════════════════════════════ -->
+        <section class="section" id="menu">
+            <h2 class="section-title">Menu List</h2>
+            <p class="section-desc">Vertical navigation with icons, badges, and groups.</p>
+            <div style="max-width: 280px;">
+                <nav class="neu-menu">
+                    <div class="neu-menu-group">Main</div>
+                    <button class="neu-menu-item active"><span class="neu-menu-icon">🏠</span> Dashboard <span class="neu-menu-badge">3</span></button>
+                    <button class="neu-menu-item"><span class="neu-menu-icon">📊</span> Analytics</button>
+                    <div class="neu-menu-divider"></div>
+                    <div class="neu-menu-group">Settings</div>
+                    <button class="neu-menu-item"><span class="neu-menu-icon">👤</span> Profile</button>
+                    <button class="neu-menu-item"><span class="neu-menu-icon">⚙️</span> Preferences</button>
+                </nav>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════ -->
+        <!-- BREADCRUMB -->
+        <!-- ═══════════════════════════════════════ -->
+        <section class="section" id="breadcrumb">
+            <h2 class="section-title">Breadcrumb</h2>
+            <p class="section-desc">Navigation trail with separator.</p>
+            <nav class="neu-breadcrumb">
+                <span class="neu-breadcrumb-item">Home</span>
+                <span class="neu-breadcrumb-sep">/</span>
+                <span class="neu-breadcrumb-item">Components</span>
+                <span class="neu-breadcrumb-sep">/</span>
+                <span class="neu-breadcrumb-item active">Breadcrumb</span>
+            </nav>
+        </section>
+
+        <!-- ═══════════════════════════════════════ -->
+        <!-- TIMELINE -->
+        <!-- ═══════════════════════════════════════ -->
+        <section class="section" id="timeline">
+            <h2 class="section-title">Timeline</h2>
+            <p class="section-desc">Vertical timeline with colored dots and content cards.</p>
+            <div class="neu-timeline" style="max-width: 500px;">
+                <div class="neu-timeline-item">
+                    <div class="neu-timeline-dot accent">✓</div>
+                    <div class="neu-timeline-content">
+                        <div class="neu-timeline-title">Project Created</div>
+                        <div class="neu-timeline-time">Feb 15, 2026</div>
+                        <div class="neu-timeline-body">Initial component library structure was set up.</div>
+                    </div>
+                </div>
+                <div class="neu-timeline-item">
+                    <div class="neu-timeline-dot success">✓</div>
+                    <div class="neu-timeline-content">
+                        <div class="neu-timeline-title">Design Tokens Defined</div>
+                        <div class="neu-timeline-time">Feb 18, 2026</div>
+                        <div class="neu-timeline-body">CSS custom properties for the neumorphic system.</div>
+                    </div>
+                </div>
+                <div class="neu-timeline-item">
+                    <div class="neu-timeline-dot"></div>
+                    <div class="neu-timeline-content">
+                        <div class="neu-timeline-title">Components Built</div>
+                        <div class="neu-timeline-time">Feb 21, 2026</div>
+                        <div class="neu-timeline-body">35+ components across 9 categories.</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════ -->
+        <!-- ACCORDION -->
+        <!-- ═══════════════════════════════════════ -->
+        <section class="section" id="accordion">
+            <h2 class="section-title">Accordion / Collapse</h2>
+            <p class="section-desc">Expandable content panels, single or grouped.</p>
+            <div class="neu-accordion" style="max-width: 500px;">
+                <div class="neu-collapse open">
+                    <button class="neu-collapse-trigger">What is Neumorphism? <span class="neu-collapse-arrow">▼</span></button>
+                    <div class="neu-collapse-body"><div class="neu-collapse-inner">Neumorphism is a design trend that uses soft shadows and subtle highlights to create an extruded, plastic-like look. It blends flat design with skeuomorphism.</div></div>
+                </div>
+                <div class="neu-collapse">
+                    <button class="neu-collapse-trigger">How to use this library? <span class="neu-collapse-arrow">▼</span></button>
+                    <div class="neu-collapse-body"><div class="neu-collapse-inner">Copy the <code>component-library</code> folder, link <code>neu-all.css</code>, add <code>neu-components.js</code>, and use the HTML class names documented here.</div></div>
+                </div>
+                <div class="neu-collapse">
+                    <button class="neu-collapse-trigger">Does it support dark mode? <span class="neu-collapse-arrow">▼</span></button>
+                    <div class="neu-collapse-body"><div class="neu-collapse-inner">Yes! Add <code>data-theme="dark"</code> to your <code>&lt;html&gt;</code> element. The toggle button in the top-right switches themes.</div></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════ -->
+        <!-- TABLE -->
+        <!-- ═══════════════════════════════════════ -->
+        <section class="section" id="table">
+            <h2 class="section-title">Table</h2>
+            <p class="section-desc">Data table with striped rows and hover effects.</p>
+            <div class="neu-table-wrapper">
+                <table class="neu-table neu-table-striped neu-table-hover">
+                    <thead><tr><th>Name</th><th>Role</th><th>Status</th><th>Score</th></tr></thead>
+                    <tbody>
+                        <tr><td>Anirban</td><td>Developer</td><td><span class="neu-badge neu-badge-filled neu-badge-success">Active</span></td><td>98</td></tr>
+                        <tr><td>Priya</td><td>Designer</td><td><span class="neu-badge neu-badge-filled neu-badge-accent">Active</span></td><td>95</td></tr>
+                        <tr><td>Ravi</td><td>Manager</td><td><span class="neu-badge neu-badge-filled neu-badge-warning">Away</span></td><td>88</td></tr>
+                        <tr><td>Sara</td><td>Tester</td><td><span class="neu-badge neu-badge-filled neu-badge-danger">Offline</span></td><td>92</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════ -->
+        <!-- DATA TABLE -->
+        <!-- ═══════════════════════════════════════ -->
+        <section class="section" id="datatable">
+            <h2 class="section-title">Data Table</h2>
+            <p class="section-desc">Full-featured table with search, date filters, sortable columns, per-page, and pagination.</p>
+
+            <div class="neu-data-table" data-neu-datatable data-date-col="5">
+                <!-- Toolbar -->
+                <div class="neu-dt-toolbar">
+                    <div class="neu-dt-toolbar-left">
+                        <button class="neu-dt-filter-btn">☰ Filter</button>
+                        <div class="neu-dt-search">
+                            <span class="neu-dt-search-icon">🔍</span>
+                            <input type="text" placeholder="Search records...">
+                        </div>
+                        <div class="neu-dt-date">
+                            <label>From</label>
+                            <input type="date" class="neu-dt-from">
+                        </div>
+                        <div class="neu-dt-date">
+                            <label>To</label>
+                            <input type="date" class="neu-dt-to">
+                        </div>
+                        <button class="neu-dt-reset">↺ Reset</button>
+                    </div>
+                    <div class="neu-dt-toolbar-right">
+                        <div class="neu-dt-col-manager">
+                            <button class="neu-dt-col-manager-btn">⚙ Columns</button>
+                            <div class="neu-dt-col-panel">
+                                <div class="neu-dt-col-panel-title">Manage Columns</div>
+                                <div class="neu-dt-col-list"></div>
+                            </div>
+                        </div>
+                        <div class="neu-dt-per-page">
+                            <label>Show</label>
+                            <div class="neu-dt-select-wrap">
+                                <select>
+                                    <option value="5">5</option>
+                                    <option value="10" selected>10</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Expandable Filter Panel -->
+                <div class="neu-dt-filters">
+                    <div class="neu-dt-filter-group">
+                        <label>Role</label>
+                        <div class="neu-dt-filter-select-wrap">
+                            <select data-filter-col="3">
+                                <option value="">All Roles</option>
+                                <option value="Developer">Developer</option>
+                                <option value="Designer">Designer</option>
+                                <option value="Manager">Manager</option>
+                                <option value="Tester">Tester</option>
+                                <option value="Analyst">Analyst</option>
+                                <option value="DevOps">DevOps</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="neu-dt-filter-group">
+                        <label>Status</label>
+                        <div class="neu-dt-filter-select-wrap">
+                            <select data-filter-col="6">
+                                <option value="">All Status</option>
+                                <option value="Active">Active</option>
+                                <option value="Away">Away</option>
+                                <option value="Busy">Busy</option>
+                                <option value="Offline">Offline</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Active Filter Tags -->
+                <div class="neu-dt-active-filters"></div>
+
+                <!-- Table -->
+                <div class="neu-dt-table-wrap">
+                <table class="neu-dt-table">
+                    <thead>
+                        <tr>
+                            <th class="neu-dt-sortable">Name <span class="neu-dt-sort-icon"><span class="up">▲</span><span class="down">▼</span></span></th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th class="neu-dt-sortable">Role <span class="neu-dt-sort-icon"><span class="up">▲</span><span class="down">▼</span></span></th>
+                            <th class="neu-dt-sortable">Score <span class="neu-dt-sort-icon"><span class="up">▲</span><span class="down">▼</span></span></th>
+                            <th class="neu-dt-sortable">Date <span class="neu-dt-sort-icon"><span class="up">▲</span><span class="down">▼</span></span></th>
+                            <th>Status</th>
+                            <th style="text-align:center;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><div class="neu-dt-cell-main">Anirban Choudhury</div><div class="neu-dt-cell-sub">Lead Full-Stack Engineer</div></td><td>anirban.c@alphapark.io</td><td>+91 98765 43210</td><td>Developer</td><td>98</td><td>2026-01-15</td><td><span class="neu-badge neu-badge-filled neu-badge-success">Active</span></td><td class="neu-dt-action-cell"><button class="neu-dt-action-btn">⋮</button><div class="neu-dt-action-menu"><button class="neu-dt-action-item">📝 Edit</button><button class="neu-dt-action-item">📋 Clone</button><div class="neu-dt-action-divider"></div><button class="neu-dt-action-item danger">🗑️ Delete</button></div></td></tr>
+                        <tr><td><div class="neu-dt-cell-main">Priya Mukherjee</div><div class="neu-dt-cell-sub">Senior UI Designer</div></td><td>priya.m@alphapark.io</td><td>+91 98765 43211</td><td>Designer</td><td>95</td><td>2026-01-20</td><td><span class="neu-badge neu-badge-filled neu-badge-success">Active</span></td><td class="neu-dt-action-cell"><button class="neu-dt-action-btn">⋮</button><div class="neu-dt-action-menu"><button class="neu-dt-action-item">📝 Edit</button><button class="neu-dt-action-item">📋 Clone</button><div class="neu-dt-action-divider"></div><button class="neu-dt-action-item danger">🗑️ Delete</button></div></td></tr>
+                        <tr><td><div class="neu-dt-cell-main">Ravi Kumar</div><div class="neu-dt-cell-sub">Project Manager</div></td><td>ravi.k@alphapark.io</td><td>+91 98765 43212</td><td>Manager</td><td>88</td><td>2026-02-01</td><td><span class="neu-badge neu-badge-filled neu-badge-warning">Away</span></td><td class="neu-dt-action-cell"><button class="neu-dt-action-btn">⋮</button><div class="neu-dt-action-menu"><button class="neu-dt-action-item">📝 Edit</button><button class="neu-dt-action-item">📋 Clone</button><div class="neu-dt-action-divider"></div><button class="neu-dt-action-item danger">🗑️ Delete</button></div></td></tr>
+                        <tr><td><div class="neu-dt-cell-main">Sara Patel</div><div class="neu-dt-cell-sub">QA Engineer</div></td><td>sara.p@alphapark.io</td><td>+91 98765 43213</td><td>Tester</td><td>92</td><td>2026-02-05</td><td><span class="neu-badge neu-badge-filled neu-badge-danger">Offline</span></td><td class="neu-dt-action-cell"><button class="neu-dt-action-btn">⋮</button><div class="neu-dt-action-menu"><button class="neu-dt-action-item">📝 Edit</button><button class="neu-dt-action-item">📋 Clone</button><div class="neu-dt-action-divider"></div><button class="neu-dt-action-item danger">🗑️ Delete</button></div></td></tr>
+                        <tr><td><div class="neu-dt-cell-main">Amit Sharma</div><div class="neu-dt-cell-sub">Backend Developer</div></td><td>amit.s@alphapark.io</td><td>+91 98765 43214</td><td>Developer</td><td>91</td><td>2026-02-08</td><td><span class="neu-badge neu-badge-filled neu-badge-success">Active</span></td><td class="neu-dt-action-cell"><button class="neu-dt-action-btn">⋮</button><div class="neu-dt-action-menu"><button class="neu-dt-action-item">📝 Edit</button><button class="neu-dt-action-item">📋 Clone</button><div class="neu-dt-action-divider"></div><button class="neu-dt-action-item danger">🗑️ Delete</button></div></td></tr>
+                        <tr><td><div class="neu-dt-cell-main">Neha Reddy</div><div class="neu-dt-cell-sub">Visual Designer</div></td><td>neha.r@alphapark.io</td><td>+91 98765 43215</td><td>Designer</td><td>87</td><td>2026-02-10</td><td><span class="neu-badge neu-badge-filled neu-badge-success">Active</span></td><td class="neu-dt-action-cell"><button class="neu-dt-action-btn">⋮</button><div class="neu-dt-action-menu"><button class="neu-dt-action-item">📝 Edit</button><button class="neu-dt-action-item">📋 Clone</button><div class="neu-dt-action-divider"></div><button class="neu-dt-action-item danger">🗑️ Delete</button></div></td></tr>
+                        <tr><td><div class="neu-dt-cell-main">Vikram Thakur</div><div class="neu-dt-cell-sub">DevOps Engineer</div></td><td>vikram.t@alphapark.io</td><td>+91 98765 43216</td><td>DevOps</td><td>93</td><td>2026-02-12</td><td><span class="neu-badge neu-badge-filled neu-badge-accent">Busy</span></td><td class="neu-dt-action-cell"><button class="neu-dt-action-btn">⋮</button><div class="neu-dt-action-menu"><button class="neu-dt-action-item">📝 Edit</button><button class="neu-dt-action-item">📋 Clone</button><div class="neu-dt-action-divider"></div><button class="neu-dt-action-item danger">🗑️ Delete</button></div></td></tr>
+                        <tr><td><div class="neu-dt-cell-main">Meera Joshi</div><div class="neu-dt-cell-sub">Data Analyst</div></td><td>meera.j@alphapark.io</td><td>+91 98765 43217</td><td>Analyst</td><td>85</td><td>2026-02-14</td><td><span class="neu-badge neu-badge-filled neu-badge-success">Active</span></td><td class="neu-dt-action-cell"><button class="neu-dt-action-btn">⋮</button><div class="neu-dt-action-menu"><button class="neu-dt-action-item">📝 Edit</button><button class="neu-dt-action-item">📋 Clone</button><div class="neu-dt-action-divider"></div><button class="neu-dt-action-item danger">🗑️ Delete</button></div></td></tr>
+                        <tr><td><div class="neu-dt-cell-main">Karan Desai</div><div class="neu-dt-cell-sub">Frontend Developer</div></td><td>karan.d@alphapark.io</td><td>+91 98765 43218</td><td>Developer</td><td>90</td><td>2026-02-15</td><td><span class="neu-badge neu-badge-filled neu-badge-warning">Away</span></td><td class="neu-dt-action-cell"><button class="neu-dt-action-btn">⋮</button><div class="neu-dt-action-menu"><button class="neu-dt-action-item">📝 Edit</button><button class="neu-dt-action-item">📋 Clone</button><div class="neu-dt-action-divider"></div><button class="neu-dt-action-item danger">🗑️ Delete</button></div></td></tr>
+                        <tr><td><div class="neu-dt-cell-main">Pooja Lal</div><div class="neu-dt-cell-sub">Automation Tester</div></td><td>pooja.l@alphapark.io</td><td>+91 98765 43219</td><td>Tester</td><td>86</td><td>2026-02-16</td><td><span class="neu-badge neu-badge-filled neu-badge-success">Active</span></td><td class="neu-dt-action-cell"><button class="neu-dt-action-btn">⋮</button><div class="neu-dt-action-menu"><button class="neu-dt-action-item">📝 Edit</button><button class="neu-dt-action-item">📋 Clone</button><div class="neu-dt-action-divider"></div><button class="neu-dt-action-item danger">🗑️ Delete</button></div></td></tr>
+                        <tr><td><div class="neu-dt-cell-main">Rajesh Bansal</div><div class="neu-dt-cell-sub">Engineering Manager</div></td><td>rajesh.b@alphapark.io</td><td>+91 98765 43220</td><td>Manager</td><td>82</td><td>2026-02-17</td><td><span class="neu-badge neu-badge-filled neu-badge-danger">Offline</span></td><td class="neu-dt-action-cell"><button class="neu-dt-action-btn">⋮</button><div class="neu-dt-action-menu"><button class="neu-dt-action-item">📝 Edit</button><button class="neu-dt-action-item">📋 Clone</button><div class="neu-dt-action-divider"></div><button class="neu-dt-action-item danger">🗑️ Delete</button></div></td></tr>
+                        <tr><td><div class="neu-dt-cell-main">Deepa Nair</div><div class="neu-dt-cell-sub">UX Designer</div></td><td>deepa.n@alphapark.io</td><td>+91 98765 43221</td><td>Designer</td><td>94</td><td>2026-02-18</td><td><span class="neu-badge neu-badge-filled neu-badge-success">Active</span></td><td class="neu-dt-action-cell"><button class="neu-dt-action-btn">⋮</button><div class="neu-dt-action-menu"><button class="neu-dt-action-item">📝 Edit</button><button class="neu-dt-action-item">📋 Clone</button><div class="neu-dt-action-divider"></div><button class="neu-dt-action-item danger">🗑️ Delete</button></div></td></tr>
+                        <tr><td><div class="neu-dt-cell-main">Suresh Verma</div><div class="neu-dt-cell-sub">Senior Developer</div></td><td>suresh.v@alphapark.io</td><td>+91 98765 43222</td><td>Developer</td><td>89</td><td>2026-02-19</td><td><span class="neu-badge neu-badge-filled neu-badge-accent">Busy</span></td><td class="neu-dt-action-cell"><button class="neu-dt-action-btn">⋮</button><div class="neu-dt-action-menu"><button class="neu-dt-action-item">📝 Edit</button><button class="neu-dt-action-item">📋 Clone</button><div class="neu-dt-action-divider"></div><button class="neu-dt-action-item danger">🗑️ Delete</button></div></td></tr>
+                        <tr><td><div class="neu-dt-cell-main">Kavita Gupta</div><div class="neu-dt-cell-sub">Business Analyst</div></td><td>kavita.g@alphapark.io</td><td>+91 98765 43223</td><td>Analyst</td><td>96</td><td>2026-02-20</td><td><span class="neu-badge neu-badge-filled neu-badge-success">Active</span></td><td class="neu-dt-action-cell"><button class="neu-dt-action-btn">⋮</button><div class="neu-dt-action-menu"><button class="neu-dt-action-item">📝 Edit</button><button class="neu-dt-action-item">📋 Clone</button><div class="neu-dt-action-divider"></div><button class="neu-dt-action-item danger">🗑️ Delete</button></div></td></tr>
+                        <tr><td><div class="neu-dt-cell-main">Arjun Hegde</div><div class="neu-dt-cell-sub">Cloud Engineer</div></td><td>arjun.h@alphapark.io</td><td>+91 98765 43224</td><td>DevOps</td><td>84</td><td>2026-02-21</td><td><span class="neu-badge neu-badge-filled neu-badge-warning">Away</span></td><td class="neu-dt-action-cell"><button class="neu-dt-action-btn">⋮</button><div class="neu-dt-action-menu"><button class="neu-dt-action-item">📝 Edit</button><button class="neu-dt-action-item">📋 Clone</button><div class="neu-dt-action-divider"></div><button class="neu-dt-action-item danger">🗑️ Delete</button></div></td></tr>
+                    </tbody>
+                </table>
+                </div>
+
+                <!-- Footer -->
+                <div class="neu-dt-footer">
+                    <div class="neu-dt-info">Showing <strong>1</strong> to <strong>10</strong> of <strong>15</strong> records</div>
+                    <div class="neu-dt-pages"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════ -->
+        <!-- PROGRESS -->
+        <!-- ═══════════════════════════════════════ -->
+        <section class="section" id="progress">
+            <h2 class="section-title">Progress Bar</h2>
+            <p class="section-desc">Horizontal bars with variants, sizes, and animation.</p>
+            <div class="demo-col" style="max-width: 500px;">
+                <div><span class="demo-label">Default (65%)</span><div class="neu-progress"><div class="neu-progress-bar" style="width:65%"></div></div></div>
+                <div><span class="demo-label">Success (80%)</span><div class="neu-progress neu-progress-success"><div class="neu-progress-bar" style="width:80%"></div></div></div>
+                <div><span class="demo-label">Danger (30%)</span><div class="neu-progress neu-progress-danger"><div class="neu-progress-bar" style="width:30%"></div></div></div>
+                <div><span class="demo-label">Striped + Animated</span><div class="neu-progress neu-progress-striped neu-progress-animated"><div class="neu-progress-bar" style="width:55%"></div></div></div>
+                <div><span class="demo-label">Labeled (72%)</span><div class="neu-progress neu-progress-labeled"><div class="neu-progress-bar" style="width:72%"><span class="neu-progress-label">72%</span></div></div></div>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════ -->
+        <!-- CIRCLE BAR -->
+        <!-- ═══════════════════════════════════════ -->
+        <section class="section" id="circlebar">
+            <h2 class="section-title">Circle Bar</h2>
+            <p class="section-desc">Radial progress with SVG ring and neumorphic center.</p>
+            <div class="demo-row">
+                <div class="neu-circlebar neu-circlebar-md neu-circlebar-glow">
+                    <svg width="100" height="100" viewBox="0 0 100 100">
+                        <circle class="neu-circlebar-track" cx="50" cy="50" r="42"></circle>
+                        <circle class="neu-circlebar-fill" cx="50" cy="50" r="42" stroke-dasharray="264" stroke-dashoffset="66"></circle>
+                    </svg>
+                    <div class="neu-circlebar-bg">
+                        <div><div class="neu-circlebar-value">75%</div><div class="neu-circlebar-label">Score</div></div>
+                    </div>
+                </div>
+                <div class="neu-circlebar neu-circlebar-sm neu-circlebar-success">
+                    <svg width="64" height="64" viewBox="0 0 100 100">
+                        <circle class="neu-circlebar-track" cx="50" cy="50" r="42"></circle>
+                        <circle class="neu-circlebar-fill" cx="50" cy="50" r="42" stroke-dasharray="264" stroke-dashoffset="53"></circle>
+                    </svg>
+                    <div class="neu-circlebar-bg"><div class="neu-circlebar-value">80%</div></div>
+                </div>
+                <div class="neu-circlebar neu-circlebar-lg neu-circlebar-danger">
+                    <svg width="140" height="140" viewBox="0 0 100 100">
+                        <circle class="neu-circlebar-track" cx="50" cy="50" r="42"></circle>
+                        <circle class="neu-circlebar-fill" cx="50" cy="50" r="42" stroke-dasharray="264" stroke-dashoffset="172"></circle>
+                    </svg>
+                    <div class="neu-circlebar-bg"><div><div class="neu-circlebar-value">35%</div><div class="neu-circlebar-label">Risk</div></div></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════ -->
+        <!-- SKELETON -->
+        <!-- ═══════════════════════════════════════ -->
+        <section class="section" id="skeleton">
+            <h2 class="section-title">Skeleton</h2>
+            <p class="section-desc">Loading placeholders with shimmer animation.</p>
+            <div class="demo-row demo-row-start">
+                <div class="neu-skeleton-card" style="width: 320px;">
+                    <div class="neu-skeleton neu-skeleton-circle neu-skeleton-circle-lg"></div>
+                    <div class="neu-skeleton-card-body">
+                        <div class="neu-skeleton neu-skeleton-heading"></div>
+                        <div class="neu-skeleton neu-skeleton-text"></div>
+                        <div class="neu-skeleton neu-skeleton-text"></div>
+                        <div class="neu-skeleton neu-skeleton-text" style="width:60%"></div>
+                    </div>
+                </div>
+                <div class="demo-col">
+                    <div class="neu-skeleton neu-skeleton-btn"></div>
+                    <div class="neu-skeleton neu-skeleton-rect" style="width:200px; height:80px;"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════ -->
+        <!-- SPINNER -->
+        <!-- ═══════════════════════════════════════ -->
+        <section class="section" id="spinner">
+            <h2 class="section-title">Spinner</h2>
+            <p class="section-desc">Loading indicators: neumorphic pulse, ring, and dots.</p>
+            <div class="demo-row">
+                <div class="demo-col" style="align-items:center;"><span class="demo-label">Neu Pulse</span><div class="neu-spinner neu-spinner-sm"></div></div>
+                <div class="demo-col" style="align-items:center;"><span class="demo-label">Default</span><div class="neu-spinner"></div></div>
+                <div class="demo-col" style="align-items:center;"><span class="demo-label">Ring</span><div class="neu-spinner neu-spinner-ring"></div></div>
+                <div class="demo-col" style="align-items:center;"><span class="demo-label">Dots</span><div class="neu-spinner neu-spinner-dots"><span></span><span></span><span></span></div></div>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════ -->
+        <!-- ALERTS -->
+        <!-- ═══════════════════════════════════════ -->
+        <section class="section" id="alerts">
+            <h2 class="section-title">Alert</h2>
+            <p class="section-desc">Inline notification banners with severity variants.</p>
+            <div class="demo-col" style="max-width: 550px;">
+                <div class="neu-alert neu-alert-info">
+                    <span class="neu-alert-icon">ℹ️</span>
+                    <div class="neu-alert-content"><div class="neu-alert-title">Information</div>This is a neutral informational alert.</div>
+                </div>
+                <div class="neu-alert neu-alert-success">
+                    <span class="neu-alert-icon">✅</span>
+                    <div class="neu-alert-content"><div class="neu-alert-title">Success</div>Operation completed successfully!</div>
+                    <button class="neu-alert-close">✕</button>
+                </div>
+                <div class="neu-alert neu-alert-warning">
+                    <span class="neu-alert-icon">⚠️</span>
+                    <div class="neu-alert-content"><div class="neu-alert-title">Warning</div>Please review before proceeding.</div>
+                </div>
+                <div class="neu-alert neu-alert-danger">
+                    <span class="neu-alert-icon">❌</span>
+                    <div class="neu-alert-content"><div class="neu-alert-title">Error</div>Something went wrong. Please try again.</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════ -->
+        <!-- TOAST -->
+        <!-- ═══════════════════════════════════════ -->
+        <section class="section" id="toast">
+            <h2 class="section-title">Toast / Notification</h2>
+            <p class="section-desc">Programmatic toast notifications via <code class="neu-code">NeuUI.toast()</code>.</p>
+            <div class="demo-row">
+                <button class="neu-btn neu-btn-sm neu-btn-success" onclick="NeuUI.toast('File saved!', 'success')">Success Toast</button>
+                <button class="neu-btn neu-btn-sm neu-btn-danger" onclick="NeuUI.toast('Delete failed!', 'danger')">Error Toast</button>
+                <button class="neu-btn neu-btn-sm neu-btn-warning" onclick="NeuUI.toast('Low storage!', 'warning')">Warning Toast</button>
+                <button class="neu-btn neu-btn-sm" onclick="NeuUI.toast('New update available', 'info')">Info Toast</button>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════ -->
+        <!-- MODAL -->
+        <!-- ═══════════════════════════════════════ -->
+        <section class="section" id="modal">
+            <h2 class="section-title">Modal</h2>
+            <p class="section-desc">Centered overlay dialog with header, body, and footer.</p>
+            <button class="neu-btn neu-btn-md neu-btn-primary" data-neu-modal="#demoModal">Open Modal</button>
+        </section>
+
+        <!-- Modal Instance -->
+        <div class="neu-modal-overlay" id="demoModal">
+            <div class="neu-modal">
+                <div class="neu-modal-header">
+                    <span class="neu-modal-title">🎉 Modal Title</span>
+                    <button class="neu-modal-close">✕</button>
+                </div>
+                <div class="neu-modal-body">
+                    <p class="neu-p">This is a neumorphic modal dialog. Click the X button or the overlay backdrop to close.</p>
+                    <p class="neu-p">It supports header, scrollable body, and a footer with actions.</p>
+                </div>
+                <div class="neu-modal-footer">
+                    <button class="neu-btn neu-btn-sm neu-btn-ghost neu-modal-close">Cancel</button>
+                    <button class="neu-btn neu-btn-sm neu-btn-accent">Confirm</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════ -->
+        <!-- DRAWER -->
+        <!-- ═══════════════════════════════════════ -->
+        <section class="section" id="drawer">
+            <h2 class="section-title">Drawer</h2>
+            <p class="section-desc">Slide-in panel from the right side.</p>
+            <button class="neu-btn neu-btn-md neu-btn-primary" data-neu-drawer="#demoDrawer">Open Drawer</button>
+        </section>
+
+        <!-- Drawer Instance -->
+        <div class="neu-drawer-overlay" id="demoDrawer-overlay"></div>
+        <div class="neu-drawer neu-drawer-right" id="demoDrawer">
+            <div class="neu-drawer-header">
+                <span class="neu-drawer-title">Drawer Panel</span>
+                <button class="neu-drawer-close">✕</button>
+            </div>
+            <div class="neu-drawer-body">
+                <p class="neu-p">This is a slide-in drawer. Great for settings, filters, or secondary navigation.</p>
+                <hr class="neu-divider">
+                <p class="neu-small">Content scrolls independently.</p>
+            </div>
+            <div class="neu-drawer-footer">
+                <button class="neu-btn neu-btn-sm neu-btn-ghost neu-drawer-close">Close</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════ -->
+        <!-- CAROUSEL -->
+        <!-- ═══════════════════════════════════════ -->
+        <section class="section" id="carousel">
+            <h2 class="section-title">Carousel</h2>
+            <p class="section-desc">Sliding content with prev/next and dot indicators.</p>
+            <div class="neu-carousel" style="max-width: 500px;">
+                <div class="neu-carousel-track">
+                    <div class="neu-carousel-slide"><div class="neu-box" style="text-align:center; width:100%;"><h3 class="neu-h3">Slide 1</h3><p class="neu-p">First slide content</p></div></div>
+                    <div class="neu-carousel-slide"><div class="neu-box neu-box-concave" style="text-align:center; width:100%;"><h3 class="neu-h3">Slide 2</h3><p class="neu-p">Second slide content</p></div></div>
+                    <div class="neu-carousel-slide"><div class="neu-box" style="text-align:center; width:100%;"><h3 class="neu-h3">Slide 3</h3><p class="neu-p">Third slide content</p></div></div>
+                </div>
+                <button class="neu-carousel-prev">‹</button>
+                <button class="neu-carousel-next">›</button>
+                <div class="neu-carousel-dots">
+                    <button class="neu-carousel-dot active"></button>
+                    <button class="neu-carousel-dot"></button>
+                    <button class="neu-carousel-dot"></button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════ -->
+        <!-- CHARTS -->
+        <!-- ═══════════════════════════════════════ -->
+        <section class="section" id="charts">
+            <h2 class="section-title">Charts</h2>
+            <p class="section-desc">CSS bar chart and SVG donut chart.</p>
+            <div class="demo-row demo-row-start">
+                <div style="flex:1; min-width:280px;">
+                    <span class="demo-label">Bar Chart</span>
+                    <div class="neu-chart-bar" style="height:180px;">
+                        <div class="neu-bar"><span class="neu-bar-value">85</span><div class="neu-bar-fill" style="height:85%"></div><span class="neu-bar-label">Mon</span></div>
+                        <div class="neu-bar"><span class="neu-bar-value">45</span><div class="neu-bar-fill success" style="height:45%"></div><span class="neu-bar-label">Tue</span></div>
+                        <div class="neu-bar"><span class="neu-bar-value">70</span><div class="neu-bar-fill warning" style="height:70%"></div><span class="neu-bar-label">Wed</span></div>
+                        <div class="neu-bar"><span class="neu-bar-value">55</span><div class="neu-bar-fill danger" style="height:55%"></div><span class="neu-bar-label">Thu</span></div>
+                        <div class="neu-bar"><span class="neu-bar-value">90</span><div class="neu-bar-fill info" style="height:90%"></div><span class="neu-bar-label">Fri</span></div>
+                    </div>
+                </div>
+                <div>
+                    <span class="demo-label">Donut Chart</span>
+                    <div class="neu-chart-donut" style="width:120px; height:120px;">
+                        <svg width="120" height="120" viewBox="0 0 100 100">
+                            <circle class="neu-chart-donut-bg" cx="50" cy="50" r="40" stroke-dasharray="251"></circle>
+                            <circle cx="50" cy="50" r="40" fill="none" stroke-width="10" stroke-linecap="round" stroke="var(--neu-accent)" stroke-dasharray="251" stroke-dashoffset="63" style="transform:rotate(-90deg); transform-origin:center;"></circle>
+                        </svg>
+                        <div class="neu-chart-donut-center" style="inset:16px;">
+                            <div class="neu-chart-donut-value">75%</div>
+                            <div class="neu-chart-donut-label">Sales</div>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <span class="demo-label">Legend</span>
+                    <div class="neu-legend neu-legend-vertical neu-legend-card">
+                        <div class="neu-legend-item"><span class="neu-legend-dot accent"></span> Revenue</div>
+                        <div class="neu-legend-item"><span class="neu-legend-dot success"></span> Growth</div>
+                        <div class="neu-legend-item"><span class="neu-legend-dot warning"></span> Pending</div>
+                        <div class="neu-legend-item"><span class="neu-legend-dot danger"></span> Declined</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════ -->
+        <!-- FORMS -->
+        <!-- ═══════════════════════════════════════ -->
+        <section class="section" id="forms">
+            <h2 class="section-title">Forms</h2>
+            <p class="section-desc">Inputs, select, checkbox, radio, toggle, and slider.</p>
+            <div class="demo-row demo-row-start" style="max-width: 600px;">
+                <div class="demo-col" style="flex:1; min-width: 250px;">
+                    <div class="neu-input-group">
+                        <label class="neu-input-label">Email</label>
+                        <div class="neu-input-wrapper has-icon">
+                            <span class="neu-input-icon">📧</span>
+                            <input type="email" class="neu-input" placeholder="you@example.com">
+                        </div>
+                    </div>
+                    <div class="neu-input-group">
+                        <label class="neu-input-label">Password</label>
+                        <input type="password" class="neu-input" placeholder="Enter password">
+                        <span class="neu-input-hint">Min 8 characters</span>
+                    </div>
+                    <div class="neu-input-group">
+                        <label class="neu-input-label">Error State</label>
+                        <input type="text" class="neu-input neu-input-error" value="Invalid">
+                        <span class="neu-input-hint error">This field is required</span>
+                    </div>
+                    <div class="neu-input-group">
+                        <label class="neu-input-label">Message</label>
+                        <textarea class="neu-textarea" placeholder="Write something..." rows="3"></textarea>
+                    </div>
+                    <div class="neu-input-group">
+                        <label class="neu-input-label">Country</label>
+                        <div class="neu-select-wrapper" style="width:100%;">
+                            <select class="neu-select" style="width:100%;">
+                                <option>Select country...</option>
+                                <option>India</option>
+                                <option>United States</option>
+                                <option>United Kingdom</option>
+                                <option>Japan</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="demo-col" style="flex:1; min-width: 200px;">
+                    <div>
+                        <span class="demo-label">Checkboxes</span>
+                        <div class="neu-checkbox-group">
+                            <label class="neu-checkbox"><input type="checkbox" checked> Design</label>
+                            <label class="neu-checkbox"><input type="checkbox"> Development</label>
+                            <label class="neu-checkbox"><input type="checkbox"> Testing</label>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="demo-label">Radio</span>
+                        <div class="neu-radio-group">
+                            <label class="neu-radio"><input type="radio" name="demo-radio" checked> Option A</label>
+                            <label class="neu-radio"><input type="radio" name="demo-radio"> Option B</label>
+                            <label class="neu-radio"><input type="radio" name="demo-radio"> Option C</label>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="demo-label">Toggle</span>
+                        <div style="display:flex; flex-direction:column; gap: var(--neu-space-sm);">
+                            <label class="neu-toggle"><input type="checkbox" checked> Notifications</label>
+                            <label class="neu-toggle neu-toggle-success"><input type="checkbox" checked> Dark Mode</label>
+                            <label class="neu-toggle neu-toggle-danger"><input type="checkbox"> Danger</label>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="demo-label">Slider</span>
+                        <div class="neu-slider">
+                            <input type="range" min="0" max="100" value="65">
+                            <div class="neu-slider-labels"><span>0</span><span>50</span><span>100</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <hr class="neu-divider-lg">
+        <div style="text-align:center; padding: var(--neu-space-xl);">
+            <p class="neu-small">NEU UI — Neumorphic Component Library · Built with ❤️ using Vanilla CSS & JS</p>
+            <p class="neu-caption" style="margin-top: var(--neu-space-sm);">Copy the <code class="neu-code">component-library/</code> folder to use in any project</p>
+        </div>
+    </div>
+
+    <script src="js/neu-components.js"></script>
+</body>
+</html>

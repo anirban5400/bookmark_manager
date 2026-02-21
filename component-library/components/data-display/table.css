@@ -1,0 +1,61 @@
+/* ============================================
+   NEU UI — Table
+   ============================================ */
+
+.neu-table-wrapper {
+    background: var(--neu-bg-base);
+    border-radius: var(--neu-radius-lg);
+    box-shadow: var(--neu-convex);
+    overflow: hidden;
+}
+
+.neu-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--neu-font-sm);
+}
+
+.neu-table thead {
+    background: var(--neu-bg-base);
+    box-shadow: var(--neu-concave);
+}
+.neu-table th {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: var(--neu-font-xs);
+    color: var(--neu-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.neu-table td {
+    padding: 0.75rem 1rem;
+    color: var(--neu-text-secondary);
+    border-bottom: 1px solid var(--neu-bg-dark);
+}
+.neu-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Striped */
+.neu-table-striped tbody tr:nth-child(even) {
+    background: rgba(0, 0, 0, 0.02);
+}
+[data-theme="dark"] .neu-table-striped tbody tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+/* Hoverable */
+.neu-table-hover tbody tr {
+    transition: all var(--neu-transition-fast);
+}
+.neu-table-hover tbody tr:hover {
+    background: var(--neu-bg-light);
+}
+
+/* Compact */
+.neu-table-compact th,
+.neu-table-compact td {
+    padding: 0.5rem 0.75rem;
+}

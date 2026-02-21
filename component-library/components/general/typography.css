@@ -1,0 +1,116 @@
+/* ============================================
+   NEU UI — Typography
+   ============================================ */
+
+/* ── Headings ── */
+.neu-h1, .neu-h2, .neu-h3, .neu-h4, .neu-h5, .neu-h6 {
+    color: var(--neu-text-primary);
+    font-weight: 600;
+    line-height: 1.3;
+    margin-bottom: var(--neu-space-sm);
+}
+.neu-h1 { font-size: var(--neu-font-4xl); letter-spacing: -1px; }
+.neu-h2 { font-size: var(--neu-font-3xl); letter-spacing: -0.5px; }
+.neu-h3 { font-size: var(--neu-font-2xl); }
+.neu-h4 { font-size: var(--neu-font-xl); }
+.neu-h5 { font-size: var(--neu-font-lg); }
+.neu-h6 { font-size: var(--neu-font-md); font-weight: 500; }
+
+/* ── Paragraph ── */
+.neu-p {
+    font-size: var(--neu-font-base);
+    color: var(--neu-text-secondary);
+    line-height: 1.7;
+    margin-bottom: var(--neu-space-md);
+}
+
+/* ── Lead text ── */
+.neu-lead {
+    font-size: var(--neu-font-lg);
+    color: var(--neu-text-secondary);
+    font-weight: 300;
+    line-height: 1.8;
+}
+
+/* ── Small / Caption ── */
+.neu-small {
+    font-size: var(--neu-font-sm);
+    color: var(--neu-text-muted);
+}
+.neu-caption {
+    font-size: var(--neu-font-xs);
+    color: var(--neu-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+
+/* ── Link ── */
+.neu-link {
+    color: var(--neu-accent);
+    font-weight: 500;
+    text-decoration: none;
+    transition: color var(--neu-transition-fast);
+    cursor: pointer;
+}
+.neu-link:hover {
+    color: var(--neu-accent-dark);
+    text-decoration: underline;
+}
+
+/* ── Blockquote ── */
+.neu-blockquote {
+    padding: var(--neu-space-md) var(--neu-space-lg);
+    background: var(--neu-bg-base);
+    border-radius: var(--neu-radius-md);
+    box-shadow: var(--neu-concave);
+    border-left: 4px solid var(--neu-accent);
+    font-style: italic;
+    color: var(--neu-text-secondary);
+    font-size: var(--neu-font-base);
+    margin: var(--neu-space-md) 0;
+}
+
+/* ── Code ── */
+.neu-code {
+    display: inline;
+    padding: 0.15rem 0.5rem;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 0.8em;
+    background: var(--neu-bg-base);
+    box-shadow: var(--neu-concave-sm);
+    border-radius: var(--neu-radius-sm);
+    color: var(--neu-accent);
+}
+
+.neu-pre {
+    padding: var(--neu-space-md);
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: var(--neu-font-sm);
+    background: var(--neu-bg-base);
+    box-shadow: var(--neu-concave);
+    border-radius: var(--neu-radius-md);
+    overflow-x: auto;
+    color: var(--neu-text-primary);
+    line-height: 1.6;
+    margin: var(--neu-space-md) 0;
+}
+
+/* ── Label ── */
+.neu-label {
+    display: block;
+    font-size: var(--neu-font-sm);
+    font-weight: 600;
+    color: var(--neu-text-secondary);
+    margin-bottom: var(--neu-space-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ── Mark / Highlight ── */
+.neu-mark {
+    background: var(--neu-accent-light);
+    color: #fff;
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+}

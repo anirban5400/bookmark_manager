@@ -1,0 +1,75 @@
+/* ============================================
+   NEU UI — Box / Card
+   ============================================ */
+
+.neu-box {
+    background: var(--neu-bg-base);
+    border-radius: var(--neu-radius-lg);
+    padding: var(--neu-space-lg);
+    box-shadow: var(--neu-convex);
+    transition: all var(--neu-transition);
+}
+
+/* ── Variants ── */
+.neu-box-flat {
+    box-shadow: var(--neu-flat);
+}
+.neu-box-concave {
+    box-shadow: var(--neu-concave);
+}
+.neu-box-interactive {
+    cursor: pointer;
+}
+.neu-box-interactive:hover {
+    box-shadow: var(--neu-flat);
+    transform: translateY(-2px);
+}
+.neu-box-interactive:active {
+    box-shadow: var(--neu-concave);
+    transform: translateY(0);
+}
+
+/* ── Box Header ── */
+.neu-box-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: var(--neu-space-md);
+    margin-bottom: var(--neu-space-md);
+    border-bottom: 1px solid var(--neu-bg-dark);
+}
+.neu-box-title {
+    font-size: var(--neu-font-lg);
+    font-weight: 600;
+    color: var(--neu-text-primary);
+}
+.neu-box-subtitle {
+    font-size: var(--neu-font-sm);
+    color: var(--neu-text-muted);
+    margin-top: 0.15rem;
+}
+
+/* ── Box Body ── */
+.neu-box-body {
+    font-size: var(--neu-font-base);
+    color: var(--neu-text-secondary);
+}
+
+/* ── Box Footer ── */
+.neu-box-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--neu-space-sm);
+    padding-top: var(--neu-space-md);
+    margin-top: var(--neu-space-md);
+    border-top: 1px solid var(--neu-bg-dark);
+}
+
+/* ── Padding Variants ── */
+.neu-box-compact { padding: var(--neu-space-md); }
+.neu-box-spacious { padding: var(--neu-space-xl); }
+
+/* ── Radius Variants ── */
+.neu-box-rounded-sm { border-radius: var(--neu-radius-sm); }
+.neu-box-rounded-md { border-radius: var(--neu-radius-md); }

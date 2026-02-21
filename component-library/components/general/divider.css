@@ -1,0 +1,51 @@
+/* ============================================
+   NEU UI — Divider
+   ============================================ */
+
+.neu-divider {
+    border: none;
+    height: 2px;
+    background: var(--neu-bg-base);
+    box-shadow: inset 1px 1px 2px var(--neu-shadow-dark), inset -1px -1px 2px var(--neu-shadow-light);
+    margin: var(--neu-space-lg) 0;
+    border-radius: 2px;
+}
+
+/* Vertical divider */
+.neu-divider-vertical {
+    display: inline-block;
+    width: 2px;
+    height: 100%;
+    min-height: 24px;
+    margin: 0 var(--neu-space-md);
+    box-shadow: inset 1px 1px 2px var(--neu-shadow-dark), inset -1px -1px 2px var(--neu-shadow-light);
+    background: var(--neu-bg-base);
+    border-radius: 2px;
+    vertical-align: middle;
+}
+
+/* Divider with label */
+.neu-divider-label {
+    display: flex;
+    align-items: center;
+    gap: var(--neu-space-md);
+    margin: var(--neu-space-lg) 0;
+    color: var(--neu-text-muted);
+    font-size: var(--neu-font-sm);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.neu-divider-label::before,
+.neu-divider-label::after {
+    content: '';
+    flex: 1;
+    height: 2px;
+    background: var(--neu-bg-base);
+    box-shadow: inset 1px 1px 2px var(--neu-shadow-dark), inset -1px -1px 2px var(--neu-shadow-light);
+    border-radius: 2px;
+}
+
+/* Spacing variants */
+.neu-divider-sm { margin: var(--neu-space-sm) 0; }
+.neu-divider-lg { margin: var(--neu-space-2xl) 0; }

@@ -1,0 +1,83 @@
+/* ============================================
+   NEU UI — Avatar
+   ============================================ */
+
+.neu-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--neu-radius-circle);
+    background: var(--neu-bg-base);
+    box-shadow: var(--neu-concave);
+    flex-shrink: 0;
+    overflow: hidden;
+    font-weight: 600;
+    color: var(--neu-accent);
+    text-transform: uppercase;
+}
+
+/* Sizes */
+.neu-avatar-sm {
+    width: 32px;
+    height: 32px;
+    font-size: var(--neu-font-xs);
+}
+.neu-avatar-md {
+    width: 44px;
+    height: 44px;
+    font-size: var(--neu-font-sm);
+}
+.neu-avatar-lg {
+    width: 56px;
+    height: 56px;
+    font-size: var(--neu-font-md);
+}
+.neu-avatar-xl {
+    width: 72px;
+    height: 72px;
+    font-size: var(--neu-font-xl);
+}
+
+.neu-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: var(--neu-radius-circle);
+}
+
+/* Raised variant */
+.neu-avatar-raised {
+    box-shadow: var(--neu-convex-sm);
+}
+
+/* Avatar with status dot */
+.neu-avatar-wrapper {
+    position: relative;
+    display: inline-flex;
+}
+.neu-avatar-status {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 12px;
+    height: 12px;
+    border-radius: var(--neu-radius-circle);
+    border: 2px solid var(--neu-bg-base);
+    background: var(--neu-text-muted);
+}
+.neu-avatar-status.online  { background: var(--neu-success); }
+.neu-avatar-status.offline { background: var(--neu-danger); }
+.neu-avatar-status.away    { background: var(--neu-warning); }
+
+/* Avatar Group (stacked) */
+.neu-avatar-group {
+    display: flex;
+}
+.neu-avatar-group .neu-avatar {
+    margin-left: -12px;
+    border: 3px solid var(--neu-bg-base);
+    box-shadow: var(--neu-convex-sm);
+}
+.neu-avatar-group .neu-avatar:first-child {
+    margin-left: 0;
+}

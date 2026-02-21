@@ -1,0 +1,77 @@
+/* ============================================
+   NEU UI — Contextual Help
+   ============================================ */
+
+.neu-help {
+    position: relative;
+    display: inline-flex;
+}
+
+.neu-help-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--neu-text-muted);
+    background: var(--neu-bg-base);
+    border: none;
+    border-radius: var(--neu-radius-circle);
+    box-shadow: var(--neu-convex-sm);
+    cursor: pointer;
+    transition: all var(--neu-transition-fast);
+    padding: 0;
+}
+.neu-help-trigger::after {
+    content: '?';
+}
+.neu-help-trigger:hover {
+    box-shadow: var(--neu-flat);
+    color: var(--neu-accent);
+}
+
+/* Help content panel */
+.neu-help-panel {
+    position: absolute;
+    bottom: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%) scale(0.95);
+    min-width: 200px;
+    max-width: 280px;
+    padding: var(--neu-space-md);
+    background: var(--neu-bg-base);
+    border-radius: var(--neu-radius-md);
+    box-shadow: var(--neu-convex);
+    z-index: var(--neu-z-tooltip);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: all var(--neu-transition-fast);
+    font-size: var(--neu-font-sm);
+    color: var(--neu-text-secondary);
+    line-height: 1.5;
+}
+.neu-help-panel::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 7px solid transparent;
+    border-top-color: var(--neu-bg-base);
+}
+
+.neu-help.active .neu-help-panel {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateX(-50%) scale(1);
+}
+
+.neu-help-title {
+    font-weight: 600;
+    color: var(--neu-text-primary);
+    margin-bottom: var(--neu-space-xs);
+}

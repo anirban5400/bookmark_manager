@@ -1,0 +1,80 @@
+/* ============================================
+   NEU UI — Scroll Shadow
+   ============================================ */
+
+.neu-scroll-shadow {
+    position: relative;
+    overflow: hidden;
+}
+
+.neu-scroll-shadow-inner {
+    overflow-y: auto;
+    max-height: 100%;
+    scrollbar-width: thin;
+}
+
+/* Top shadow */
+.neu-scroll-shadow::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 24px;
+    background: linear-gradient(
+        to bottom,
+        var(--neu-bg-base) 0%,
+        transparent 100%
+    );
+    z-index: 2;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity var(--neu-transition-fast);
+}
+
+/* Bottom shadow */
+.neu-scroll-shadow::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 24px;
+    background: linear-gradient(
+        to top,
+        var(--neu-bg-base) 0%,
+        transparent 100%
+    );
+    z-index: 2;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity var(--neu-transition-fast);
+}
+
+/* JS toggles these classes */
+.neu-scroll-shadow.shadow-top::before { opacity: 1; }
+.neu-scroll-shadow.shadow-bottom::after { opacity: 1; }
+
+/* Horizontal variant */
+.neu-scroll-shadow-horizontal .neu-scroll-shadow-inner {
+    overflow-x: auto;
+    overflow-y: hidden;
+    max-height: none;
+    white-space: nowrap;
+}
+.neu-scroll-shadow-horizontal::before {
+    top: 0;
+    bottom: 0;
+    height: auto;
+    width: 24px;
+    right: auto;
+    background: linear-gradient(to right, var(--neu-bg-base), transparent);
+}
+.neu-scroll-shadow-horizontal::after {
+    top: 0;
+    bottom: 0;
+    height: auto;
+    width: 24px;
+    left: auto;
+    background: linear-gradient(to left, var(--neu-bg-base), transparent);
+}
