@@ -801,9 +801,41 @@
         const defaultPerPage = config.defaultPerPage || 10;
         const searchable = config.searchable !== false;
         const onAction = config.onAction || (() => {});
+        const onCellEdit = config.onCellEdit || (() => {});
         const hasActions = actions.length > 0;
         const hasDateCol = cols.some(c => c.type === 'date');
         const filterCols = cols.filter(c => c.filter);
+
+        // ── Normalize filter options to [{key, value}] ──
+        function normalizeFilterOptions(opts) {
+            if (!opts) return [];
+            if (Array.isArray(opts)) {
+                return opts.map(o => {
+                    if (typeof o === 'object' && o.key !== undefined) return { key: String(o.key), value: String(o.value) };
+                    return { key: String(o), value: String(o) };
+                });
+            }
+            if (typeof opts === 'object') {
+                return Object.entries(opts).map(([k, v]) => ({ key: String(k), value: String(v) }));
+            }
+            return [];
+        }
+
+        // Pre-normalize all filter options
+        cols.forEach(col => {
+            if (col.filter) {
+                col.filter._normalized = normalizeFilterOptions(col.filter.options);
+            }
+        });
+
+        // ── Flatten value for search/sort ──
+        function flattenValue(val) {
+            if (val == null) return '';
+            if (typeof val === 'string' || typeof val === 'number') return String(val);
+            if (Array.isArray(val)) return val.map(flattenValue).join(', ');
+            if (typeof val === 'object') return Object.values(val).map(flattenValue).join(' ');
+            return String(val);
+        }
 
         // Effective column list (user cols + optional actions)
         const effectiveCols = [...cols];
@@ -815,9 +847,8 @@
         const wrapper = document.createElement('div');
         wrapper.className = 'neu-data-table';
         wrapper.setAttribute('data-neu-datatable', '');
-        wrapper.setAttribute('data-neu-dt-dynamic', ''); // Skip auto-init by initDataTables
+        wrapper.setAttribute('data-neu-dt-dynamic', '');
 
-        // Find date column index for filtering
         const dateColIdx = effectiveCols.findIndex(c => c.type === 'date');
         if (dateColIdx >= 0) wrapper.setAttribute('data-date-col', dateColIdx);
 
@@ -842,15 +873,16 @@
         toolbarHTML += `</select></div></div></div>`;
         wrapper.innerHTML = toolbarHTML;
 
-        // — Filter Panel —
+        // — Filter Panel (key-value options) —
         if (filterCols.length > 0) {
             const fp = document.createElement('div');
             fp.className = 'neu-dt-filters';
             filterCols.forEach(col => {
                 const colIdx = effectiveCols.indexOf(col);
+                const opts = col.filter._normalized || [];
                 let groupHTML = `<div class="neu-dt-filter-group"><label>${col.label}</label><div class="neu-dt-filter-select-wrap"><select data-filter-col="${colIdx}"><option value="">All ${col.label}</option>`;
-                (col.filter.options || []).forEach(opt => {
-                    groupHTML += `<option value="${opt}">${opt}</option>`;
+                opts.forEach(o => {
+                    groupHTML += `<option value="${o.key}">${o.value}</option>`;
                 });
                 groupHTML += `</select></div></div>`;
                 fp.innerHTML += groupHTML;
@@ -869,7 +901,6 @@
         const table = document.createElement('table');
         table.className = 'neu-dt-table';
 
-        // thead
         const thead = document.createElement('thead');
         let headerHTML = '<tr>';
         effectiveCols.forEach(col => {
@@ -885,19 +916,16 @@
         thead.innerHTML = headerHTML;
         table.appendChild(thead);
 
-        // tbody
         const tbody = document.createElement('tbody');
         table.appendChild(tbody);
         tableWrap.appendChild(table);
         wrapper.appendChild(tableWrap);
 
-        // — Footer —
         const footer = document.createElement('div');
         footer.className = 'neu-dt-footer';
         footer.innerHTML = `<div class="neu-dt-info"></div><div class="neu-dt-pages"></div>`;
         wrapper.appendChild(footer);
 
-        // Insert into DOM
         container.innerHTML = '';
         container.appendChild(wrapper);
 
@@ -907,11 +935,8 @@
         let perPage = defaultPerPage;
         const stickyState = {};
 
-        // Apply initial sticky from config
         effectiveCols.forEach((col, i) => {
-            if (col.sticky === 'left' || col.sticky === 'right') {
-                stickyState[i] = col.sticky;
-            }
+            if (col.sticky === 'left' || col.sticky === 'right') stickyState[i] = col.sticky;
         });
 
         // ── DOM references ──
@@ -928,40 +953,147 @@
         const colList = wrapper.querySelector('.neu-dt-col-list');
         const footerEl = wrapper.querySelector('.neu-dt-footer');
         const activeFiltersContainer = wrapper.querySelector('.neu-dt-active-filters');
-
-        // Helper: get current ths
         const allThs = () => Array.from(thead.querySelectorAll('th'));
+
+        // ── Lookup filter display value from key ──
+        function filterDisplayValue(col, key) {
+            if (!col.filter || !col.filter._normalized) return key;
+            const found = col.filter._normalized.find(o => o.key === String(key));
+            return found ? found.value : key;
+        }
 
         // ── Cell Renderer ──
         function renderCell(col, row) {
             if (col._isActions) {
+                const rowActions = row._actions; // array of allowed action keys
+                const visibleActions = rowActions
+                    ? actions.filter(act => act.divider || (act.key && rowActions.includes(act.key)))
+                    : actions;
+                if (visibleActions.length === 0 || visibleActions.every(a => a.divider)) return '';
                 let html = `<button class="neu-dt-action-btn">⋮</button><div class="neu-dt-action-menu">`;
-                actions.forEach(act => {
-                    if (act.divider) {
-                        html += `<div class="neu-dt-action-divider"></div>`;
-                    } else {
-                        html += `<button class="neu-dt-action-item ${act.danger ? 'danger' : ''}" data-action="${act.key}">${act.label}</button>`;
-                    }
+                visibleActions.forEach(act => {
+                    if (act.divider) html += `<div class="neu-dt-action-divider"></div>`;
+                    else html += `<button class="neu-dt-action-item ${act.danger ? 'danger' : ''}" data-action="${act.key}">${act.label}</button>`;
                 });
                 html += `</div>`;
                 return html;
             }
             const val = row[col.key];
             if (col.render) return col.render(val, row);
-            return val != null ? String(val) : '';
+            // Default rendering for different data types
+            if (val == null) return '';
+            if (typeof val === 'object' && !Array.isArray(val)) {
+                const entries = Object.values(val).filter(v => v != null);
+                if (entries.length === 0) return '';
+                return `<div class="neu-dt-cell-main">${entries[0]}</div>${entries.length > 1 ? `<div class="neu-dt-cell-sub">${entries.slice(1).join(', ')}</div>` : ''}`;
+            }
+            if (Array.isArray(val)) return val.join(', ');
+            // If column has filter options, display the value not the key
+            if (col.filter && col.filter._normalized) {
+                return filterDisplayValue(col, val);
+            }
+            return String(val);
         }
 
         // ── Build a <tr> from row data ──
         function buildRow(row) {
             const tr = document.createElement('tr');
             tr.setAttribute('data-row-idx', row._idx);
-            effectiveCols.forEach(col => {
+            effectiveCols.forEach((col, colIdx) => {
                 const td = document.createElement('td');
                 if (col._isActions) td.className = 'neu-dt-action-cell';
+                if (col.editable) td.classList.add('neu-dt-editable');
                 td.innerHTML = renderCell(col, row);
+                // Editable cell: dblclick to edit
+                if (col.editable && !col._isActions) {
+                    td.addEventListener('dblclick', () => startCellEdit(td, col, row));
+                }
                 tr.appendChild(td);
             });
             return tr;
+        }
+
+        // ── Inline Cell Editing ──
+        function startCellEdit(td, col, row) {
+            if (td.classList.contains('neu-dt-editing')) return;
+            td.classList.add('neu-dt-editing');
+            
+            const isObj = typeof row[col.key] === 'object' && row[col.key] !== null;
+            const currentVal = (isObj && col.editField) ? row[col.key][col.editField] : row[col.key];
+            const inputType = col.inputType || 'text';
+
+            let editor;
+            if (inputType === 'dropdown') {
+                editor = document.createElement('select');
+                editor.className = 'neu-dt-cell-editor';
+                const opts = (col.filter && col.filter._normalized) || [];
+                opts.forEach(o => {
+                    const opt = document.createElement('option');
+                    opt.value = o.key;
+                    opt.textContent = o.value;
+                    if (String(o.key) === String(currentVal)) opt.selected = true;
+                    editor.appendChild(opt);
+                });
+            } else if (inputType === 'textarea') {
+                editor = document.createElement('textarea');
+                editor.className = 'neu-dt-cell-editor';
+                editor.value = flattenValue(currentVal);
+            } else {
+                editor = document.createElement('input');
+                editor.className = 'neu-dt-cell-editor';
+                editor.type = inputType === 'number' ? 'number' : 'text';
+                editor.value = flattenValue(currentVal);
+            }
+
+            td.innerHTML = '';
+            td.appendChild(editor);
+            editor.focus();
+            if (editor.select) editor.select();
+
+            function commitEdit() {
+                if (!td.classList.contains('neu-dt-editing')) return;
+                td.classList.remove('neu-dt-editing');
+                const newVal = editor.value;
+                const parsedVal = inputType === 'number' ? parseFloat(newVal) || 0 : newVal;
+                
+                if (isObj && col.editField) {
+                    row[col.key][col.editField] = parsedVal;
+                } else {
+                    row[col.key] = parsedVal;
+                }
+                
+                // Update allData
+                const srcRow = allData.find(r => r._idx === row._idx);
+                if (srcRow) {
+                    if (typeof srcRow[col.key] === 'object' && srcRow[col.key] !== null && col.editField) {
+                        srcRow[col.key][col.editField] = parsedVal;
+                    } else {
+                        srcRow[col.key] = parsedVal;
+                    }
+                }
+                
+                td.innerHTML = renderCell(col, row);
+                // Add dblclick back
+                td.addEventListener('dblclick', () => startCellEdit(td, col, row));
+                // Fire callbacks
+                const cleanRow = { ...row }; delete cleanRow._idx;
+                if (col.cellMethod) {
+                    const fn = typeof col.cellMethod === 'function' ? col.cellMethod : window[col.cellMethod];
+                    if (typeof fn === 'function') fn(col.key, parsedVal, cleanRow);
+                }
+                onCellEdit(col.key, parsedVal, cleanRow);
+            }
+
+            editor.addEventListener('blur', commitEdit);
+            editor.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && inputType !== 'textarea') { e.preventDefault(); commitEdit(); }
+                if (e.key === 'Escape') {
+                    td.classList.remove('neu-dt-editing');
+                    td.innerHTML = renderCell(col, row);
+                    td.addEventListener('dblclick', () => startCellEdit(td, col, row));
+                }
+            });
+            if (inputType === 'dropdown') editor.addEventListener('change', commitEdit);
         }
 
         // ── Filter Toggle ──
@@ -998,16 +1130,14 @@
                     const col = effectiveCols[colIdx];
                     if (col) {
                         filteredData.sort((a, b) => {
-                            let aVal = a[col.key];
-                            let bVal = b[col.key];
-                            if (aVal == null) aVal = '';
-                            if (bVal == null) bVal = '';
+                            let aVal = flattenValue(a[col.key]);
+                            let bVal = flattenValue(b[col.key]);
                             const aNum = parseFloat(aVal);
                             const bNum = parseFloat(bVal);
                             if (!isNaN(aNum) && !isNaN(bNum)) {
                                 return dir === 'asc' ? aNum - bNum : bNum - aNum;
                             }
-                            return dir === 'asc' ? String(aVal).localeCompare(String(bVal)) : String(bVal).localeCompare(String(aVal));
+                            return dir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
                         });
                     }
                 }
@@ -1023,17 +1153,17 @@
             const to = toDate ? toDate.value : '';
 
             filteredData = allData.filter(row => {
-                // Text search across all visible columns
+                // Text search across all columns
                 if (query) {
-                    const allText = cols.map(c => String(row[c.key] || '')).join(' ').toLowerCase();
+                    const allText = cols.map(c => flattenValue(row[c.key])).join(' ').toLowerCase();
                     if (!allText.includes(query)) return false;
                 }
 
                 // Date range filter
                 if (dateColIdx >= 0 && (from || to)) {
                     const dateCol = effectiveCols[dateColIdx];
-                    const cellVal = row[dateCol.key] || '';
-                    const cellDate = new Date(cellVal);
+                    const cellVal = row[dateCol.key];
+                    const cellDate = new Date(flattenValue(cellVal));
                     if (!isNaN(cellDate)) {
                         if (from && cellDate < new Date(from)) return false;
                         if (to && cellDate > new Date(to + 'T23:59:59')) return false;
@@ -1047,7 +1177,12 @@
                     const colIdx = parseInt(sel.getAttribute('data-filter-col'));
                     const col = effectiveCols[colIdx];
                     if (!col) continue;
-                    const cellText = String(row[col.key] || '').toLowerCase();
+                    
+                    const cellVal = row[col.key];
+                    // If exact key match (for normalized key-value options), it's good
+                    if (cellVal != null && String(cellVal) === val) continue;
+                    // Otherwise fallback string match
+                    const cellText = flattenValue(cellVal).toLowerCase();
                     if (!cellText.includes(val.toLowerCase())) return false;
                 }
 
@@ -1059,12 +1194,12 @@
                 const col = effectiveCols[currentSortCol];
                 if (col) {
                     filteredData.sort((a, b) => {
-                        let aVal = a[col.key]; let bVal = b[col.key];
-                        if (aVal == null) aVal = '';
-                        if (bVal == null) bVal = '';
-                        const aNum = parseFloat(aVal); const bNum = parseFloat(bVal);
+                        let aVal = flattenValue(a[col.key]); 
+                        let bVal = flattenValue(b[col.key]);
+                        const aNum = parseFloat(aVal); 
+                        const bNum = parseFloat(bVal);
                         if (!isNaN(aNum) && !isNaN(bNum)) return currentSortDir === 'asc' ? aNum - bNum : bNum - aNum;
-                        return currentSortDir === 'asc' ? String(aVal).localeCompare(String(bVal)) : String(bVal).localeCompare(String(aVal));
+                        return currentSortDir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
                     });
                 }
             }
@@ -1333,7 +1468,10 @@
                 if (sel.value) {
                     const labelEl = sel.closest('.neu-dt-filter-group')?.querySelector('label');
                     const labelText = labelEl ? labelEl.textContent : 'Filter';
-                    tags.push({ label: labelText, value: sel.value, clear: () => { sel.value = ''; } });
+                    const colIdx = parseInt(sel.getAttribute('data-filter-col'));
+                    const col = effectiveCols[colIdx];
+                    const displayVal = col ? filterDisplayValue(col, sel.value) : sel.value;
+                    tags.push({ label: labelText, value: displayVal, clear: () => { sel.value = ''; } });
                 }
             });
 

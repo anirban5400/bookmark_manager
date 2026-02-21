@@ -202,7 +202,8 @@
 /* ── Table ── */
 .neu-dt-table {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
     font-size: var(--neu-font-sm);
     table-layout: auto;
 }
@@ -279,6 +280,7 @@ body.neu-dt-resizing * {
     position: sticky;
     z-index: 3;
     background: var(--neu-bg-base);
+    box-shadow: inset -1px 0 0 var(--neu-bg-dark), 4px 0 8px -2px rgba(0,0,0,0.1);
 }
 .neu-dt-table thead th.neu-dt-sticky-left {
     z-index: 5;
@@ -288,6 +290,7 @@ body.neu-dt-resizing * {
     position: sticky;
     z-index: 3;
     background: var(--neu-bg-base);
+    box-shadow: inset 1px 0 0 var(--neu-bg-dark), -4px 0 8px -2px rgba(0,0,0,0.1);
 }
 .neu-dt-table thead th.neu-dt-sticky-right {
     z-index: 5;
@@ -364,6 +367,61 @@ body.neu-dt-resizing * {
 }
 .neu-dt-table tbody tr:hover td {
     background: var(--neu-bg-light);
+}
+
+/* ── Editable Cells ── */
+.neu-dt-editable {
+    position: relative;
+    cursor: text;
+    transition: background var(--neu-transition-fast);
+}
+.neu-dt-editable:hover {
+    background: var(--neu-bg-base) !important;
+}
+.neu-dt-editable::after {
+    content: '✎';
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.8rem;
+    color: var(--neu-text-muted);
+    opacity: 0;
+    transition: opacity var(--neu-transition-fast);
+    pointer-events: none;
+}
+.neu-dt-editable:hover::after {
+    opacity: 0.5;
+}
+.neu-dt-editing::after {
+    display: none;
+}
+.neu-dt-cell-editor {
+    width: 100%;
+    min-width: 100px;
+    padding: 0.4rem 0.6rem;
+    font-family: inherit;
+    font-size: inherit;
+    color: var(--neu-text-secondary);
+    background: var(--neu-bg-light);
+    border: none;
+    border-radius: var(--neu-radius-sm);
+    box-shadow: var(--neu-concave-sm);
+    outline: none;
+    box-sizing: border-box;
+}
+.neu-dt-cell-editor:focus {
+    box-shadow: var(--neu-concave-md);
+    color: var(--neu-accent);
+}
+select.neu-dt-cell-editor {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%238f9bb3%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.6rem top 50%;
+    background-size: 0.6rem auto;
+    padding-right: 1.8rem;
 }
 
 /* Empty state */

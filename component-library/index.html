@@ -505,19 +505,35 @@ console.log('Current theme:', theme);</pre>
 
             <div id="dynamic-datatable"></div>
             <script>
+                // Global callback for cell edits
+                window.tdUpdateName = function(key, val, row) {
+                    console.log(`Callback tdUpdateName => Saved ${key}:`, val, 'for row:', row);
+                };
+
                 document.addEventListener('DOMContentLoaded', function () {
-                    NeuUI.createDataTable(document.getElementById('dynamic-datatable'), {
+                    const table = NeuUI.createDataTable(document.getElementById('dynamic-datatable'), {
                         columns: [
                             {
                                 key: 'name', label: 'Name', sortable: true, sticky: 'left',
-                                render: (val, row) =>
-                                    `<div class="neu-dt-cell-main">${row.name}</div><div class="neu-dt-cell-sub">${row.designation}</div>`
+                                editable: true, inputType: 'text', cellMethod: 'tdUpdateName',
+                                editField: 'name',
+                                render: (val) => {
+                                    if (typeof val === 'object' && val !== null) {
+                                        return `<div class="neu-dt-cell-main">${val.name}</div><div class="neu-dt-cell-sub">${val.address || ''}</div>`;
+                                    }
+                                    return `<div class="neu-dt-cell-main">${val}</div>`;
+                                }
                             },
                             { key: 'email', label: 'Email' },
-                            { key: 'phone', label: 'Phone' },
                             {
                                 key: 'role', label: 'Role', sortable: true,
-                                filter: { options: ['Developer', 'Designer', 'Manager', 'Tester', 'Analyst', 'DevOps'] }
+                                editable: true, inputType: 'dropdown',
+                                filter: { 
+                                    options: {
+                                        '10': 'Developer', '20': 'Designer', '30': 'Manager', 
+                                        '40': 'Tester', '50': 'Analyst', '60': 'DevOps'
+                                    }
+                                }
                             },
                             { key: 'score', label: 'Score', sortable: true },
                             { key: 'date', label: 'Date', sortable: true, type: 'date' },
@@ -536,31 +552,33 @@ console.log('Current theme:', theme);</pre>
                             { divider: true },
                             { label: '🗑️ Delete', key: 'delete', danger: true }
                         ],
-                        data: [
-                            { name: 'Anirban Choudhury', designation: 'Lead Full-Stack Engineer', email: 'anirban.c@alphapark.io', phone: '+91 98765 43210', role: 'Developer', score: 98, date: '2026-01-15', status: 'Active' },
-                            { name: 'Priya Mukherjee', designation: 'Senior UI Designer', email: 'priya.m@alphapark.io', phone: '+91 98765 43211', role: 'Designer', score: 95, date: '2026-01-20', status: 'Active' },
-                            { name: 'Ravi Kumar', designation: 'Project Manager', email: 'ravi.k@alphapark.io', phone: '+91 98765 43212', role: 'Manager', score: 88, date: '2026-02-01', status: 'Away' },
-                            { name: 'Sara Patel', designation: 'QA Engineer', email: 'sara.p@alphapark.io', phone: '+91 98765 43213', role: 'Tester', score: 92, date: '2026-02-05', status: 'Offline' },
-                            { name: 'Amit Sharma', designation: 'Backend Developer', email: 'amit.s@alphapark.io', phone: '+91 98765 43214', role: 'Developer', score: 91, date: '2026-02-08', status: 'Active' },
-                            { name: 'Neha Reddy', designation: 'Visual Designer', email: 'neha.r@alphapark.io', phone: '+91 98765 43215', role: 'Designer', score: 87, date: '2026-02-10', status: 'Active' },
-                            { name: 'Vikram Thakur', designation: 'DevOps Engineer', email: 'vikram.t@alphapark.io', phone: '+91 98765 43216', role: 'DevOps', score: 93, date: '2026-02-12', status: 'Busy' },
-                            { name: 'Meera Joshi', designation: 'Data Analyst', email: 'meera.j@alphapark.io', phone: '+91 98765 43217', role: 'Analyst', score: 85, date: '2026-02-14', status: 'Active' },
-                            { name: 'Karan Desai', designation: 'Frontend Developer', email: 'karan.d@alphapark.io', phone: '+91 98765 43218', role: 'Developer', score: 90, date: '2026-02-15', status: 'Away' },
-                            { name: 'Pooja Lal', designation: 'Automation Tester', email: 'pooja.l@alphapark.io', phone: '+91 98765 43219', role: 'Tester', score: 86, date: '2026-02-16', status: 'Active' },
-                            { name: 'Rajesh Bansal', designation: 'Engineering Manager', email: 'rajesh.b@alphapark.io', phone: '+91 98765 43220', role: 'Manager', score: 82, date: '2026-02-17', status: 'Offline' },
-                            { name: 'Deepa Nair', designation: 'UX Designer', email: 'deepa.n@alphapark.io', phone: '+91 98765 43221', role: 'Designer', score: 94, date: '2026-02-18', status: 'Active' },
-                            { name: 'Suresh Verma', designation: 'Senior Developer', email: 'suresh.v@alphapark.io', phone: '+91 98765 43222', role: 'Developer', score: 89, date: '2026-02-19', status: 'Busy' },
-                            { name: 'Kavita Gupta', designation: 'Business Analyst', email: 'kavita.g@alphapark.io', phone: '+91 98765 43223', role: 'Analyst', score: 96, date: '2026-02-20', status: 'Active' },
-                            { name: 'Arjun Hegde', designation: 'Cloud Engineer', email: 'arjun.h@alphapark.io', phone: '+91 98765 43224', role: 'DevOps', score: 84, date: '2026-02-21', status: 'Away' }
-                        ],
                         perPageOptions: [5, 10, 25, 50],
                         defaultPerPage: 10,
                         searchable: true,
-                        onAction: (action, row) => {
-                            console.log('Action:', action, 'Row:', row);
-                            alert(`${action} → ${row.name}`);
-                        }
+                        onCellEdit: (key, val, row) => console.log(`Global Edit Event => ${key} changed to ${val}`, row),
+                        onAction: (action, row) => alert(`${action} → ${row.name?.name || row.name}`)
                     });
+
+                    // Simulate API data load
+                    setTimeout(() => {
+                        table.setData([
+                            { name: { name: 'Anirban Choudhury', address: 'Bangalore, India' }, email: 'anirban.c@alphapark.io', role: '10', score: 98, date: '2026-01-15', status: 'Active', _actions: ['edit', 'clone', 'delete'] },
+                            { name: { name: 'Priya Mukherjee', address: 'Mumbai, India' }, email: 'priya.m@alphapark.io', role: '20', score: 95, date: '2026-01-20', status: 'Active', _actions: ['edit'] }, // only edit action
+                            { name: 'Ravi Kumar', email: 'ravi.k@alphapark.io', role: '30', score: 88, date: '2026-02-01', status: 'Away', _actions: ['clone'] }, // missing edit/delete
+                            { name: 'Sara Patel', email: 'sara.p@alphapark.io', role: '40', score: 92, date: '2026-02-05', status: 'Offline', _actions: ['edit', 'delete'] },
+                            { name: { name: 'Amit Sharma', address: 'Delhi, India' }, email: 'amit.s@alphapark.io', role: '10', score: 91, date: '2026-02-08', status: 'Active' }, // missing _actions array => defaults to ALL actions
+                            { name: 'Neha Reddy', email: 'neha.r@alphapark.io', role: '20', score: 87, date: '2026-02-10', status: 'Active', _actions: ['edit'] },
+                            { name: 'Vikram Thakur', email: 'vikram.t@alphapark.io', role: '60', score: 93, date: '2026-02-12', status: 'Busy', _actions: ['delete'] },
+                            { name: { name: 'Meera Joshi', address: 'Pune, India' }, email: 'meera.j@alphapark.io', role: '50', score: 85, date: '2026-02-14', status: 'Active' },
+                            { name: 'Karan Desai', email: 'karan.d@alphapark.io', role: '10', score: 90, date: '2026-02-15', status: 'Away' },
+                            { name: 'Pooja Lal', email: 'pooja.l@alphapark.io', role: '40', score: 86, date: '2026-02-16', status: 'Active' },
+                            { name: 'Rajesh Bansal', email: 'rajesh.b@alphapark.io', role: '30', score: 82, date: '2026-02-17', status: 'Offline' },
+                            { name: 'Deepa Nair', email: 'deepa.n@alphapark.io', role: '20', score: 94, date: '2026-02-18', status: 'Active' },
+                            { name: 'Suresh Verma', email: 'suresh.v@alphapark.io', role: '10', score: 89, date: '2026-02-19', status: 'Busy' },
+                            { name: 'Kavita Gupta', email: 'kavita.g@alphapark.io', role: '50', score: 96, date: '2026-02-20', status: 'Active' },
+                            { name: 'Arjun Hegde', email: 'arjun.h@alphapark.io', role: '60', score: 84, date: '2026-02-21', status: 'Away' }
+                        ]);
+                    }, 500); // 0.5s delay to simulate loading
                 });
             </script>
         </section>
