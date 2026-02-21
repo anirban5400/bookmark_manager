@@ -503,121 +503,66 @@ console.log('Current theme:', theme);</pre>
             <h2 class="section-title">Data Table</h2>
             <p class="section-desc">Full-featured table with search, date filters, sortable columns, per-page, and pagination.</p>
 
-            <div class="neu-data-table" data-neu-datatable data-date-col="5">
-                <!-- Toolbar -->
-                <div class="neu-dt-toolbar">
-                    <div class="neu-dt-toolbar-left">
-                        <button class="neu-dt-filter-btn">☰ Filter</button>
-                        <div class="neu-dt-search">
-                            <span class="neu-dt-search-icon">🔍</span>
-                            <input type="text" placeholder="Search records...">
-                        </div>
-                        <div class="neu-dt-date">
-                            <label>From</label>
-                            <input type="date" class="neu-dt-from">
-                        </div>
-                        <div class="neu-dt-date">
-                            <label>To</label>
-                            <input type="date" class="neu-dt-to">
-                        </div>
-                        <button class="neu-dt-reset">↺ Reset</button>
-                    </div>
-                    <div class="neu-dt-toolbar-right">
-                        <div class="neu-dt-col-manager">
-                            <button class="neu-dt-col-manager-btn">⚙ Columns</button>
-                            <div class="neu-dt-col-panel">
-                                <div class="neu-dt-col-panel-title">Manage Columns</div>
-                                <div class="neu-dt-col-list"></div>
-                            </div>
-                        </div>
-                        <div class="neu-dt-per-page">
-                            <label>Show</label>
-                            <div class="neu-dt-select-wrap">
-                                <select>
-                                    <option value="5">5</option>
-                                    <option value="10" selected>10</option>
-                                    <option value="25">25</option>
-                                    <option value="50">50</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Expandable Filter Panel -->
-                <div class="neu-dt-filters">
-                    <div class="neu-dt-filter-group">
-                        <label>Role</label>
-                        <div class="neu-dt-filter-select-wrap">
-                            <select data-filter-col="3">
-                                <option value="">All Roles</option>
-                                <option value="Developer">Developer</option>
-                                <option value="Designer">Designer</option>
-                                <option value="Manager">Manager</option>
-                                <option value="Tester">Tester</option>
-                                <option value="Analyst">Analyst</option>
-                                <option value="DevOps">DevOps</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="neu-dt-filter-group">
-                        <label>Status</label>
-                        <div class="neu-dt-filter-select-wrap">
-                            <select data-filter-col="6">
-                                <option value="">All Status</option>
-                                <option value="Active">Active</option>
-                                <option value="Away">Away</option>
-                                <option value="Busy">Busy</option>
-                                <option value="Offline">Offline</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Active Filter Tags -->
-                <div class="neu-dt-active-filters"></div>
-
-                <!-- Table -->
-                <div class="neu-dt-table-wrap">
-                <table class="neu-dt-table">
-                    <thead>
-                        <tr>
-                            <th class="neu-dt-sortable">Name <span class="neu-dt-sort-icon"><span class="up">▲</span><span class="down">▼</span></span></th>
-                            <th>Email</th>
-                            <th>Phone</th>
-                            <th class="neu-dt-sortable">Role <span class="neu-dt-sort-icon"><span class="up">▲</span><span class="down">▼</span></span></th>
-                            <th class="neu-dt-sortable">Score <span class="neu-dt-sort-icon"><span class="up">▲</span><span class="down">▼</span></span></th>
-                            <th class="neu-dt-sortable">Date <span class="neu-dt-sort-icon"><span class="up">▲</span><span class="down">▼</span></span></th>
-                            <th>Status</th>
-                            <th style="text-align:center;">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr><td><div class="neu-dt-cell-main">Anirban Choudhury</div><div class="neu-dt-cell-sub">Lead Full-Stack Engineer</div></td><td>anirban.c@alphapark.io</td><td>+91 98765 43210</td><td>Developer</td><td>98</td><td>2026-01-15</td><td><span class="neu-badge neu-badge-filled neu-badge-success">Active</span></td><td class="neu-dt-action-cell"><button class="neu-dt-action-btn">⋮</button><div class="neu-dt-action-menu"><button class="neu-dt-action-item">📝 Edit</button><button class="neu-dt-action-item">📋 Clone</button><div class="neu-dt-action-divider"></div><button class="neu-dt-action-item danger">🗑️ Delete</button></div></td></tr>
-                        <tr><td><div class="neu-dt-cell-main">Priya Mukherjee</div><div class="neu-dt-cell-sub">Senior UI Designer</div></td><td>priya.m@alphapark.io</td><td>+91 98765 43211</td><td>Designer</td><td>95</td><td>2026-01-20</td><td><span class="neu-badge neu-badge-filled neu-badge-success">Active</span></td><td class="neu-dt-action-cell"><button class="neu-dt-action-btn">⋮</button><div class="neu-dt-action-menu"><button class="neu-dt-action-item">📝 Edit</button><button class="neu-dt-action-item">📋 Clone</button><div class="neu-dt-action-divider"></div><button class="neu-dt-action-item danger">🗑️ Delete</button></div></td></tr>
-                        <tr><td><div class="neu-dt-cell-main">Ravi Kumar</div><div class="neu-dt-cell-sub">Project Manager</div></td><td>ravi.k@alphapark.io</td><td>+91 98765 43212</td><td>Manager</td><td>88</td><td>2026-02-01</td><td><span class="neu-badge neu-badge-filled neu-badge-warning">Away</span></td><td class="neu-dt-action-cell"><button class="neu-dt-action-btn">⋮</button><div class="neu-dt-action-menu"><button class="neu-dt-action-item">📝 Edit</button><button class="neu-dt-action-item">📋 Clone</button><div class="neu-dt-action-divider"></div><button class="neu-dt-action-item danger">🗑️ Delete</button></div></td></tr>
-                        <tr><td><div class="neu-dt-cell-main">Sara Patel</div><div class="neu-dt-cell-sub">QA Engineer</div></td><td>sara.p@alphapark.io</td><td>+91 98765 43213</td><td>Tester</td><td>92</td><td>2026-02-05</td><td><span class="neu-badge neu-badge-filled neu-badge-danger">Offline</span></td><td class="neu-dt-action-cell"><button class="neu-dt-action-btn">⋮</button><div class="neu-dt-action-menu"><button class="neu-dt-action-item">📝 Edit</button><button class="neu-dt-action-item">📋 Clone</button><div class="neu-dt-action-divider"></div><button class="neu-dt-action-item danger">🗑️ Delete</button></div></td></tr>
-                        <tr><td><div class="neu-dt-cell-main">Amit Sharma</div><div class="neu-dt-cell-sub">Backend Developer</div></td><td>amit.s@alphapark.io</td><td>+91 98765 43214</td><td>Developer</td><td>91</td><td>2026-02-08</td><td><span class="neu-badge neu-badge-filled neu-badge-success">Active</span></td><td class="neu-dt-action-cell"><button class="neu-dt-action-btn">⋮</button><div class="neu-dt-action-menu"><button class="neu-dt-action-item">📝 Edit</button><button class="neu-dt-action-item">📋 Clone</button><div class="neu-dt-action-divider"></div><button class="neu-dt-action-item danger">🗑️ Delete</button></div></td></tr>
-                        <tr><td><div class="neu-dt-cell-main">Neha Reddy</div><div class="neu-dt-cell-sub">Visual Designer</div></td><td>neha.r@alphapark.io</td><td>+91 98765 43215</td><td>Designer</td><td>87</td><td>2026-02-10</td><td><span class="neu-badge neu-badge-filled neu-badge-success">Active</span></td><td class="neu-dt-action-cell"><button class="neu-dt-action-btn">⋮</button><div class="neu-dt-action-menu"><button class="neu-dt-action-item">📝 Edit</button><button class="neu-dt-action-item">📋 Clone</button><div class="neu-dt-action-divider"></div><button class="neu-dt-action-item danger">🗑️ Delete</button></div></td></tr>
-                        <tr><td><div class="neu-dt-cell-main">Vikram Thakur</div><div class="neu-dt-cell-sub">DevOps Engineer</div></td><td>vikram.t@alphapark.io</td><td>+91 98765 43216</td><td>DevOps</td><td>93</td><td>2026-02-12</td><td><span class="neu-badge neu-badge-filled neu-badge-accent">Busy</span></td><td class="neu-dt-action-cell"><button class="neu-dt-action-btn">⋮</button><div class="neu-dt-action-menu"><button class="neu-dt-action-item">📝 Edit</button><button class="neu-dt-action-item">📋 Clone</button><div class="neu-dt-action-divider"></div><button class="neu-dt-action-item danger">🗑️ Delete</button></div></td></tr>
-                        <tr><td><div class="neu-dt-cell-main">Meera Joshi</div><div class="neu-dt-cell-sub">Data Analyst</div></td><td>meera.j@alphapark.io</td><td>+91 98765 43217</td><td>Analyst</td><td>85</td><td>2026-02-14</td><td><span class="neu-badge neu-badge-filled neu-badge-success">Active</span></td><td class="neu-dt-action-cell"><button class="neu-dt-action-btn">⋮</button><div class="neu-dt-action-menu"><button class="neu-dt-action-item">📝 Edit</button><button class="neu-dt-action-item">📋 Clone</button><div class="neu-dt-action-divider"></div><button class="neu-dt-action-item danger">🗑️ Delete</button></div></td></tr>
-                        <tr><td><div class="neu-dt-cell-main">Karan Desai</div><div class="neu-dt-cell-sub">Frontend Developer</div></td><td>karan.d@alphapark.io</td><td>+91 98765 43218</td><td>Developer</td><td>90</td><td>2026-02-15</td><td><span class="neu-badge neu-badge-filled neu-badge-warning">Away</span></td><td class="neu-dt-action-cell"><button class="neu-dt-action-btn">⋮</button><div class="neu-dt-action-menu"><button class="neu-dt-action-item">📝 Edit</button><button class="neu-dt-action-item">📋 Clone</button><div class="neu-dt-action-divider"></div><button class="neu-dt-action-item danger">🗑️ Delete</button></div></td></tr>
-                        <tr><td><div class="neu-dt-cell-main">Pooja Lal</div><div class="neu-dt-cell-sub">Automation Tester</div></td><td>pooja.l@alphapark.io</td><td>+91 98765 43219</td><td>Tester</td><td>86</td><td>2026-02-16</td><td><span class="neu-badge neu-badge-filled neu-badge-success">Active</span></td><td class="neu-dt-action-cell"><button class="neu-dt-action-btn">⋮</button><div class="neu-dt-action-menu"><button class="neu-dt-action-item">📝 Edit</button><button class="neu-dt-action-item">📋 Clone</button><div class="neu-dt-action-divider"></div><button class="neu-dt-action-item danger">🗑️ Delete</button></div></td></tr>
-                        <tr><td><div class="neu-dt-cell-main">Rajesh Bansal</div><div class="neu-dt-cell-sub">Engineering Manager</div></td><td>rajesh.b@alphapark.io</td><td>+91 98765 43220</td><td>Manager</td><td>82</td><td>2026-02-17</td><td><span class="neu-badge neu-badge-filled neu-badge-danger">Offline</span></td><td class="neu-dt-action-cell"><button class="neu-dt-action-btn">⋮</button><div class="neu-dt-action-menu"><button class="neu-dt-action-item">📝 Edit</button><button class="neu-dt-action-item">📋 Clone</button><div class="neu-dt-action-divider"></div><button class="neu-dt-action-item danger">🗑️ Delete</button></div></td></tr>
-                        <tr><td><div class="neu-dt-cell-main">Deepa Nair</div><div class="neu-dt-cell-sub">UX Designer</div></td><td>deepa.n@alphapark.io</td><td>+91 98765 43221</td><td>Designer</td><td>94</td><td>2026-02-18</td><td><span class="neu-badge neu-badge-filled neu-badge-success">Active</span></td><td class="neu-dt-action-cell"><button class="neu-dt-action-btn">⋮</button><div class="neu-dt-action-menu"><button class="neu-dt-action-item">📝 Edit</button><button class="neu-dt-action-item">📋 Clone</button><div class="neu-dt-action-divider"></div><button class="neu-dt-action-item danger">🗑️ Delete</button></div></td></tr>
-                        <tr><td><div class="neu-dt-cell-main">Suresh Verma</div><div class="neu-dt-cell-sub">Senior Developer</div></td><td>suresh.v@alphapark.io</td><td>+91 98765 43222</td><td>Developer</td><td>89</td><td>2026-02-19</td><td><span class="neu-badge neu-badge-filled neu-badge-accent">Busy</span></td><td class="neu-dt-action-cell"><button class="neu-dt-action-btn">⋮</button><div class="neu-dt-action-menu"><button class="neu-dt-action-item">📝 Edit</button><button class="neu-dt-action-item">📋 Clone</button><div class="neu-dt-action-divider"></div><button class="neu-dt-action-item danger">🗑️ Delete</button></div></td></tr>
-                        <tr><td><div class="neu-dt-cell-main">Kavita Gupta</div><div class="neu-dt-cell-sub">Business Analyst</div></td><td>kavita.g@alphapark.io</td><td>+91 98765 43223</td><td>Analyst</td><td>96</td><td>2026-02-20</td><td><span class="neu-badge neu-badge-filled neu-badge-success">Active</span></td><td class="neu-dt-action-cell"><button class="neu-dt-action-btn">⋮</button><div class="neu-dt-action-menu"><button class="neu-dt-action-item">📝 Edit</button><button class="neu-dt-action-item">📋 Clone</button><div class="neu-dt-action-divider"></div><button class="neu-dt-action-item danger">🗑️ Delete</button></div></td></tr>
-                        <tr><td><div class="neu-dt-cell-main">Arjun Hegde</div><div class="neu-dt-cell-sub">Cloud Engineer</div></td><td>arjun.h@alphapark.io</td><td>+91 98765 43224</td><td>DevOps</td><td>84</td><td>2026-02-21</td><td><span class="neu-badge neu-badge-filled neu-badge-warning">Away</span></td><td class="neu-dt-action-cell"><button class="neu-dt-action-btn">⋮</button><div class="neu-dt-action-menu"><button class="neu-dt-action-item">📝 Edit</button><button class="neu-dt-action-item">📋 Clone</button><div class="neu-dt-action-divider"></div><button class="neu-dt-action-item danger">🗑️ Delete</button></div></td></tr>
-                    </tbody>
-                </table>
-                </div>
-
-                <!-- Footer -->
-                <div class="neu-dt-footer">
-                    <div class="neu-dt-info">Showing <strong>1</strong> to <strong>10</strong> of <strong>15</strong> records</div>
-                    <div class="neu-dt-pages"></div>
-                </div>
-            </div>
+            <div id="dynamic-datatable"></div>
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    NeuUI.createDataTable(document.getElementById('dynamic-datatable'), {
+                        columns: [
+                            {
+                                key: 'name', label: 'Name', sortable: true, sticky: 'left',
+                                render: (val, row) =>
+                                    `<div class="neu-dt-cell-main">${row.name}</div><div class="neu-dt-cell-sub">${row.designation}</div>`
+                            },
+                            { key: 'email', label: 'Email' },
+                            { key: 'phone', label: 'Phone' },
+                            {
+                                key: 'role', label: 'Role', sortable: true,
+                                filter: { options: ['Developer', 'Designer', 'Manager', 'Tester', 'Analyst', 'DevOps'] }
+                            },
+                            { key: 'score', label: 'Score', sortable: true },
+                            { key: 'date', label: 'Date', sortable: true, type: 'date' },
+                            {
+                                key: 'status', label: 'Status',
+                                filter: { options: ['Active', 'Away', 'Busy', 'Offline'] },
+                                render: (val) => {
+                                    const map = { Active: 'success', Away: 'warning', Busy: 'accent', Offline: 'danger' };
+                                    return `<span class="neu-badge neu-badge-filled neu-badge-${map[val] || 'default'}">${val}</span>`;
+                                }
+                            }
+                        ],
+                        actions: [
+                            { label: '📝 Edit', key: 'edit' },
+                            { label: '📋 Clone', key: 'clone' },
+                            { divider: true },
+                            { label: '🗑️ Delete', key: 'delete', danger: true }
+                        ],
+                        data: [
+                            { name: 'Anirban Choudhury', designation: 'Lead Full-Stack Engineer', email: 'anirban.c@alphapark.io', phone: '+91 98765 43210', role: 'Developer', score: 98, date: '2026-01-15', status: 'Active' },
+                            { name: 'Priya Mukherjee', designation: 'Senior UI Designer', email: 'priya.m@alphapark.io', phone: '+91 98765 43211', role: 'Designer', score: 95, date: '2026-01-20', status: 'Active' },
+                            { name: 'Ravi Kumar', designation: 'Project Manager', email: 'ravi.k@alphapark.io', phone: '+91 98765 43212', role: 'Manager', score: 88, date: '2026-02-01', status: 'Away' },
+                            { name: 'Sara Patel', designation: 'QA Engineer', email: 'sara.p@alphapark.io', phone: '+91 98765 43213', role: 'Tester', score: 92, date: '2026-02-05', status: 'Offline' },
+                            { name: 'Amit Sharma', designation: 'Backend Developer', email: 'amit.s@alphapark.io', phone: '+91 98765 43214', role: 'Developer', score: 91, date: '2026-02-08', status: 'Active' },
+                            { name: 'Neha Reddy', designation: 'Visual Designer', email: 'neha.r@alphapark.io', phone: '+91 98765 43215', role: 'Designer', score: 87, date: '2026-02-10', status: 'Active' },
+                            { name: 'Vikram Thakur', designation: 'DevOps Engineer', email: 'vikram.t@alphapark.io', phone: '+91 98765 43216', role: 'DevOps', score: 93, date: '2026-02-12', status: 'Busy' },
+                            { name: 'Meera Joshi', designation: 'Data Analyst', email: 'meera.j@alphapark.io', phone: '+91 98765 43217', role: 'Analyst', score: 85, date: '2026-02-14', status: 'Active' },
+                            { name: 'Karan Desai', designation: 'Frontend Developer', email: 'karan.d@alphapark.io', phone: '+91 98765 43218', role: 'Developer', score: 90, date: '2026-02-15', status: 'Away' },
+                            { name: 'Pooja Lal', designation: 'Automation Tester', email: 'pooja.l@alphapark.io', phone: '+91 98765 43219', role: 'Tester', score: 86, date: '2026-02-16', status: 'Active' },
+                            { name: 'Rajesh Bansal', designation: 'Engineering Manager', email: 'rajesh.b@alphapark.io', phone: '+91 98765 43220', role: 'Manager', score: 82, date: '2026-02-17', status: 'Offline' },
+                            { name: 'Deepa Nair', designation: 'UX Designer', email: 'deepa.n@alphapark.io', phone: '+91 98765 43221', role: 'Designer', score: 94, date: '2026-02-18', status: 'Active' },
+                            { name: 'Suresh Verma', designation: 'Senior Developer', email: 'suresh.v@alphapark.io', phone: '+91 98765 43222', role: 'Developer', score: 89, date: '2026-02-19', status: 'Busy' },
+                            { name: 'Kavita Gupta', designation: 'Business Analyst', email: 'kavita.g@alphapark.io', phone: '+91 98765 43223', role: 'Analyst', score: 96, date: '2026-02-20', status: 'Active' },
+                            { name: 'Arjun Hegde', designation: 'Cloud Engineer', email: 'arjun.h@alphapark.io', phone: '+91 98765 43224', role: 'DevOps', score: 84, date: '2026-02-21', status: 'Away' }
+                        ],
+                        perPageOptions: [5, 10, 25, 50],
+                        defaultPerPage: 10,
+                        searchable: true,
+                        onAction: (action, row) => {
+                            console.log('Action:', action, 'Row:', row);
+                            alert(`${action} → ${row.name}`);
+                        }
+                    });
+                });
+            </script>
         </section>
 
         <!-- ═══════════════════════════════════════ -->

@@ -268,6 +268,8 @@
     // ─── Data Table ───
     NeuUI.initDataTables = function () {
         document.querySelectorAll('[data-neu-datatable]').forEach(wrapper => {
+            // Skip dynamically generated tables (handled by createDataTable)
+            if (wrapper.hasAttribute('data-neu-dt-dynamic')) return;
             const table = wrapper.querySelector('.neu-dt-table');
             if (!table) return;
 
@@ -786,6 +788,661 @@
 
             render();
         });
+    };
+
+    // ─── Dynamic Data Table Factory ───
+    NeuUI.createDataTable = function (container, config) {
+        if (!container || !config) return;
+
+        const cols = config.columns || [];
+        const actions = config.actions || [];
+        const allData = (config.data || []).map((row, i) => ({ ...row, _idx: i }));
+        const perPageOpts = config.perPageOptions || [5, 10, 25, 50];
+        const defaultPerPage = config.defaultPerPage || 10;
+        const searchable = config.searchable !== false;
+        const onAction = config.onAction || (() => {});
+        const hasActions = actions.length > 0;
+        const hasDateCol = cols.some(c => c.type === 'date');
+        const filterCols = cols.filter(c => c.filter);
+
+        // Effective column list (user cols + optional actions)
+        const effectiveCols = [...cols];
+        if (hasActions) {
+            effectiveCols.push({ key: '_actions', label: 'Actions', _isActions: true });
+        }
+
+        // ── Build HTML ──
+        const wrapper = document.createElement('div');
+        wrapper.className = 'neu-data-table';
+        wrapper.setAttribute('data-neu-datatable', '');
+        wrapper.setAttribute('data-neu-dt-dynamic', ''); // Skip auto-init by initDataTables
+
+        // Find date column index for filtering
+        const dateColIdx = effectiveCols.findIndex(c => c.type === 'date');
+        if (dateColIdx >= 0) wrapper.setAttribute('data-date-col', dateColIdx);
+
+        // — Toolbar —
+        let toolbarHTML = `<div class="neu-dt-toolbar"><div class="neu-dt-toolbar-left">`;
+        if (filterCols.length > 0) {
+            toolbarHTML += `<button class="neu-dt-filter-btn">☰ Filter</button>`;
+        }
+        if (searchable) {
+            toolbarHTML += `<div class="neu-dt-search"><span class="neu-dt-search-icon">🔍</span><input type="text" placeholder="Search records..."></div>`;
+        }
+        if (hasDateCol) {
+            toolbarHTML += `<div class="neu-dt-date"><span class="neu-dt-date-label">From</span><input type="date" class="neu-dt-from"><span class="neu-dt-date-label">To</span><input type="date" class="neu-dt-to"></div>`;
+        }
+        toolbarHTML += `<button class="neu-dt-reset">↻ Reset</button></div>`;
+        toolbarHTML += `<div class="neu-dt-toolbar-right">`;
+        toolbarHTML += `<div class="neu-dt-col-manager"><button class="neu-dt-col-manager-btn">⚙ Columns</button><div class="neu-dt-col-panel"><div class="neu-dt-col-panel-title">Manage Columns</div><div class="neu-dt-col-list"></div></div></div>`;
+        toolbarHTML += `<div class="neu-dt-per-page"><span class="neu-dt-per-page-label">Show</span><select>`;
+        perPageOpts.forEach(n => {
+            toolbarHTML += `<option value="${n}" ${n === defaultPerPage ? 'selected' : ''}>${n}</option>`;
+        });
+        toolbarHTML += `</select></div></div></div>`;
+        wrapper.innerHTML = toolbarHTML;
+
+        // — Filter Panel —
+        if (filterCols.length > 0) {
+            const fp = document.createElement('div');
+            fp.className = 'neu-dt-filters';
+            filterCols.forEach(col => {
+                const colIdx = effectiveCols.indexOf(col);
+                let groupHTML = `<div class="neu-dt-filter-group"><label>${col.label}</label><div class="neu-dt-filter-select-wrap"><select data-filter-col="${colIdx}"><option value="">All ${col.label}</option>`;
+                (col.filter.options || []).forEach(opt => {
+                    groupHTML += `<option value="${opt}">${opt}</option>`;
+                });
+                groupHTML += `</select></div></div>`;
+                fp.innerHTML += groupHTML;
+            });
+            wrapper.appendChild(fp);
+        }
+
+        // — Active Filter Tags —
+        const activeFiltersDiv = document.createElement('div');
+        activeFiltersDiv.className = 'neu-dt-active-filters';
+        wrapper.appendChild(activeFiltersDiv);
+
+        // — Table —
+        const tableWrap = document.createElement('div');
+        tableWrap.className = 'neu-dt-table-wrap';
+        const table = document.createElement('table');
+        table.className = 'neu-dt-table';
+
+        // thead
+        const thead = document.createElement('thead');
+        let headerHTML = '<tr>';
+        effectiveCols.forEach(col => {
+            if (col._isActions) {
+                headerHTML += `<th style="text-align:center;">Actions</th>`;
+            } else if (col.sortable) {
+                headerHTML += `<th class="neu-dt-sortable">${col.label} <span class="neu-dt-sort-icon"><span class="up">▲</span><span class="down">▼</span></span></th>`;
+            } else {
+                headerHTML += `<th>${col.label}</th>`;
+            }
+        });
+        headerHTML += '</tr>';
+        thead.innerHTML = headerHTML;
+        table.appendChild(thead);
+
+        // tbody
+        const tbody = document.createElement('tbody');
+        table.appendChild(tbody);
+        tableWrap.appendChild(table);
+        wrapper.appendChild(tableWrap);
+
+        // — Footer —
+        const footer = document.createElement('div');
+        footer.className = 'neu-dt-footer';
+        footer.innerHTML = `<div class="neu-dt-info"></div><div class="neu-dt-pages"></div>`;
+        wrapper.appendChild(footer);
+
+        // Insert into DOM
+        container.innerHTML = '';
+        container.appendChild(wrapper);
+
+        // ── State ──
+        let filteredData = [...allData];
+        let currentPage = 1;
+        let perPage = defaultPerPage;
+        const stickyState = {};
+
+        // Apply initial sticky from config
+        effectiveCols.forEach((col, i) => {
+            if (col.sticky === 'left' || col.sticky === 'right') {
+                stickyState[i] = col.sticky;
+            }
+        });
+
+        // ── DOM references ──
+        const searchInput = wrapper.querySelector('.neu-dt-search input');
+        const fromDate = wrapper.querySelector('.neu-dt-from');
+        const toDate = wrapper.querySelector('.neu-dt-to');
+        const perPageSelect = wrapper.querySelector('.neu-dt-per-page select');
+        const resetBtn = wrapper.querySelector('.neu-dt-reset');
+        const filterBtn = wrapper.querySelector('.neu-dt-filter-btn');
+        const filterPanel = wrapper.querySelector('.neu-dt-filters');
+        const filterSelects = wrapper.querySelectorAll('.neu-dt-filters select[data-filter-col]');
+        const colManager = wrapper.querySelector('.neu-dt-col-manager');
+        const colManagerBtn = wrapper.querySelector('.neu-dt-col-manager-btn');
+        const colList = wrapper.querySelector('.neu-dt-col-list');
+        const footerEl = wrapper.querySelector('.neu-dt-footer');
+        const activeFiltersContainer = wrapper.querySelector('.neu-dt-active-filters');
+
+        // Helper: get current ths
+        const allThs = () => Array.from(thead.querySelectorAll('th'));
+
+        // ── Cell Renderer ──
+        function renderCell(col, row) {
+            if (col._isActions) {
+                let html = `<button class="neu-dt-action-btn">⋮</button><div class="neu-dt-action-menu">`;
+                actions.forEach(act => {
+                    if (act.divider) {
+                        html += `<div class="neu-dt-action-divider"></div>`;
+                    } else {
+                        html += `<button class="neu-dt-action-item ${act.danger ? 'danger' : ''}" data-action="${act.key}">${act.label}</button>`;
+                    }
+                });
+                html += `</div>`;
+                return html;
+            }
+            const val = row[col.key];
+            if (col.render) return col.render(val, row);
+            return val != null ? String(val) : '';
+        }
+
+        // ── Build a <tr> from row data ──
+        function buildRow(row) {
+            const tr = document.createElement('tr');
+            tr.setAttribute('data-row-idx', row._idx);
+            effectiveCols.forEach(col => {
+                const td = document.createElement('td');
+                if (col._isActions) td.className = 'neu-dt-action-cell';
+                td.innerHTML = renderCell(col, row);
+                tr.appendChild(td);
+            });
+            return tr;
+        }
+
+        // ── Filter Toggle ──
+        if (filterBtn && filterPanel) {
+            filterBtn.addEventListener('click', () => {
+                filterBtn.classList.toggle('active');
+                filterPanel.classList.toggle('open');
+            });
+        }
+
+        // ── Dropdown Filters ──
+        filterSelects.forEach(sel => {
+            sel.addEventListener('change', applyFilters);
+        });
+
+        // ── Sort ──
+        let currentSortCol = -1;
+        let currentSortDir = '';
+        wrapper.querySelectorAll('.neu-dt-sortable').forEach(th => {
+            th.addEventListener('click', () => {
+                const colIdx = Array.from(th.parentElement.children).indexOf(th);
+                const current = th.getAttribute('data-sort');
+                wrapper.querySelectorAll('.neu-dt-sortable').forEach(h => h.removeAttribute('data-sort'));
+
+                let dir = 'asc';
+                if (current === 'asc') dir = 'desc';
+                else if (current === 'desc') dir = '';
+
+                currentSortCol = dir ? colIdx : -1;
+                currentSortDir = dir;
+
+                if (dir) {
+                    th.setAttribute('data-sort', dir);
+                    const col = effectiveCols[colIdx];
+                    if (col) {
+                        filteredData.sort((a, b) => {
+                            let aVal = a[col.key];
+                            let bVal = b[col.key];
+                            if (aVal == null) aVal = '';
+                            if (bVal == null) bVal = '';
+                            const aNum = parseFloat(aVal);
+                            const bNum = parseFloat(bVal);
+                            if (!isNaN(aNum) && !isNaN(bNum)) {
+                                return dir === 'asc' ? aNum - bNum : bNum - aNum;
+                            }
+                            return dir === 'asc' ? String(aVal).localeCompare(String(bVal)) : String(bVal).localeCompare(String(aVal));
+                        });
+                    }
+                }
+                currentPage = 1;
+                render();
+            });
+        });
+
+        // ── Filter ──
+        function applyFilters() {
+            const query = searchInput ? searchInput.value.toLowerCase() : '';
+            const from = fromDate ? fromDate.value : '';
+            const to = toDate ? toDate.value : '';
+
+            filteredData = allData.filter(row => {
+                // Text search across all visible columns
+                if (query) {
+                    const allText = cols.map(c => String(row[c.key] || '')).join(' ').toLowerCase();
+                    if (!allText.includes(query)) return false;
+                }
+
+                // Date range filter
+                if (dateColIdx >= 0 && (from || to)) {
+                    const dateCol = effectiveCols[dateColIdx];
+                    const cellVal = row[dateCol.key] || '';
+                    const cellDate = new Date(cellVal);
+                    if (!isNaN(cellDate)) {
+                        if (from && cellDate < new Date(from)) return false;
+                        if (to && cellDate > new Date(to + 'T23:59:59')) return false;
+                    }
+                }
+
+                // Dropdown filters
+                for (const sel of filterSelects) {
+                    const val = sel.value;
+                    if (!val) continue;
+                    const colIdx = parseInt(sel.getAttribute('data-filter-col'));
+                    const col = effectiveCols[colIdx];
+                    if (!col) continue;
+                    const cellText = String(row[col.key] || '').toLowerCase();
+                    if (!cellText.includes(val.toLowerCase())) return false;
+                }
+
+                return true;
+            });
+
+            // Re-apply current sort
+            if (currentSortCol >= 0 && currentSortDir) {
+                const col = effectiveCols[currentSortCol];
+                if (col) {
+                    filteredData.sort((a, b) => {
+                        let aVal = a[col.key]; let bVal = b[col.key];
+                        if (aVal == null) aVal = '';
+                        if (bVal == null) bVal = '';
+                        const aNum = parseFloat(aVal); const bNum = parseFloat(bVal);
+                        if (!isNaN(aNum) && !isNaN(bNum)) return currentSortDir === 'asc' ? aNum - bNum : bNum - aNum;
+                        return currentSortDir === 'asc' ? String(aVal).localeCompare(String(bVal)) : String(bVal).localeCompare(String(aVal));
+                    });
+                }
+            }
+
+            currentPage = 1;
+            render();
+            renderTags();
+        }
+
+        if (searchInput) searchInput.addEventListener('input', applyFilters);
+        if (fromDate) fromDate.addEventListener('change', applyFilters);
+        if (toDate) toDate.addEventListener('change', applyFilters);
+        if (perPageSelect) perPageSelect.addEventListener('change', () => {
+            perPage = parseInt(perPageSelect.value);
+            currentPage = 1;
+            render();
+        });
+        if (resetBtn) resetBtn.addEventListener('click', () => {
+            if (searchInput) searchInput.value = '';
+            if (fromDate) fromDate.value = '';
+            if (toDate) toDate.value = '';
+            if (perPageSelect) { perPageSelect.value = String(defaultPerPage); perPage = defaultPerPage; }
+            filterSelects.forEach(sel => { sel.value = ''; });
+            wrapper.querySelectorAll('.neu-dt-sortable').forEach(h => h.removeAttribute('data-sort'));
+            currentSortCol = -1;
+            currentSortDir = '';
+            filteredData = [...allData];
+            currentPage = 1;
+            render();
+            renderTags();
+        });
+
+        // ── Action Menus ──
+        wrapper.addEventListener('click', (e) => {
+            const actionBtn = e.target.closest('.neu-dt-action-btn');
+            if (actionBtn) {
+                e.stopPropagation();
+                const cell = actionBtn.closest('.neu-dt-action-cell');
+                wrapper.querySelectorAll('.neu-dt-action-cell.open').forEach(c => {
+                    if (c !== cell) c.classList.remove('open');
+                });
+                cell.classList.toggle('open');
+                return;
+            }
+            const actionItem = e.target.closest('.neu-dt-action-item');
+            if (actionItem) {
+                const key = actionItem.getAttribute('data-action');
+                const rowEl = actionItem.closest('tr');
+                const rowIdx = rowEl ? parseInt(rowEl.getAttribute('data-row-idx')) : -1;
+                const rowData = allData.find(r => r._idx === rowIdx) || {};
+                wrapper.querySelectorAll('.neu-dt-action-cell.open').forEach(c => c.classList.remove('open'));
+                onAction(key, rowData);
+                return;
+            }
+        });
+        document.addEventListener('click', () => {
+            wrapper.querySelectorAll('.neu-dt-action-cell.open').forEach(c => c.classList.remove('open'));
+        });
+
+        // ── Column Resize ──
+        allThs().forEach(th => {
+            const handle = document.createElement('div');
+            handle.className = 'neu-dt-resize-handle';
+            th.appendChild(handle);
+
+            let startX, startW;
+            handle.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!table.classList.contains('resizable')) {
+                    allThs().forEach(h => { h.style.width = h.offsetWidth + 'px'; });
+                    table.classList.add('resizable');
+                }
+                startX = e.pageX;
+                startW = th.offsetWidth;
+                handle.classList.add('active');
+                document.body.classList.add('neu-dt-resizing');
+
+                const onMove = (e2) => {
+                    const diff = e2.pageX - startX;
+                    th.style.width = Math.max(50, startW + diff) + 'px';
+                };
+                const onUp = () => {
+                    handle.classList.remove('active');
+                    document.body.classList.remove('neu-dt-resizing');
+                    document.removeEventListener('mousemove', onMove);
+                    document.removeEventListener('mouseup', onUp);
+                    applyStickyPositions();
+                };
+                document.addEventListener('mousemove', onMove);
+                document.addEventListener('mouseup', onUp);
+            });
+        });
+
+        // ── Column Manager (Visibility + Reorder + Sticky) ──
+        if (colManager && colManagerBtn && colList) {
+            colManagerBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                colManager.classList.toggle('open');
+            });
+            document.addEventListener('click', (e) => {
+                if (!colManager.contains(e.target)) colManager.classList.remove('open');
+            });
+
+            function buildColumnList() {
+                const ths = allThs();
+                colList.innerHTML = '';
+                ths.forEach((th, i) => {
+                    const name = th.textContent.replace(/[▲▼⋮]/g, '').trim();
+                    const isHidden = th.classList.contains('neu-dt-col-hidden');
+                    const sticky = stickyState[i] || 'none';
+                    const pinClass = sticky === 'left' ? 'pinned-left' : sticky === 'right' ? 'pinned-right' : '';
+                    const pinTitle = sticky === 'none' ? 'Pin column' : sticky === 'left' ? 'Pinned left (click: pin right)' : 'Pinned right (click: unpin)';
+                    const item = document.createElement('div');
+                    item.className = 'neu-dt-col-item';
+                    item.setAttribute('draggable', 'true');
+                    item.setAttribute('data-col-idx', i);
+                    item.innerHTML = `<span class="neu-dt-col-grip">⠿</span><span class="neu-dt-col-name">${name}</span><button class="neu-dt-col-pin ${pinClass}" title="${pinTitle}">📌</button><button class="neu-dt-col-eye ${isHidden ? 'hidden' : ''}">${isHidden ? '👁‍🗨' : '👁'}</button>`;
+                    colList.appendChild(item);
+
+                    // Pin toggle
+                    item.querySelector('.neu-dt-col-pin').addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const cur = stickyState[i] || 'none';
+                        if (cur === 'none') stickyState[i] = 'left';
+                        else if (cur === 'left') stickyState[i] = 'right';
+                        else stickyState[i] = 'none';
+                        applyStickyPositions();
+                        buildColumnList();
+                    });
+
+                    // Eye toggle
+                    const eyeBtn = item.querySelector('.neu-dt-col-eye');
+                    eyeBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const hidden = !th.classList.contains('neu-dt-col-hidden');
+                        th.classList.toggle('neu-dt-col-hidden', hidden);
+                        tbody.querySelectorAll('tr').forEach(row => {
+                            const cell = row.children[i];
+                            if (cell) cell.classList.toggle('neu-dt-col-hidden', hidden);
+                        });
+                        eyeBtn.classList.toggle('hidden', hidden);
+                        eyeBtn.textContent = hidden ? '👁‍🗨' : '👁';
+                        applyStickyPositions();
+                    });
+
+                    // Drag reorder
+                    item.addEventListener('dragstart', (e) => {
+                        item.classList.add('dragging');
+                        e.dataTransfer.effectAllowed = 'move';
+                        e.dataTransfer.setData('text/plain', i.toString());
+                    });
+                    item.addEventListener('dragend', () => {
+                        item.classList.remove('dragging');
+                        colList.querySelectorAll('.neu-dt-col-item').forEach(el => el.classList.remove('drag-over'));
+                    });
+                    item.addEventListener('dragover', (e) => {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'move';
+                        colList.querySelectorAll('.neu-dt-col-item').forEach(el => el.classList.remove('drag-over'));
+                        item.classList.add('drag-over');
+                    });
+                    item.addEventListener('dragleave', () => item.classList.remove('drag-over'));
+                    item.addEventListener('drop', (e) => {
+                        e.preventDefault();
+                        item.classList.remove('drag-over');
+                        const fromIdx = parseInt(e.dataTransfer.getData('text/plain'));
+                        if (fromIdx === i) return;
+                        Object.keys(stickyState).forEach(k => delete stickyState[k]);
+                        moveColumn(fromIdx, i);
+                        // Also reorder effectiveCols to keep in sync
+                        const movedCol = effectiveCols.splice(fromIdx, 1)[0];
+                        effectiveCols.splice(i, 0, movedCol);
+                        applyStickyPositions();
+                        buildColumnList();
+                    });
+                });
+            }
+
+            function moveColumn(from, to) {
+                const headerRow = thead.querySelector('tr');
+                const ths = Array.from(headerRow.children);
+                const movedTh = ths[from];
+                if (from < to) headerRow.insertBefore(movedTh, ths[to].nextSibling);
+                else headerRow.insertBefore(movedTh, ths[to]);
+                tbody.querySelectorAll('tr').forEach(row => {
+                    const cells = Array.from(row.children);
+                    const movedCell = cells[from];
+                    if (from < to) row.insertBefore(movedCell, cells[to].nextSibling);
+                    else row.insertBefore(movedCell, cells[to]);
+                });
+            }
+
+            buildColumnList();
+        }
+
+        // ── Sticky Positions ──
+        function applyStickyPositions() {
+            const ths = allThs();
+            ths.forEach(th => {
+                th.classList.remove('neu-dt-sticky-left', 'neu-dt-sticky-right', 'neu-dt-sticky-edge');
+                th.style.left = ''; th.style.right = '';
+            });
+            tbody.querySelectorAll('tr').forEach(row => {
+                Array.from(row.children).forEach(td => {
+                    td.classList.remove('neu-dt-sticky-left', 'neu-dt-sticky-right', 'neu-dt-sticky-edge');
+                    td.style.left = ''; td.style.right = '';
+                });
+            });
+
+            const leftCols = [], rightCols = [];
+            ths.forEach((th, i) => {
+                const state = stickyState[i] || 'none';
+                if (state === 'left' && !th.classList.contains('neu-dt-col-hidden')) leftCols.push(i);
+                if (state === 'right' && !th.classList.contains('neu-dt-col-hidden')) rightCols.push(i);
+            });
+
+            let leftOffset = 0;
+            leftCols.forEach((colIdx, order) => {
+                const th = ths[colIdx];
+                const w = th.offsetWidth;
+                th.classList.add('neu-dt-sticky-left');
+                th.style.left = leftOffset + 'px';
+                if (order === leftCols.length - 1) th.classList.add('neu-dt-sticky-edge');
+                tbody.querySelectorAll('tr').forEach(row => {
+                    const td = row.children[colIdx];
+                    if (td) {
+                        td.classList.add('neu-dt-sticky-left');
+                        td.style.left = leftOffset + 'px';
+                        if (order === leftCols.length - 1) td.classList.add('neu-dt-sticky-edge');
+                    }
+                });
+                leftOffset += w;
+            });
+
+            let rightOffset = 0;
+            rightCols.reverse().forEach((colIdx, order) => {
+                const th = ths[colIdx];
+                const w = th.offsetWidth;
+                th.classList.add('neu-dt-sticky-right');
+                th.style.right = rightOffset + 'px';
+                if (order === rightCols.length - 1) th.classList.add('neu-dt-sticky-edge');
+                tbody.querySelectorAll('tr').forEach(row => {
+                    const td = row.children[colIdx];
+                    if (td) {
+                        td.classList.add('neu-dt-sticky-right');
+                        td.style.right = rightOffset + 'px';
+                        if (order === rightCols.length - 1) td.classList.add('neu-dt-sticky-edge');
+                    }
+                });
+                rightOffset += w;
+            });
+        }
+
+        // ── Active Filter Tags ──
+        function renderTags() {
+            if (!activeFiltersContainer) return;
+            const tags = [];
+            const query = searchInput ? searchInput.value.trim() : '';
+            if (query) tags.push({ label: 'Search', value: query, clear: () => { searchInput.value = ''; } });
+            const from = fromDate ? fromDate.value : '';
+            const to = toDate ? toDate.value : '';
+            if (from) tags.push({ label: 'From', value: from, clear: () => { fromDate.value = ''; } });
+            if (to) tags.push({ label: 'To', value: to, clear: () => { toDate.value = ''; } });
+            filterSelects.forEach(sel => {
+                if (sel.value) {
+                    const labelEl = sel.closest('.neu-dt-filter-group')?.querySelector('label');
+                    const labelText = labelEl ? labelEl.textContent : 'Filter';
+                    tags.push({ label: labelText, value: sel.value, clear: () => { sel.value = ''; } });
+                }
+            });
+
+            if (tags.length === 0) {
+                activeFiltersContainer.classList.remove('has-tags');
+                activeFiltersContainer.innerHTML = '';
+                return;
+            }
+
+            let html = '<span class="neu-dt-active-filters-label">Filters:</span>';
+            tags.forEach((tag, i) => {
+                html += `<span class="neu-dt-tag"><span class="neu-dt-tag-label">${tag.label}:</span> ${tag.value} <button class="neu-dt-tag-close" data-tag-idx="${i}">✕</button></span>`;
+            });
+            html += '<button class="neu-dt-clear-all">Clear all</button>';
+            activeFiltersContainer.innerHTML = html;
+            activeFiltersContainer.classList.add('has-tags');
+
+            activeFiltersContainer.querySelectorAll('.neu-dt-tag-close').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const idx = parseInt(btn.getAttribute('data-tag-idx'));
+                    if (tags[idx]) { tags[idx].clear(); applyFilters(); }
+                });
+            });
+            const clearAllBtn = activeFiltersContainer.querySelector('.neu-dt-clear-all');
+            if (clearAllBtn) clearAllBtn.addEventListener('click', () => { if (resetBtn) resetBtn.click(); });
+        }
+
+        // ── Render ──
+        function render() {
+            const total = filteredData.length;
+            const totalPages = Math.max(1, Math.ceil(total / perPage));
+            if (currentPage > totalPages) currentPage = totalPages;
+            const start = (currentPage - 1) * perPage;
+            const end = Math.min(start + perPage, total);
+            const pageData = filteredData.slice(start, end);
+
+            // Clear & fill tbody
+            tbody.innerHTML = '';
+            if (pageData.length === 0) {
+                const emptyRow = document.createElement('tr');
+                const colCount = effectiveCols.length;
+                emptyRow.innerHTML = `<td colspan="${colCount}"><div class="neu-dt-empty"><div class="neu-dt-empty-icon">📭</div>No records found</div></td>`;
+                tbody.appendChild(emptyRow);
+            } else {
+                pageData.forEach(row => tbody.appendChild(buildRow(row)));
+            }
+
+            // Footer info
+            if (footerEl) {
+                const info = footerEl.querySelector('.neu-dt-info');
+                if (info) {
+                    info.innerHTML = `Showing <strong>${total === 0 ? 0 : start + 1}</strong> to <strong>${end}</strong> of <strong>${total}</strong> records`;
+                }
+
+                const pagesContainer = footerEl.querySelector('.neu-dt-pages');
+                if (pagesContainer) {
+                    let html = `<button class="neu-dt-page-btn" data-page="prev" ${currentPage <= 1 ? 'disabled' : ''}>‹</button>`;
+                    const maxVisible = 5;
+                    let pStart = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+                    let pEnd = Math.min(totalPages, pStart + maxVisible - 1);
+                    if (pEnd - pStart < maxVisible - 1) pStart = Math.max(1, pEnd - maxVisible + 1);
+                    if (pStart > 1) {
+                        html += `<button class="neu-dt-page-btn" data-page="1">1</button>`;
+                        if (pStart > 2) html += `<span class="neu-dt-page-ellipsis">…</span>`;
+                    }
+                    for (let p = pStart; p <= pEnd; p++) {
+                        html += `<button class="neu-dt-page-btn ${p === currentPage ? 'active' : ''}" data-page="${p}">${p}</button>`;
+                    }
+                    if (pEnd < totalPages) {
+                        if (pEnd < totalPages - 1) html += `<span class="neu-dt-page-ellipsis">…</span>`;
+                        html += `<button class="neu-dt-page-btn" data-page="${totalPages}">${totalPages}</button>`;
+                    }
+                    html += `<button class="neu-dt-page-btn" data-page="next" ${currentPage >= totalPages ? 'disabled' : ''}>›</button>`;
+                    pagesContainer.innerHTML = html;
+
+                    pagesContainer.querySelectorAll('.neu-dt-page-btn').forEach(btn => {
+                        btn.addEventListener('click', () => {
+                            const val = btn.getAttribute('data-page');
+                            if (val === 'prev') currentPage--;
+                            else if (val === 'next') currentPage++;
+                            else currentPage = parseInt(val);
+                            render();
+                        });
+                    });
+                }
+            }
+
+            // Re-apply sticky after render
+            applyStickyPositions();
+        }
+
+        // Initial render
+        render();
+
+        // Return API for external control
+        return {
+            refresh: render,
+            setData: (newData) => {
+                allData.length = 0;
+                newData.forEach((row, i) => allData.push({ ...row, _idx: i }));
+                filteredData = [...allData];
+                currentPage = 1;
+                render();
+                renderTags();
+            },
+            getData: () => allData.map(r => { const { _idx, ...rest } = r; return rest; }),
+            getFilteredData: () => filteredData.map(r => { const { _idx, ...rest } = r; return rest; }),
+            getWrapper: () => wrapper
+        };
     };
 
     // ─── Init All ───
