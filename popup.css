@@ -1775,24 +1775,31 @@ body {
     font-size: 0.9rem;
 }
 
-/* Notes Grid */
+/* Notes Grid - Flex layout for individually resizable cards */
 .notes-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    display: flex;
+    flex-wrap: wrap;
     gap: var(--gap-md);
+    align-items: flex-start;
 }
 
-/* Note Card */
+/* Note Card - Individually resizable */
 .note-card {
     background: var(--bg-base);
     border-radius: var(--radius-md);
     box-shadow: var(--neu-convex);
     display: flex;
     flex-direction: column;
-    transition: all var(--transition-normal);
+    transition: box-shadow var(--transition-normal);
     position: relative;
     overflow: hidden;
     animation: noteSlideIn 0.3s ease forwards;
+    /* Resizable by user */
+    resize: both;
+    width: 420px;
+    min-width: 300px;
+    max-width: 100%;
+    min-height: 200px;
 }
 
 @keyframes noteSlideIn {
@@ -1808,7 +1815,6 @@ body {
 
 .note-card:hover {
     box-shadow: var(--neu-flat);
-    transform: translateY(-2px);
 }
 
 /* Note Color Accent Strip */
@@ -1821,12 +1827,14 @@ body {
     height: 3px;
     background: linear-gradient(90deg, var(--accent-color), var(--accent-light));
     border-radius: var(--radius-md) var(--radius-md) 0 0;
+    pointer-events: none;
 }
 
-/* Note Textarea */
+/* Note Textarea - fills the card */
 .note-textarea {
     width: 100%;
-    min-height: 120px;
+    flex: 1;
+    min-height: 0;
     padding: var(--gap-md);
     padding-top: calc(var(--gap-md) + 4px);
     font-size: 0.9rem;
@@ -1838,6 +1846,10 @@ body {
     outline: none;
     resize: none;
     overflow-y: auto;
+    overflow-x: hidden;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: pre-wrap;
 }
 
 .note-textarea::placeholder {
@@ -1845,14 +1857,60 @@ body {
     font-style: italic;
 }
 
-/* Note Footer */
-.note-footer {
+.note-textarea::-webkit-scrollbar {
+    width: 6px;
+}
+
+.note-textarea::-webkit-scrollbar-track {
+    background: var(--bg-dark);
+    border-radius: 3px;
+}
+
+.note-textarea::-webkit-scrollbar-thumb {
+    background: var(--accent-color);
+    border-radius: 3px;
+}
+
+.note-textarea::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-dark);
+}
+
+/* Note Header */
+.note-header {
+    padding: 0.5rem var(--gap-md);
+    padding-top: calc(0.5rem + 4px);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--gap-sm);
+    border-bottom: 1px solid var(--bg-dark);
+}
+
+/* Note Title Input */
+.note-title-input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    background: transparent;
+    font-size: 0.95rem;
+    font-weight: 700;
+    font-family: inherit;
+    color: var(--text-primary);
+    outline: none;
+    padding: 0;
+}
+
+.note-title-input::placeholder {
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+/* Note Meta Row */
+.note-meta-row {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 0.5rem var(--gap-md);
-    padding-top: calc(0.5rem + 3px);
-    border-bottom: 1px solid var(--bg-dark);
+    gap: var(--gap-sm);
+    flex-shrink: 0;
 }
 
 .note-timestamp {
@@ -1957,8 +2015,10 @@ body {
         min-width: 0;
     }
 
-    .notes-grid {
-        grid-template-columns: 1fr;
+    .note-card {
+        width: 100%;
+        min-width: 0;
+        resize: vertical;
     }
 
     .btn-notes-toggle .btn-text {

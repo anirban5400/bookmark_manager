@@ -91,6 +91,46 @@ let settings = {
 };
 
 /**
+ * Handle note title input (auto-save with debounce)
+ */
+let titleSaveTimeouts = {};
+function handleNoteTitleInput(event) {
+    const titleInput = event.target.closest('.note-title-input');
+    if (!titleInput) return;
+    
+    const noteId = titleInput.dataset.noteId;
+    if (!noteId) return;
+    
+    const card = titleInput.closest('.note-card');
+    const indicator = card?.querySelector('.note-save-indicator');
+    if (indicator) {
+        indicator.textContent = 'Saving...';
+        indicator.className = 'note-save-indicator visible';
+    }
+    
+    if (titleSaveTimeouts[noteId]) clearTimeout(titleSaveTimeouts[noteId]);
+    
+    titleSaveTimeouts[noteId] = setTimeout(() => {
+        const note = allNotes.find(n => n.id === noteId);
+        if (note) {
+            note.title = titleInput.value;
+            note.updatedAt = new Date().toISOString();
+            saveNotes();
+            
+            const timestampEl = card?.querySelector('.note-timestamp');
+            if (timestampEl) timestampEl.textContent = formatNoteDate(note.updatedAt);
+            
+            if (indicator) {
+                indicator.textContent = '✓ Saved';
+                indicator.className = 'note-save-indicator visible saved';
+                setTimeout(() => { indicator.className = 'note-save-indicator'; }, 1500);
+            }
+        }
+        delete titleSaveTimeouts[noteId];
+    }, 500);
+}
+
+/**
  * Initialize the application
  */
 async function init() {
@@ -222,6 +262,10 @@ function setupEventListeners() {
                 handleNotesSearch(e.target.value.trim());
             }, 300);
         });
+    }
+    // Title input handler on notes container
+    if (notesContainer) {
+        notesContainer.addEventListener('input', handleNoteTitleInput);
     }
 }
 
@@ -1627,11 +1671,7 @@ function handleNoteInput(event) {
         indicator.className = 'note-save-indicator visible';
     }
     
-    // Auto-resize textarea
-    textarea.style.height = 'auto';
-    textarea.style.height = Math.max(120, textarea.scrollHeight) + 'px';
-    
-    // Debounce save (500ms)
+
     if (noteSaveTimeouts[noteId]) {
         clearTimeout(noteSaveTimeouts[noteId]);
     }
@@ -1674,10 +1714,46 @@ function handleNotesSearch(query) {
     
     const lowerQuery = query.toLowerCase();
     const filtered = allNotes.filter(note => 
-        note.content.toLowerCase().includes(lowerQuery)
+        note.content.toLowerCase().includes(lowerQuery) ||
+        (note.title || '').toLowerCase().includes(lowerQuery)
     );
     renderNotes(filtered);
     updateNotesCount(filtered.length, allNotes.length);
+}
+
+/**
+ * Create a debounced ResizeObserver callback for a note card.
+ * Persists the card's width/height to the note data in localStorage.
+ */
+function debounceResize(noteId, card) {
+    let timeout = null;
+    let initialCall = true; // Skip the initial observation trigger
+    
+    return function(entries) {
+        // Skip the first call which fires when observe() is called
+        if (initialCall) {
+            initialCall = false;
+            return;
+        }
+        
+        if (timeout) clearTimeout(timeout);
+        timeout = setTimeout(() => {
+            const entry = entries[0];
+            if (!entry) return;
+            
+            const width = Math.round(entry.contentRect.width + 
+                parseFloat(getComputedStyle(card).paddingLeft || 0) + 
+                parseFloat(getComputedStyle(card).paddingRight || 0));
+            const height = Math.round(card.offsetHeight);
+            
+            const note = allNotes.find(n => n.id === noteId);
+            if (note) {
+                note.cardWidth = width;
+                note.cardHeight = height;
+                saveNotes();
+            }
+        }, 300);
+    };
 }
 
 /**
@@ -1704,16 +1780,21 @@ function renderNotes(notes) {
         card.className = 'note-card';
         card.style.animationDelay = `${index * 0.05}s`;
         
-        // Textarea
-        const textarea = document.createElement('textarea');
-        textarea.className = 'note-textarea';
-        textarea.dataset.noteId = note.id;
-        textarea.value = note.content; // Safe - uses .value
-        textarea.placeholder = 'Start typing your note...';
+        // Header with title + meta row
+        const header = document.createElement('div');
+        header.className = 'note-header';
         
-        // Footer
-        const footer = document.createElement('div');
-        footer.className = 'note-footer';
+        // Title input
+        const titleInput = document.createElement('input');
+        titleInput.type = 'text';
+        titleInput.className = 'note-title-input';
+        titleInput.dataset.noteId = note.id;
+        titleInput.value = note.title || '';
+        titleInput.placeholder = 'Untitled Note';
+        
+        // Meta row (timestamp + save indicator + delete)
+        const metaRow = document.createElement('div');
+        metaRow.className = 'note-meta-row';
         
         // Timestamp
         const timestamp = document.createElement('span');
@@ -1731,20 +1812,34 @@ function renderNotes(notes) {
         deleteBtn.textContent = '✕';
         deleteBtn.title = 'Delete note';
         
-        footer.appendChild(timestamp);
-        footer.appendChild(saveIndicator);
-        footer.appendChild(deleteBtn);
+        metaRow.appendChild(timestamp);
+        metaRow.appendChild(saveIndicator);
+        metaRow.appendChild(deleteBtn);
         
-        card.appendChild(footer);
+        header.appendChild(titleInput);
+        header.appendChild(metaRow);
+        
+        // Textarea
+        const textarea = document.createElement('textarea');
+        textarea.className = 'note-textarea';
+        textarea.dataset.noteId = note.id;
+        textarea.value = note.content;
+        textarea.placeholder = 'Start typing your note...';
+        
+        card.appendChild(header);
         card.appendChild(textarea);
         
         notesContainer.appendChild(card);
         
-        // Auto-resize on render
-        if (note.content) {
-            textarea.style.height = 'auto';
-            textarea.style.height = Math.max(120, textarea.scrollHeight) + 'px';
-        }
+        // Apply stored dimensions if user previously resized this card
+        if (note.cardWidth) card.style.width = note.cardWidth + 'px';
+        if (note.cardHeight) card.style.height = note.cardHeight + 'px';
+        
+        // Observe resize to persist dimensions
+        const resizeObserver = new ResizeObserver(debounceResize(note.id, card));
+        resizeObserver.observe(card);
+        
+
     });
 }
 
