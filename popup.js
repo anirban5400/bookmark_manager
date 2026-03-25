@@ -59,6 +59,13 @@ const apiKeyToggle = document.getElementById('apiKeyToggle');
 const tempUnitSelect = document.getElementById('tempUnit');
 const weatherCitySelect = document.getElementById('weatherCity');
 
+// AI Assistant elements
+const ollamaEnabledCheckbox = document.getElementById('ollamaEnabled');
+const ollamaUrlInput = document.getElementById('ollamaUrl');
+const ollamaModelInput = document.getElementById('ollamaModel');
+const ollamaSystemPromptInput = document.getElementById('ollamaSystemPrompt');
+const aiRewriteBtn = document.getElementById('aiRewriteBtn');
+
 // Notes page elements
 const notesToggleBtn = document.getElementById('notesToggleBtn');
 const bookmarksPage = document.getElementById('bookmarksPage');
@@ -88,7 +95,12 @@ let settings = {
     weatherEnabled: false,
     weatherApiKey: '',
     weatherCity: '',
-    tempUnit: 'celsius'
+    tempUnit: 'celsius',
+    // AI Assistant settings
+    ollamaEnabled: false,
+    ollamaUrl: 'http://localhost:11434',
+    ollamaModel: 'llama3',
+    ollamaSystemPrompt: 'You are an expert executive writing assistant. First, analyze the type of text given to you (e.g., an email, a chat message, or a task list). Then, rewrite it to be highly professional, articulate, and polished for business communication. Use sophisticated but clear vocabulary.\n\nRules:\n1. Only return the final rewritten text.\n2. Do not add any greetings, explanations, or quotes around the text.\n3. If the text has no meaning (like just dots or random letters), return it exactly as it is without changes.\n4. IMPORTANT: Always preserve any structural formatting from the original text (such as numbering like "1)" or bullet points).'
 };
 
 /**
@@ -244,9 +256,33 @@ function setupEventListeners() {
         });
     }
     
+    // AI Assistant settings events
+    if (ollamaEnabledCheckbox) ollamaEnabledCheckbox.addEventListener('change', handleSettingsChange);
+    if (ollamaUrlInput) ollamaUrlInput.addEventListener('change', handleSettingsChange);
+    if (ollamaModelInput) ollamaModelInput.addEventListener('change', handleSettingsChange);
+    if (ollamaSystemPromptInput) ollamaSystemPromptInput.addEventListener('change', handleSettingsChange);
+    
     // Notes page events
     if (notesToggleBtn) {
         notesToggleBtn.addEventListener('click', toggleNotesPage);
+    }
+    
+    // AI Rewrite Selection
+    document.addEventListener('selectionchange', () => {
+        setTimeout(() => {
+            const activeEl = document.activeElement;
+            if (activeEl && activeEl.classList.contains('note-textarea')) {
+                handleTextSelection({ target: activeEl });
+            } else if (aiRewriteBtn && document.activeElement !== aiRewriteBtn) {
+                aiRewriteBtn.classList.add('hidden');
+            }
+        }, 10);
+    });
+    
+    if (aiRewriteBtn) {
+        // Prevent losing focus on textarea when clicking button
+        aiRewriteBtn.addEventListener('mousedown', (e) => { e.preventDefault(); });
+        aiRewriteBtn.addEventListener('click', handleAiRewrite);
     }
     if (addNoteBtn) {
         addNoteBtn.addEventListener('click', addNote);
@@ -996,6 +1032,12 @@ function loadSettings() {
     if (saved) {
         try {
             settings = { ...settings, ...JSON.parse(saved) };
+            
+            // Auto-migrate old system prompts to the highly professional default
+            if (settings.ollamaSystemPrompt && (settings.ollamaSystemPrompt.startsWith('You are an expert editor.') || settings.ollamaSystemPrompt.startsWith('You are a helpful writing assistant.'))) {
+                settings.ollamaSystemPrompt = 'You are an expert executive writing assistant. First, analyze the type of text given to you (e.g., an email, a chat message, or a task list). Then, rewrite it to be highly professional, articulate, and polished for business communication. Use sophisticated but clear vocabulary.\n\nRules:\n1. Only return the final rewritten text.\n2. Do not add any greetings, explanations, or quotes around the text.\n3. If the text has no meaning (like just dots or random letters), return it exactly as it is without changes.\n4. IMPORTANT: Always preserve any structural formatting from the original text (such as numbering like "1)" or bullet points).';
+                saveSettings();
+            }
         } catch (e) {
             console.error('Failed to load settings:', e);
         }
@@ -1015,6 +1057,12 @@ function loadSettings() {
     if (weatherApiKeyInput) weatherApiKeyInput.value = settings.weatherApiKey;
     if (weatherCitySelect) weatherCitySelect.value = settings.weatherCity || '';
     if (tempUnitSelect) tempUnitSelect.value = settings.tempUnit;
+    
+    // Update AI Assistant controls
+    if (ollamaEnabledCheckbox) ollamaEnabledCheckbox.checked = settings.ollamaEnabled;
+    if (ollamaUrlInput) ollamaUrlInput.value = settings.ollamaUrl;
+    if (ollamaModelInput) ollamaModelInput.value = settings.ollamaModel;
+    if (ollamaSystemPromptInput) ollamaSystemPromptInput.value = settings.ollamaSystemPrompt;
     
     // Initialize weather if enabled
     if (settings.weatherEnabled && settings.weatherApiKey) {
@@ -1067,6 +1115,11 @@ function handleSettingsChange() {
     settings.showNetwork = showNetworkCheckbox?.checked ?? true;
     settings.showMemory = showMemoryCheckbox?.checked ?? true;
     settings.timezone = timezoneSelect?.value ?? 'local';
+    
+    settings.ollamaEnabled = ollamaEnabledCheckbox?.checked ?? false;
+    settings.ollamaUrl = ollamaUrlInput?.value?.trim() || 'http://localhost:11434';
+    settings.ollamaModel = ollamaModelInput?.value?.trim() || 'llama3';
+    settings.ollamaSystemPrompt = ollamaSystemPromptInput?.value?.trim() || 'You are an expert executive writing assistant. First, analyze the type of text given to you (e.g., an email, a chat message, or a task list). Then, rewrite it to be highly professional, articulate, and polished for business communication. Use sophisticated but clear vocabulary.\n\nRules:\n1. Only return the final rewritten text.\n2. Do not add any greetings, explanations, or quotes around the text.\n3. If the text has no meaning (like just dots or random letters), return it exactly as it is without changes.\n4. IMPORTANT: Always preserve any structural formatting from the original text (such as numbering like "1)" or bullet points).';
     
     saveSettings();
     applySettings();
@@ -1961,6 +2014,92 @@ function formatNoteDate(isoString) {
         });
     } catch {
         return '';
+    }
+}
+
+// ==========================================
+// AI REWRITE FUNCTIONS
+// ==========================================
+let currentAiTextarea = null;
+
+function handleTextSelection(e) {
+    if (!settings.ollamaEnabled || !aiRewriteBtn || !isNotesPageVisible) return;
+    
+    const textarea = e.target;
+    const selectedText = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd).trim();
+    
+    // Only show button if there is text AND it contains at least one alphanumeric character
+    if (!selectedText || !/[a-zA-Z0-9]/.test(selectedText)) {
+        aiRewriteBtn.classList.add('hidden');
+        currentAiTextarea = null;
+        return;
+    }
+    
+    currentAiTextarea = textarea;
+    
+    const rect = textarea.getBoundingClientRect();
+    // Position floating button nicely above the textarea's center
+    aiRewriteBtn.style.top = `${Math.max(10, rect.top - 45)}px`;
+    aiRewriteBtn.style.left = `${Math.max(10, rect.left + rect.width / 2)}px`; 
+    aiRewriteBtn.classList.remove('hidden');
+}
+
+async function handleAiRewrite(e) {
+    e.preventDefault();
+    if (!currentAiTextarea || !settings.ollamaEnabled) return;
+    
+    const start = currentAiTextarea.selectionStart;
+    const end = currentAiTextarea.selectionEnd;
+    const selectedText = currentAiTextarea.value.substring(start, end).trim();
+    
+    if (!selectedText) return;
+    
+    const originalText = aiRewriteBtn.innerHTML;
+    aiRewriteBtn.innerHTML = '<span class="btn-icon">⏳</span><span class="btn-text">Rewriting...</span>';
+    aiRewriteBtn.classList.add('is-loading');
+    aiRewriteBtn.disabled = true;
+    
+    try {
+        const response = await fetch(`${settings.ollamaUrl}/api/generate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: settings.ollamaModel,
+                system: settings.ollamaSystemPrompt,
+                prompt: `Rewrite this text:\n\n${selectedText}`,
+                stream: false
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Ollama API error: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        let rewrittenText = data.response.trim();
+        
+        // Final sanity check for quotes
+        if (rewrittenText.startsWith('"') && rewrittenText.endsWith('"')) {
+            rewrittenText = rewrittenText.substring(1, rewrittenText.length - 1);
+        }
+        
+        if (rewrittenText) {
+            // Using execCommand ensures perfect compatibility with Chrome's native Undo/Redo stack
+            currentAiTextarea.focus();
+            currentAiTextarea.setSelectionRange(start, end);
+            document.execCommand('insertText', false, rewrittenText);
+            
+            showToast('Rewritten successfully!', 'success');
+        }
+    } catch (error) {
+        console.error('AI Rewrite Error:', error);
+        showToast('Failed to connect to Ollama. Is it running?', 'error');
+    } finally {
+        aiRewriteBtn.innerHTML = originalText;
+        aiRewriteBtn.classList.remove('is-loading');
+        aiRewriteBtn.disabled = false;
+        aiRewriteBtn.classList.add('hidden'); // Hide button after use
+        currentAiTextarea.focus();
     }
 }
 
