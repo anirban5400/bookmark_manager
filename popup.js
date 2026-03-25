@@ -59,11 +59,23 @@ const apiKeyToggle = document.getElementById('apiKeyToggle');
 const tempUnitSelect = document.getElementById('tempUnit');
 const weatherCitySelect = document.getElementById('weatherCity');
 
+// Notes page elements
+const notesToggleBtn = document.getElementById('notesToggleBtn');
+const bookmarksPage = document.getElementById('bookmarksPage');
+const notesPage = document.getElementById('notesPage');
+const notesContainer = document.getElementById('notesContainer');
+const notesCount = document.getElementById('notesCount');
+const addNoteBtn = document.getElementById('addNoteBtn');
+const notesSearchInput = document.getElementById('notesSearchInput');
+
 // State
 let allBookmarks = [];
 let isFormVisible = false;
 let fetchedMetadata = null;
 let weatherRefreshInterval = null;
+let isNotesPageVisible = false;
+let allNotes = [];
+let noteSaveTimeouts = {};
 
 // Settings state (with defaults)
 let settings = {
@@ -188,6 +200,27 @@ function setupEventListeners() {
             if (settings.weatherEnabled && settings.weatherApiKey) {
                 fetchWeather();
             }
+        });
+    }
+    
+    // Notes page events
+    if (notesToggleBtn) {
+        notesToggleBtn.addEventListener('click', toggleNotesPage);
+    }
+    if (addNoteBtn) {
+        addNoteBtn.addEventListener('click', addNote);
+    }
+    if (notesContainer) {
+        notesContainer.addEventListener('click', handleNotesContainerClick);
+        notesContainer.addEventListener('input', handleNoteInput);
+    }
+    if (notesSearchInput) {
+        let notesSearchTimeout;
+        notesSearchInput.addEventListener('input', (e) => {
+            clearTimeout(notesSearchTimeout);
+            notesSearchTimeout = setTimeout(() => {
+                handleNotesSearch(e.target.value.trim());
+            }, 300);
         });
     }
 }
@@ -1457,6 +1490,301 @@ function renderForecast(data) {
         
         weatherForecast.appendChild(dayEl);
     });
+}
+
+// ==========================================
+// NOTES FUNCTIONS
+// ==========================================
+
+const NOTES_STORAGE_KEY = 'bmNotes';
+
+/**
+ * Toggle between Bookmarks page and Notes page
+ */
+function toggleNotesPage() {
+    isNotesPageVisible = !isNotesPageVisible;
+    
+    if (isNotesPageVisible) {
+        // Show notes, hide bookmarks
+        if (bookmarksPage) bookmarksPage.classList.add('hidden');
+        if (notesPage) notesPage.classList.remove('hidden');
+        if (notesToggleBtn) notesToggleBtn.classList.add('active');
+        // Hide bookmark-specific header actions
+        if (addToggleBtn) addToggleBtn.style.display = 'none';
+        // Expand container to full width for notes
+        const container = document.querySelector('.container');
+        if (container) container.classList.add('notes-active');
+        
+        // Load and render notes
+        loadNotes();
+    } else {
+        // Show bookmarks, hide notes
+        if (bookmarksPage) bookmarksPage.classList.remove('hidden');
+        if (notesPage) notesPage.classList.add('hidden');
+        if (notesToggleBtn) notesToggleBtn.classList.remove('active');
+        // Restore bookmark-specific header actions
+        if (addToggleBtn) addToggleBtn.style.display = '';
+        // Restore container max-width for bookmarks
+        const container = document.querySelector('.container');
+        if (container) container.classList.remove('notes-active');
+    }
+}
+
+/**
+ * Load notes from localStorage
+ */
+function loadNotes() {
+    try {
+        const saved = localStorage.getItem(NOTES_STORAGE_KEY);
+        if (saved) {
+            allNotes = JSON.parse(saved);
+        } else {
+            allNotes = [];
+        }
+    } catch (e) {
+        console.error('Failed to load notes:', e);
+        allNotes = [];
+    }
+    renderNotes(allNotes);
+    updateNotesCount(allNotes.length);
+}
+
+/**
+ * Save notes to localStorage
+ */
+function saveNotes() {
+    try {
+        localStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(allNotes));
+    } catch (e) {
+        console.error('Failed to save notes:', e);
+    }
+}
+
+/**
+ * Add a new empty note
+ */
+function addNote() {
+    const note = {
+        id: Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
+        content: '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    };
+    
+    allNotes.unshift(note);
+    saveNotes();
+    renderNotes(allNotes);
+    updateNotesCount(allNotes.length);
+    
+    // Focus the new note's textarea
+    setTimeout(() => {
+        const firstTextarea = notesContainer.querySelector('.note-textarea');
+        if (firstTextarea) firstTextarea.focus();
+    }, 100);
+    
+    showToast('Note created!', 'success');
+}
+
+/**
+ * Delete a note by ID
+ */
+function deleteNote(noteId) {
+    allNotes = allNotes.filter(n => n.id !== noteId);
+    saveNotes();
+    renderNotes(allNotes);
+    updateNotesCount(allNotes.length);
+    showToast('Note deleted', 'success');
+}
+
+/**
+ * Handle clicks on notes container (event delegation for delete)
+ */
+function handleNotesContainerClick(event) {
+    const deleteBtn = event.target.closest('.note-delete-btn');
+    if (deleteBtn) {
+        const noteId = deleteBtn.dataset.noteId;
+        if (noteId) {
+            deleteNote(noteId);
+        }
+    }
+}
+
+/**
+ * Handle note textarea input (auto-save with debounce)
+ */
+function handleNoteInput(event) {
+    const textarea = event.target.closest('.note-textarea');
+    if (!textarea) return;
+    
+    const noteId = textarea.dataset.noteId;
+    if (!noteId) return;
+    
+    // Show saving indicator
+    const card = textarea.closest('.note-card');
+    const indicator = card?.querySelector('.note-save-indicator');
+    if (indicator) {
+        indicator.textContent = 'Saving...';
+        indicator.className = 'note-save-indicator visible';
+    }
+    
+    // Auto-resize textarea
+    textarea.style.height = 'auto';
+    textarea.style.height = Math.max(120, textarea.scrollHeight) + 'px';
+    
+    // Debounce save (500ms)
+    if (noteSaveTimeouts[noteId]) {
+        clearTimeout(noteSaveTimeouts[noteId]);
+    }
+    
+    noteSaveTimeouts[noteId] = setTimeout(() => {
+        const note = allNotes.find(n => n.id === noteId);
+        if (note) {
+            note.content = textarea.value;
+            note.updatedAt = new Date().toISOString();
+            saveNotes();
+            
+            // Update timestamp display
+            const timestampEl = card?.querySelector('.note-timestamp');
+            if (timestampEl) {
+                timestampEl.textContent = formatNoteDate(note.updatedAt);
+            }
+            
+            // Show saved indicator
+            if (indicator) {
+                indicator.textContent = '✓ Saved';
+                indicator.className = 'note-save-indicator visible saved';
+                setTimeout(() => {
+                    indicator.className = 'note-save-indicator';
+                }, 1500);
+            }
+        }
+        delete noteSaveTimeouts[noteId];
+    }, 500);
+}
+
+/**
+ * Handle notes search
+ */
+function handleNotesSearch(query) {
+    if (!query) {
+        renderNotes(allNotes);
+        updateNotesCount(allNotes.length);
+        return;
+    }
+    
+    const lowerQuery = query.toLowerCase();
+    const filtered = allNotes.filter(note => 
+        note.content.toLowerCase().includes(lowerQuery)
+    );
+    renderNotes(filtered);
+    updateNotesCount(filtered.length, allNotes.length);
+}
+
+/**
+ * Render notes to the UI (XSS-safe)
+ */
+function renderNotes(notes) {
+    if (!notesContainer) return;
+    notesContainer.innerHTML = '';
+    
+    if (notes.length === 0) {
+        const emptyState = document.createElement('div');
+        emptyState.className = 'notes-empty-state';
+        emptyState.innerHTML = `
+            <div class="icon">📝</div>
+            <h3>No notes yet</h3>
+            <p>Click "New Note" to create your first note!</p>
+        `;
+        notesContainer.appendChild(emptyState);
+        return;
+    }
+    
+    notes.forEach((note, index) => {
+        const card = document.createElement('div');
+        card.className = 'note-card';
+        card.style.animationDelay = `${index * 0.05}s`;
+        
+        // Textarea
+        const textarea = document.createElement('textarea');
+        textarea.className = 'note-textarea';
+        textarea.dataset.noteId = note.id;
+        textarea.value = note.content; // Safe - uses .value
+        textarea.placeholder = 'Start typing your note...';
+        
+        // Footer
+        const footer = document.createElement('div');
+        footer.className = 'note-footer';
+        
+        // Timestamp
+        const timestamp = document.createElement('span');
+        timestamp.className = 'note-timestamp';
+        timestamp.textContent = formatNoteDate(note.updatedAt || note.createdAt);
+        
+        // Save indicator
+        const saveIndicator = document.createElement('span');
+        saveIndicator.className = 'note-save-indicator';
+        
+        // Delete button
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'note-delete-btn';
+        deleteBtn.dataset.noteId = note.id;
+        deleteBtn.textContent = '✕';
+        deleteBtn.title = 'Delete note';
+        
+        footer.appendChild(timestamp);
+        footer.appendChild(saveIndicator);
+        footer.appendChild(deleteBtn);
+        
+        card.appendChild(footer);
+        card.appendChild(textarea);
+        
+        notesContainer.appendChild(card);
+        
+        // Auto-resize on render
+        if (note.content) {
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.max(120, textarea.scrollHeight) + 'px';
+        }
+    });
+}
+
+/**
+ * Update notes count display
+ */
+function updateNotesCount(count, total = null) {
+    if (!notesCount) return;
+    if (total !== null && count !== total) {
+        notesCount.textContent = `${count} / ${total}`;
+    } else {
+        notesCount.textContent = count;
+    }
+}
+
+/**
+ * Format date for note display
+ */
+function formatNoteDate(isoString) {
+    try {
+        const date = new Date(isoString);
+        const now = new Date();
+        const diffMs = now - date;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+        
+        if (diffMins < 1) return 'Just now';
+        if (diffMins < 60) return `${diffMins}m ago`;
+        if (diffHours < 24) return `${diffHours}h ago`;
+        if (diffDays < 7) return `${diffDays}d ago`;
+        
+        return date.toLocaleDateString('en', { 
+            month: 'short', 
+            day: 'numeric',
+            year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+        });
+    } catch {
+        return '';
+    }
 }
 
 // Initialize when DOM is ready

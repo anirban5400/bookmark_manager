@@ -47,6 +47,11 @@
                     <span class="status-icon">💾</span>
                     <span class="status-text" id="memoryText">--</span>
                 </div>
+                <!-- Notes Toggle Button -->
+                <button class="btn-notes-toggle" id="notesToggleBtn" title="Toggle Notes">
+                    <span class="btn-icon">📝</span>
+                    <span class="btn-text">Notes</span>
+                </button>
                 <!-- Add New Bookmark Toggle Button -->
                 <button class="btn-add-toggle" id="addToggleBtn" title="Add new bookmark (⌘/Ctrl+N)">
                     <span class="btn-icon">➕</span>
@@ -63,121 +68,151 @@
             </div>
         </header>
 
-        <!-- Add Bookmark Form (Hidden by default) -->
-        <form id="addBookmarkForm" class="bookmark-form hidden">
-            <div class="form-header">
-                <span class="form-label">Add Bookmark</span>
-                <span class="fetch-status" id="fetchStatus"></span>
-            </div>
-            <div class="form-row">
-                <div class="input-group input-url-group">
-                    <div class="input-wrapper">
-                        <span class="icon">🔗</span>
-                        <input 
-                            type="url" 
-                            id="urlInput" 
-                            class="form-control" 
-                            placeholder="Paste URL and we'll fetch the details..." 
-                            required
-                            autocomplete="off"
-                        >
-                    </div>
+        <!-- ========== BOOKMARKS PAGE ========== -->
+        <div id="bookmarksPage">
+            <!-- Add Bookmark Form (Hidden by default) -->
+            <form id="addBookmarkForm" class="bookmark-form hidden">
+                <div class="form-header">
+                    <span class="form-label">Add Bookmark</span>
+                    <span class="fetch-status" id="fetchStatus"></span>
                 </div>
-                <div class="input-group">
-                    <div class="input-wrapper">
-                        <span class="icon">📝</span>
-                        <input 
-                            type="text" 
-                            id="titleInput" 
-                            class="form-control" 
-                            placeholder="Title (auto-fetched if empty)" 
-                            autocomplete="off"
-                        >
-                    </div>
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="input-group input-desc-group">
-                    <div class="input-wrapper">
-                        <span class="icon icon-top">📄</span>
-                        <textarea 
-                            id="descInput" 
-                            class="form-control form-textarea" 
-                            placeholder="Description (auto-fetched if empty)"
-                            rows="2"
-                        ></textarea>
-                    </div>
-                </div>
-                <button type="submit" class="btn-primary">
-                    <span>➕</span>
-                    <span>Add</span>
-                </button>
-            </div>
-        </form>
-
-
-
-        <!-- Weather Card - Compact like bookmark-card -->
-        <div id="weatherCard" class="weather-card hidden">
-            <!-- Refresh Button (corner) -->
-            <button class="weather-refresh-btn" id="weatherRefreshBtn" title="Refresh weather"><span style="scale:2;">↻</span></button>
-            <div class="weather-loading hidden" id="weatherLoading">
-                <div class="spinner"></div>
-                <span>Loading...</span>
-            </div>
-            <div class="weather-content hidden" id="weatherContent">
-                <!-- Current Weather Row -->
-                <div class="weather-current">
-                    <!-- Icon on left like favicon -->
-                    <div class="weather-icon-wrapper" id="weatherIconWrapper">
-                        <span class="weather-icon" id="weatherIcon">☀️</span>
-                    </div>
-                    <!-- Info on right like bookmark-info -->
-                    <div class="weather-info">
-                        <div class="weather-header">
-                            <span class="weather-location" id="weatherLocation">--</span>
-                            <span class="weather-updated" id="weatherUpdated">--</span>
+                <div class="form-row">
+                    <div class="input-group input-url-group">
+                        <div class="input-wrapper">
+                            <span class="icon">🔗</span>
+                            <input 
+                                type="url" 
+                                id="urlInput" 
+                                class="form-control" 
+                                placeholder="Paste URL and we'll fetch the details..." 
+                                required
+                                autocomplete="off"
+                            >
                         </div>
-                        <div class="weather-main">
-                            <div class="weather-temp-section">
-                                <span class="weather-temp" id="weatherTemp">--°</span>
-                                <span class="weather-condition" id="weatherCondition">--</span>
-                            </div>
-                        </div>
-                        <div class="weather-stats">
-                            <div class="weather-stat">
-                                <span class="stat-icon">💧</span>
-                                <span class="stat-value" id="weatherHumidity">--%</span>
-                            </div>
-                            <div class="weather-stat">
-                                <span class="stat-icon">💨</span>
-                                <span class="stat-value" id="weatherWind">--</span>
-                            </div>
-                            <div class="weather-stat">
-                                <span class="stat-icon">🌡️</span>
-                                <span class="stat-value" id="weatherFeelsLike">--°</span>
-                            </div>
+                    </div>
+                    <div class="input-group">
+                        <div class="input-wrapper">
+                            <span class="icon">📝</span>
+                            <input 
+                                type="text" 
+                                id="titleInput" 
+                                class="form-control" 
+                                placeholder="Title (auto-fetched if empty)" 
+                                autocomplete="off"
+                            >
                         </div>
                     </div>
                 </div>
-                <!-- 5-Day Forecast -->
-                <div class="weather-forecast" id="weatherForecast">
-                    <!-- Forecast days will be rendered by JS -->
+                <div class="form-row">
+                    <div class="input-group input-desc-group">
+                        <div class="input-wrapper">
+                            <span class="icon icon-top">📄</span>
+                            <textarea 
+                                id="descInput" 
+                                class="form-control form-textarea" 
+                                placeholder="Description (auto-fetched if empty)"
+                                rows="2"
+                            ></textarea>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary">
+                        <span>➕</span>
+                        <span>Add</span>
+                    </button>
+                </div>
+            </form>
+
+            <!-- Weather Card - Compact like bookmark-card -->
+            <div id="weatherCard" class="weather-card hidden">
+                <!-- Refresh Button (corner) -->
+                <button class="weather-refresh-btn" id="weatherRefreshBtn" title="Refresh weather"><span style="scale:2;">↻</span></button>
+                <div class="weather-loading hidden" id="weatherLoading">
+                    <div class="spinner"></div>
+                    <span>Loading...</span>
+                </div>
+                <div class="weather-content hidden" id="weatherContent">
+                    <!-- Current Weather Row -->
+                    <div class="weather-current">
+                        <!-- Icon on left like favicon -->
+                        <div class="weather-icon-wrapper" id="weatherIconWrapper">
+                            <span class="weather-icon" id="weatherIcon">☀️</span>
+                        </div>
+                        <!-- Info on right like bookmark-info -->
+                        <div class="weather-info">
+                            <div class="weather-header">
+                                <span class="weather-location" id="weatherLocation">--</span>
+                                <span class="weather-updated" id="weatherUpdated">--</span>
+                            </div>
+                            <div class="weather-main">
+                                <div class="weather-temp-section">
+                                    <span class="weather-temp" id="weatherTemp">--°</span>
+                                    <span class="weather-condition" id="weatherCondition">--</span>
+                                </div>
+                            </div>
+                            <div class="weather-stats">
+                                <div class="weather-stat">
+                                    <span class="stat-icon">💧</span>
+                                    <span class="stat-value" id="weatherHumidity">--%</span>
+                                </div>
+                                <div class="weather-stat">
+                                    <span class="stat-icon">💨</span>
+                                    <span class="stat-value" id="weatherWind">--</span>
+                                </div>
+                                <div class="weather-stat">
+                                    <span class="stat-icon">🌡️</span>
+                                    <span class="stat-value" id="weatherFeelsLike">--°</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 5-Day Forecast -->
+                    <div class="weather-forecast" id="weatherForecast">
+                        <!-- Forecast days will be rendered by JS -->
+                    </div>
+                </div>
+                <div class="weather-error hidden" id="weatherError">
+                    <span class="error-icon">⚠️</span>
+                    <span class="error-text" id="weatherErrorText">Unable to load weather</span>
                 </div>
             </div>
-            <div class="weather-error hidden" id="weatherError">
-                <span class="error-icon">⚠️</span>
-                <span class="error-text" id="weatherErrorText">Unable to load weather</span>
+
+            <!-- Bookmark List -->
+            <div id="bookmarksContainer" class="bookmark-list">
+                <!-- Loading State -->
+                <div class="loading" id="loadingState">
+                    <div class="spinner"></div>
+                </div>
             </div>
         </div>
 
-        <!-- Bookmark List -->
-        <div id="bookmarksContainer" class="bookmark-list">
-
-            
-            <!-- Loading State -->
-            <div class="loading" id="loadingState">
-                <div class="spinner"></div>
+        <!-- ========== NOTES PAGE (Hidden by default) ========== -->
+        <div id="notesPage" class="hidden">
+            <!-- Notes Header -->
+            <div class="notes-toolbar">
+                <div class="notes-toolbar-left">
+                    <span class="notes-title">📝 My Notes</span>
+                    <span class="notes-count" id="notesCount">0</span>
+                </div>
+                <div class="notes-toolbar-right">
+                    <div class="notes-search-wrapper">
+                        <span class="icon">🔍</span>
+                        <input 
+                            type="text" 
+                            id="notesSearchInput" 
+                            class="notes-search-input" 
+                            placeholder="Search notes..."
+                            autocomplete="off"
+                        >
+                    </div>
+                    <button class="btn-add-note" id="addNoteBtn" title="Add new note">
+                        <span class="btn-icon">➕</span>
+                        <span class="btn-text">New Note</span>
+                    </button>
+                </div>
+            </div>
+            <!-- Notes Grid -->
+            <div id="notesContainer" class="notes-grid">
+                <!-- Note cards will be rendered by JS -->
             </div>
         </div>
     </div>
