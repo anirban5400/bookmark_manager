@@ -1862,16 +1862,27 @@ body {
 }
 
 .note-textarea::-webkit-scrollbar-track {
-    background: var(--bg-dark);
+    background: transparent;
     border-radius: 3px;
 }
 
 .note-textarea::-webkit-scrollbar-thumb {
-    background: var(--accent-color);
+    background: transparent;
     border-radius: 3px;
 }
 
-.note-textarea::-webkit-scrollbar-thumb:hover {
+.note-textarea:hover::-webkit-scrollbar-thumb,
+.note-textarea:focus::-webkit-scrollbar-thumb {
+    background: var(--accent-color);
+}
+
+.note-textarea:hover::-webkit-scrollbar-track,
+.note-textarea:focus::-webkit-scrollbar-track {
+    background: var(--bg-dark);
+}
+
+.note-textarea:hover::-webkit-scrollbar-thumb:hover,
+.note-textarea:focus::-webkit-scrollbar-thumb:hover {
     background: var(--accent-dark);
 }
 
@@ -1884,6 +1895,60 @@ body {
     align-items: center;
     gap: var(--gap-sm);
     border-bottom: 1px solid var(--bg-dark);
+}
+
+/* Note Drag Handle */
+.note-drag-handle {
+    cursor: grab;
+    padding: 0 4px;
+    margin-right: 4px;
+    color: var(--text-muted);
+    font-size: 1.2rem;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    user-select: none;
+    opacity: 0.5;
+    transition: opacity var(--transition-fast);
+}
+
+.note-drag-handle:hover {
+    opacity: 1;
+}
+
+.note-drag-handle:active {
+    cursor: grabbing;
+}
+
+/* Dragging States */
+.note-card.dragging {
+    opacity: 0.5;
+    transform: scale(0.98);
+    box-shadow: var(--neu-concave);
+    z-index: 10;
+}
+
+.note-card.drag-over-before::after,
+.note-card.drag-over-after::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+    background: #00b894;
+    box-shadow: 0 0 10px rgba(0, 184, 148, 0.4);
+    z-index: 5;
+    pointer-events: none;
+}
+
+.note-card.drag-over-before::after {
+    left: 0;
+    border-radius: var(--radius-md) 0 0 var(--radius-md);
+}
+
+.note-card.drag-over-after::after {
+    right: 0;
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
 }
 
 /* Note Title Input */

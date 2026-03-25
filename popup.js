@@ -76,6 +76,7 @@ let weatherRefreshInterval = null;
 let isNotesPageVisible = false;
 let allNotes = [];
 let noteSaveTimeouts = {};
+let draggedNoteId = null;
 
 // Settings state (with defaults)
 let settings = {
@@ -1746,6 +1747,9 @@ function debounceResize(noteId, card) {
                 parseFloat(getComputedStyle(card).paddingRight || 0));
             const height = Math.round(card.offsetHeight);
             
+            // Ignore if the card is hidden or dimensions are 0
+            if (width === 0 || height === 0) return;
+            
             const note = allNotes.find(n => n.id === noteId);
             if (note) {
                 note.cardWidth = width;
@@ -1784,6 +1788,12 @@ function renderNotes(notes) {
         const header = document.createElement('div');
         header.className = 'note-header';
         
+        // Drag handle
+        const dragHandle = document.createElement('div');
+        dragHandle.className = 'note-drag-handle';
+        dragHandle.innerHTML = '⋮⋮';
+        dragHandle.title = 'Drag to reorder';
+        
         // Title input
         const titleInput = document.createElement('input');
         titleInput.type = 'text';
@@ -1816,6 +1826,7 @@ function renderNotes(notes) {
         metaRow.appendChild(saveIndicator);
         metaRow.appendChild(deleteBtn);
         
+        header.appendChild(dragHandle);
         header.appendChild(titleInput);
         header.appendChild(metaRow);
         
@@ -1838,6 +1849,77 @@ function renderNotes(notes) {
         // Observe resize to persist dimensions
         const resizeObserver = new ResizeObserver(debounceResize(note.id, card));
         resizeObserver.observe(card);
+        
+        // --- Drag and Drop Logic ---
+        dragHandle.addEventListener('mousedown', () => {
+            // Only allow dragging if we are not actively searching
+            if (!notesSearchInput || !notesSearchInput.value.trim()) {
+                card.setAttribute('draggable', 'true');
+            }
+        });
+        dragHandle.addEventListener('mouseup', () => card.removeAttribute('draggable'));
+        dragHandle.addEventListener('mouseleave', () => card.removeAttribute('draggable'));
+        
+        card.addEventListener('dragstart', (e) => {
+            draggedNoteId = note.id;
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', note.id);
+            setTimeout(() => card.classList.add('dragging'), 0);
+        });
+        
+        card.addEventListener('dragend', () => {
+            draggedNoteId = null;
+            card.classList.remove('dragging');
+            card.removeAttribute('draggable');
+            document.querySelectorAll('.note-card').forEach(c => {
+                c.classList.remove('drag-over-before', 'drag-over-after');
+            });
+        });
+        
+        card.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            if (!draggedNoteId || draggedNoteId === note.id) return;
+            
+            e.dataTransfer.dropEffect = 'move';
+            const rect = card.getBoundingClientRect();
+            const isBefore = (e.clientX - rect.left) < (rect.width / 2);
+            
+            card.classList.remove('drag-over-before', 'drag-over-after');
+            if (isBefore) {
+                card.classList.add('drag-over-before');
+            } else {
+                card.classList.add('drag-over-after');
+            }
+        });
+        
+        card.addEventListener('dragleave', () => {
+            card.classList.remove('drag-over-before', 'drag-over-after');
+        });
+        
+        card.addEventListener('drop', (e) => {
+            e.preventDefault();
+            card.classList.remove('drag-over-before', 'drag-over-after');
+            
+            if (!draggedNoteId || draggedNoteId === note.id) return;
+            
+            const rect = card.getBoundingClientRect();
+            const isBefore = (e.clientX - rect.left) < (rect.width / 2);
+            
+            const draggedIndex = allNotes.findIndex(n => n.id === draggedNoteId);
+            const targetIndex = allNotes.findIndex(n => n.id === note.id);
+            
+            if (draggedIndex !== -1 && targetIndex !== -1) {
+                const [draggedNoteObj] = allNotes.splice(draggedIndex, 1);
+                
+                const newTargetIndex = allNotes.findIndex(n => n.id === note.id);
+                const insertIndex = isBefore ? newTargetIndex : newTargetIndex + 1;
+                
+                allNotes.splice(insertIndex, 0, draggedNoteObj);
+                
+                saveNotes();
+                renderNotes(allNotes);
+            }
+        });
         
 
     });
