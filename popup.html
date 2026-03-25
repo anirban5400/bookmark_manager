@@ -326,27 +326,52 @@
                 </div>
                 <!-- AI Assistant Settings -->
                 <div class="settings-section">
-                    <h3>🤖 AI Assistant (Ollama)</h3>
+                    <h3>🤖 AI Assistant</h3>
                     <div class="settings-row">
                         <label for="ollamaEnabled">Enable AI Assistant</label>
                         <input type="checkbox" id="ollamaEnabled" class="toggle-checkbox">
                     </div>
-                    <div class="settings-row">
-                        <label for="ollamaUrl">Ollama API URL</label>
-                        <input type="url" id="ollamaUrl" class="settings-input" placeholder="http://localhost:11434">
+                    <div class="settings-row" style="flex-direction: column; align-items: stretch; gap: 8px; margin-bottom: 12px;">
+                        <label for="aiProvider">AI Provider</label>
+                        <select id="aiProvider" class="settings-input" style="width: 100%;">
+                            <option value="ollama">Ollama (Local/Free)</option>
+                            <option value="openrouter">OpenRouter (Cloud API)</option>
+                        </select>
                     </div>
-                    <div class="settings-row">
-                        <label for="ollamaModel">Model Name</label>
-                        <input type="text" id="ollamaModel" class="settings-input" placeholder="llama3">
+
+                    <!-- Ollama Specific Settings -->
+                    <div id="ollamaSettingsGroup">
+                        <div class="settings-row">
+                            <label for="ollamaUrl">Ollama URL</label>
+                            <input type="text" id="ollamaUrl" class="settings-input" placeholder="http://localhost:11434">
+                        </div>
+                        <div class="settings-row">
+                            <label for="ollamaModel">Model Name</label>
+                            <input type="text" id="ollamaModel" class="settings-input" placeholder="llama3">
+                        </div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 1rem; padding: 0.75rem; border-radius: var(--radius-md); box-shadow: var(--neu-pressed); margin-bottom: 16px;">
+                            <strong>Connection Error?</strong><br>
+                            If Ollama blocks the connection (403 Forbidden), run this in your Mac Terminal and restart the Ollama app:<br>
+                            <code style="display: block; margin-top: 4px; padding: 4px 6px; background: rgba(0,0,0,0.05); border-radius: 4px; word-break: break-all; opacity: 0.8;">launchctl setenv OLLAMA_ORIGINS "*"</code>
+                        </div>
                     </div>
+
+                    <!-- OpenRouter Specific Settings -->
+                    <div id="openrouterSettingsGroup" style="display: none;">
+                        <div class="settings-row">
+                            <label for="openRouterKey">OpenRouter API Key <span style="font-size:0.7rem; color:var(--text-muted);">(Stored Securely locally)</span></label>
+                            <input type="password" id="openRouterKey" class="settings-input" placeholder="sk-or-v1-..."></input>
+                        </div>
+                        <div class="settings-row">
+                            <label for="openRouterModel">Model Name</label>
+                            <input type="text" id="openRouterModel" class="settings-input" placeholder="google/gemini-2.5-flash"></input>
+                        </div>
+                    </div>
+
+                    <!-- Shared Settings -->
                     <div class="settings-row" style="flex-direction: column; align-items: stretch; gap: 8px;">
                         <label for="ollamaSystemPrompt">System Prompt</label>
                         <textarea id="ollamaSystemPrompt" class="settings-input" rows="4" style="resize: vertical; min-height: 80px;" placeholder="You are a helpful writing assistant..."></textarea>
-                    </div>
-                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 1rem; padding: 0.75rem; border-radius: var(--radius-md); box-shadow: var(--neu-pressed);">
-                        <strong>Connection Error?</strong><br>
-                        If Ollama blocks the connection (403 Forbidden), run this in your Mac Terminal and restart the Ollama app:<br>
-                        <code style="display: block; margin-top: 4px; padding: 4px 6px; background: rgba(0,0,0,0.05); border-radius: 4px; word-break: break-all; opacity: 0.8;">launchctl setenv OLLAMA_ORIGINS "*"</code>
                     </div>
                 </div>
             </div>

@@ -59,10 +59,15 @@ const apiKeyToggle = document.getElementById('apiKeyToggle');
 const tempUnitSelect = document.getElementById('tempUnit');
 const weatherCitySelect = document.getElementById('weatherCity');
 
-// AI Assistant elements
+// AI Assistant elements// DOM Elements - Settings Modal (AI)
 const ollamaEnabledCheckbox = document.getElementById('ollamaEnabled');
+const aiProviderSelect = document.getElementById('aiProvider');
+const ollamaSettingsGroup = document.getElementById('ollamaSettingsGroup');
+const openrouterSettingsGroup = document.getElementById('openrouterSettingsGroup');
 const ollamaUrlInput = document.getElementById('ollamaUrl');
 const ollamaModelInput = document.getElementById('ollamaModel');
+const openRouterKeyInput = document.getElementById('openRouterKey');
+const openRouterModelInput = document.getElementById('openRouterModel');
 const ollamaSystemPromptInput = document.getElementById('ollamaSystemPrompt');
 const aiRewriteBtn = document.getElementById('aiRewriteBtn');
 
@@ -89,17 +94,20 @@ let draggedNoteId = null;
 let settings = {
     showDateTime: true,
     showNetwork: true,
-    showMemory: true,
+    showMemory: false,
     timezone: 'local',
     // Weather settings
     weatherEnabled: false,
     weatherApiKey: '',
     weatherCity: '',
-    tempUnit: 'celsius',
-    // AI Assistant settings
+    tempUnit: 'C',
+    // AI Settings
     ollamaEnabled: false,
+    aiProvider: 'ollama', // 'ollama' or 'openrouter'
     ollamaUrl: 'http://localhost:11434',
     ollamaModel: 'llama3',
+    openRouterKey: '',
+    openRouterModel: 'google/gemini-2.5-flash',
     ollamaSystemPrompt: 'You are an expert executive writing assistant. First, analyze the type of text given to you (e.g., an email, a chat message, or a task list). Then, rewrite it to be highly professional, articulate, and polished for business communication. Use sophisticated but clear vocabulary.\n\nRules:\n1. Only return the final rewritten text.\n2. Do not add any greetings, explanations, or quotes around the text.\n3. If the text has no meaning (like just dots or random letters), return it exactly as it is without changes.\n4. IMPORTANT: Always preserve any structural formatting from the original text (such as numbering like "1)" or bullet points).'
 };
 
@@ -261,8 +269,11 @@ function setupEventListeners() {
     if (ollamaUrlInput) ollamaUrlInput.addEventListener('change', handleSettingsChange);
     if (ollamaModelInput) ollamaModelInput.addEventListener('change', handleSettingsChange);
     if (ollamaSystemPromptInput) ollamaSystemPromptInput.addEventListener('change', handleSettingsChange);
-    
-    // Notes page events
+    if (aiProviderSelect) aiProviderSelect.addEventListener('change', handleAiProviderChange);
+    if (openRouterKeyInput) openRouterKeyInput.addEventListener('change', handleSettingsChange);
+    if (openRouterModelInput) openRouterModelInput.addEventListener('change', handleSettingsChange);
+
+    // AI Rewrite Selectionts
     if (notesToggleBtn) {
         notesToggleBtn.addEventListener('click', toggleNotesPage);
     }
@@ -1060,9 +1071,15 @@ function loadSettings() {
     
     // Update AI Assistant controls
     if (ollamaEnabledCheckbox) ollamaEnabledCheckbox.checked = settings.ollamaEnabled;
+    if (aiProviderSelect) aiProviderSelect.value = settings.aiProvider;
     if (ollamaUrlInput) ollamaUrlInput.value = settings.ollamaUrl;
     if (ollamaModelInput) ollamaModelInput.value = settings.ollamaModel;
+    if (openRouterKeyInput) openRouterKeyInput.value = settings.openRouterKey;
+    if (openRouterModelInput) openRouterModelInput.value = settings.openRouterModel;
     if (ollamaSystemPromptInput) ollamaSystemPromptInput.value = settings.ollamaSystemPrompt;
+    
+    // Toggle correct settings group visibility
+    updateAiProviderVisibility();
     
     // Initialize weather if enabled
     if (settings.weatherEnabled && settings.weatherApiKey) {
@@ -1113,16 +1130,45 @@ function applySettings() {
 function handleSettingsChange() {
     settings.showDateTime = showDateTimeCheckbox?.checked ?? true;
     settings.showNetwork = showNetworkCheckbox?.checked ?? true;
-    settings.showMemory = showMemoryCheckbox?.checked ?? true;
+    settings.showMemory = showMemoryCheckbox?.checked ?? false;
     settings.timezone = timezoneSelect?.value ?? 'local';
     
     settings.ollamaEnabled = ollamaEnabledCheckbox?.checked ?? false;
     settings.ollamaUrl = ollamaUrlInput?.value?.trim() || 'http://localhost:11434';
     settings.ollamaModel = ollamaModelInput?.value?.trim() || 'llama3';
+    settings.openRouterKey = openRouterKeyInput?.value?.trim() || '';
+    settings.openRouterModel = openRouterModelInput?.value?.trim() || 'google/gemini-2.5-flash';
     settings.ollamaSystemPrompt = ollamaSystemPromptInput?.value?.trim() || 'You are an expert executive writing assistant. First, analyze the type of text given to you (e.g., an email, a chat message, or a task list). Then, rewrite it to be highly professional, articulate, and polished for business communication. Use sophisticated but clear vocabulary.\n\nRules:\n1. Only return the final rewritten text.\n2. Do not add any greetings, explanations, or quotes around the text.\n3. If the text has no meaning (like just dots or random letters), return it exactly as it is without changes.\n4. IMPORTANT: Always preserve any structural formatting from the original text (such as numbering like "1)" or bullet points).';
     
     saveSettings();
     applySettings();
+    fetchWeather(); // Refetch weather if API key/city changed
+}
+
+/**
+ * Handle AI Provider toggle
+ */
+function handleAiProviderChange() {
+    if (aiProviderSelect) {
+        settings.aiProvider = aiProviderSelect.value;
+        saveSettings();
+        updateAiProviderVisibility();
+    }
+}
+
+/**
+ * Update visibility of AI settings based on chosen provider
+ */
+function updateAiProviderVisibility() {
+    if (!aiProviderSelect || !ollamaSettingsGroup || !openrouterSettingsGroup) return;
+    
+    if (aiProviderSelect.value === 'ollama') {
+        ollamaSettingsGroup.style.display = 'block';
+        openrouterSettingsGroup.style.display = 'none';
+    } else {
+        ollamaSettingsGroup.style.display = 'none';
+        openrouterSettingsGroup.style.display = 'block';
+    }
 }
 
 /**
@@ -2060,25 +2106,59 @@ async function handleAiRewrite(e) {
     aiRewriteBtn.disabled = true;
     
     try {
-        const response = await fetch(`${settings.ollamaUrl}/api/generate`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                model: settings.ollamaModel,
-                system: settings.ollamaSystemPrompt,
-                prompt: `Rewrite this text:\n\n${selectedText}`,
-                stream: false
-            })
-        });
+        let rewrittenText = '';
         
-        if (!response.ok) {
-            throw new Error(`Ollama API error: ${response.statusText}`);
+        if (settings.aiProvider === 'openrouter') {
+            if (!settings.openRouterKey) throw new Error('OpenRouter API Key is missing. Please add it in Settings.');
+            
+            const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${settings.openRouterKey}`,
+                    'HTTP-Referer': 'chrome-extension://bookmark-notes',
+                    'X-Title': 'Bookmark Notes Extension'
+                },
+                body: JSON.stringify({
+                    model: settings.openRouterModel,
+                    messages: [
+                        { role: 'system', content: settings.ollamaSystemPrompt },
+                        { role: 'user', content: selectedText }
+                    ]
+                })
+            });
+
+            if (!response.ok) throw new Error(`OpenRouter API error: ${response.status} ${response.statusText}`);
+
+            const data = await response.json();
+            if (data.choices && data.choices.length > 0) {
+                rewrittenText = data.choices[0].message.content.trim();
+            } else {
+                throw new Error('OpenRouter returned an empty response.');
+            }
+        } else {
+            // Ollama (default)
+            const response = await fetch(`${settings.ollamaUrl}/api/generate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    model: settings.ollamaModel,
+                    prompt: selectedText,
+                    system: settings.ollamaSystemPrompt,
+                    stream: false
+                })
+            });
+
+            if (!response.ok) {
+                if (response.status === 403) throw new Error('Ollama blocked (403). Set OLLAMA_ORIGINS="*" and restart.');
+                throw new Error(`Ollama API error: ${response.status}`);
+            }
+
+            const data = await response.json();
+            rewrittenText = (data.response || '').trim();
         }
         
-        const data = await response.json();
-        let rewrittenText = data.response.trim();
-        
-        // Final sanity check for quotes
+        // Strip wrapping quotes if the model added them
         if (rewrittenText.startsWith('"') && rewrittenText.endsWith('"')) {
             rewrittenText = rewrittenText.substring(1, rewrittenText.length - 1);
         }
@@ -2093,7 +2173,7 @@ async function handleAiRewrite(e) {
         }
     } catch (error) {
         console.error('AI Rewrite Error:', error);
-        showToast('Failed to connect to Ollama. Is it running?', 'error');
+        showToast(error.message || 'AI rewrite failed. Check your settings.', 'error');
     } finally {
         aiRewriteBtn.innerHTML = originalText;
         aiRewriteBtn.classList.remove('is-loading');
