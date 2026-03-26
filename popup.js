@@ -89,6 +89,8 @@ let isNotesPageVisible = false;
 let allNotes = [];
 let noteSaveTimeouts = {};
 let draggedNoteId = null;
+const SETTINGS_STORAGE_KEY = 'bmSettings';
+const BOOKMARK_ALLOWED_PROTOCOLS = new Set(['http:', 'https:']);
 
 // Settings state (with defaults)
 let settings = {
@@ -163,7 +165,7 @@ async function init() {
         loadTheme();
         
         // Load settings
-        loadSettings();
+        await loadSettings();
         
         // Load bookmarks
         await loadBookmarks();
@@ -396,11 +398,43 @@ function handleUrlPaste() {
  */
 function isValidUrl(string) {
     try {
-        new URL(string);
-        return true;
+        const parsedUrl = new URL(string);
+        return BOOKMARK_ALLOWED_PROTOCOLS.has(parsedUrl.protocol);
     } catch {
         return false;
     }
+}
+
+function parseSafeBookmarkUrl(rawUrl) {
+    try {
+        const parsedUrl = new URL(rawUrl);
+        return BOOKMARK_ALLOWED_PROTOCOLS.has(parsedUrl.protocol) ? parsedUrl : null;
+    } catch {
+        return null;
+    }
+}
+
+function createBookmarkTitleElement(bookmark, safeUrl) {
+    const titleElement = document.createElement(safeUrl ? 'a' : 'span');
+    titleElement.className = 'bookmark-title';
+    titleElement.textContent = bookmark.title;
+    titleElement.title = bookmark.title;
+
+    if (safeUrl) {
+        titleElement.href = safeUrl.toString();
+        titleElement.target = '_blank';
+        titleElement.rel = 'noopener noreferrer';
+    }
+
+    return titleElement;
+}
+
+function getStorageArea() {
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        return chrome.storage.local;
+    }
+
+    return null;
 }
 
 /**
@@ -480,6 +514,10 @@ async function fetchMetadataForUrl(url) {
  */
 async function tryDirectFetch(url) {
     try {
+        if (!parseSafeBookmarkUrl(url)) {
+            return null;
+        }
+
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
         
@@ -606,15 +644,14 @@ async function handleAddBookmark(event) {
     }
     
     let faviconUrl = 'icon16.png'; // Fallback
-    let parsedUrl;
-    
-    try {
-        parsedUrl = new URL(url);
-        faviconUrl = `https://www.google.com/s2/favicons?sz=64&domain=${parsedUrl.hostname}`;
-    } catch (e) {
-        showToast('Please enter a valid URL', 'error');
+    const parsedUrl = parseSafeBookmarkUrl(url);
+
+    if (!parsedUrl) {
+        showToast('Please enter a valid HTTP/HTTPS URL', 'error');
         return;
     }
+
+    faviconUrl = `https://www.google.com/s2/favicons?sz=64&domain=${parsedUrl.hostname}`;
     
     // Use fetched metadata if fields are empty
     if (!title) {
@@ -697,6 +734,7 @@ function renderBookmarks(bookmarks) {
         const card = document.createElement('div');
         card.className = 'bookmark-card';
         card.style.animationDelay = `${index * 0.05}s`;
+        const safeUrl = parseSafeBookmarkUrl(bookmark.url);
         
         // Favicon wrapper (Neumorphic circle)
         const faviconWrapper = document.createElement('div');
@@ -717,21 +755,12 @@ function renderBookmarks(bookmarks) {
         info.className = 'bookmark-info';
         
         // Title link (XSS-safe)
-        const link = document.createElement('a');
-        link.href = bookmark.url;
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
-        link.textContent = bookmark.title; // Safe - uses textContent
-        link.title = bookmark.title;
+        const link = createBookmarkTitleElement(bookmark, safeUrl);
         
         // URL display
         const urlDisplay = document.createElement('div');
         urlDisplay.className = 'bookmark-url';
-        try {
-            urlDisplay.textContent = new URL(bookmark.url).hostname;
-        } catch {
-            urlDisplay.textContent = bookmark.url;
-        }
+        urlDisplay.textContent = safeUrl ? safeUrl.hostname : 'Blocked unsafe URL';
         
         info.appendChild(link);
         info.appendChild(urlDisplay);
@@ -1036,22 +1065,50 @@ function updateMemory() {
 // ==========================================
 
 /**
- * Load settings from localStorage
+ * Load settings from extension storage
  */
-function loadSettings() {
-    const saved = localStorage.getItem('bmSettings');
+async function loadSettings() {
+    const storageArea = getStorageArea();
+    let saved = null;
+    let migratedFromLocalStorage = false;
+    let migrationSaved = false;
+
+    if (storageArea) {
+        try {
+            const storedValues = await storageArea.get(SETTINGS_STORAGE_KEY);
+            saved = storedValues?.[SETTINGS_STORAGE_KEY] ?? null;
+        } catch (e) {
+            console.error('Failed to load settings:', e);
+        }
+    }
+
+    if (!saved) {
+        const legacySaved = localStorage.getItem(SETTINGS_STORAGE_KEY);
+        if (legacySaved) {
+            saved = legacySaved;
+            migratedFromLocalStorage = Boolean(storageArea);
+        }
+    }
+
     if (saved) {
         try {
-            settings = { ...settings, ...JSON.parse(saved) };
-            
+            const parsedSettings = typeof saved === 'string' ? JSON.parse(saved) : saved;
+            settings = { ...settings, ...parsedSettings };
+
             // Auto-migrate old system prompts to the highly professional default
             if (settings.ollamaSystemPrompt && (settings.ollamaSystemPrompt.startsWith('You are an expert editor.') || settings.ollamaSystemPrompt.startsWith('You are a helpful writing assistant.'))) {
                 settings.ollamaSystemPrompt = 'You are an expert executive writing assistant. First, analyze the type of text given to you (e.g., an email, a chat message, or a task list). Then, rewrite it to be highly professional, articulate, and polished for business communication. Use sophisticated but clear vocabulary.\n\nRules:\n1. Only return the final rewritten text.\n2. Do not add any greetings, explanations, or quotes around the text.\n3. If the text has no meaning (like just dots or random letters), return it exactly as it is without changes.\n4. IMPORTANT: Always preserve any structural formatting from the original text (such as numbering like "1)" or bullet points).';
-                saveSettings();
+                migrationSaved = await saveSettings();
+            } else if (migratedFromLocalStorage) {
+                migrationSaved = await saveSettings();
             }
         } catch (e) {
             console.error('Failed to load settings:', e);
         }
+    }
+
+    if (migratedFromLocalStorage && migrationSaved) {
+        localStorage.removeItem(SETTINGS_STORAGE_KEY);
     }
     
     // Apply settings to UI
@@ -1088,13 +1145,21 @@ function loadSettings() {
 }
 
 /**
- * Save settings to localStorage
+ * Save settings to extension storage
  */
-function saveSettings() {
+async function saveSettings() {
     try {
-        localStorage.setItem('bmSettings', JSON.stringify(settings));
+        const storageArea = getStorageArea();
+        if (storageArea) {
+            await storageArea.set({ [SETTINGS_STORAGE_KEY]: settings });
+            return true;
+        }
+
+        localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+        return true;
     } catch (e) {
         console.error('Failed to save settings:', e);
+        return false;
     }
 }
 
@@ -1400,11 +1465,22 @@ async function fetchWeather() {
  * Get location by IP (fallback)
  */
 async function getLocationByIP() {
-    const response = await fetch('http://ip-api.com/json/?fields=lat,lon,city,country');
+    const response = await fetch('https://ipwho.is/');
     if (!response.ok) {
         throw new Error('IP location failed');
     }
-    return await response.json();
+
+    const data = await response.json();
+    if (!data.success || typeof data.latitude !== 'number' || typeof data.longitude !== 'number') {
+        throw new Error('IP location failed');
+    }
+
+    return {
+        lat: data.latitude,
+        lon: data.longitude,
+        city: data.city,
+        country: data.country
+    };
 }
 
 /**

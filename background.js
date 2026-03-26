@@ -6,6 +6,11 @@
 // Listen for messages from popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'fetchMetadata') {
+        if (!isSafeRemoteUrl(request.url)) {
+            sendResponse({ success: false, error: 'Only HTTP(S) URLs are supported.' });
+            return false;
+        }
+
         fetchUrlMetadata(request.url)
             .then(metadata => sendResponse({ success: true, data: metadata }))
             .catch(error => sendResponse({ success: false, error: error.message }));
@@ -22,6 +27,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
  */
 async function fetchUrlMetadata(url) {
     try {
+        if (!isSafeRemoteUrl(url)) {
+            throw new Error('Only HTTP(S) URLs are supported.');
+        }
+
         const response = await fetch(url, {
             method: 'GET',
             headers: {
@@ -43,6 +52,15 @@ async function fetchUrlMetadata(url) {
     } catch (error) {
         console.error('Failed to fetch metadata:', error);
         throw error;
+    }
+}
+
+function isSafeRemoteUrl(rawUrl) {
+    try {
+        const parsedUrl = new URL(rawUrl);
+        return parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:';
+    } catch {
+        return false;
     }
 }
 

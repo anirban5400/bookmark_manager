@@ -1293,6 +1293,17 @@ body {
     transition: color var(--transition-fast);
 }
 
+.bookmark-info .bookmark-title {
+    display: block;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .bookmark-info a:hover {
     color: var(--accent-color);
 }
