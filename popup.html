@@ -52,6 +52,17 @@
                     <span class="btn-icon">📝</span>
                     <span class="btn-text">Notes</span>
                 </button>
+                <!-- Bookmark View Toggle -->
+                <div class="bookmark-view-toggle" id="bookmarkViewToggle" aria-label="Bookmark layout">
+                    <button class="bookmark-view-btn active" id="bookmarkCardsViewBtn" type="button" title="Card view">
+                        <span class="btn-icon">🧱</span>
+                        <span class="btn-text">Cards</span>
+                    </button>
+                    <button class="bookmark-view-btn" id="bookmarkTableViewBtn" type="button" title="Table view">
+                        <span class="btn-icon">📋</span>
+                        <span class="btn-text">Table</span>
+                    </button>
+                </div>
                 <!-- Add New Bookmark Toggle Button -->
                 <button class="btn-add-toggle" id="addToggleBtn" title="Add new bookmark (⌘/Ctrl+N)">
                     <span class="btn-icon">➕</span>
@@ -183,6 +194,7 @@
                     <div class="spinner"></div>
                 </div>
             </div>
+            <div id="bookmarksTableContainer" class="bookmark-table-container hidden"></div>
         </div>
 
         <!-- ========== NOTES PAGE (Hidden by default) ========== -->

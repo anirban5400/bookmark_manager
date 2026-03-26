@@ -9,12 +9,17 @@ const urlInput = document.getElementById('urlInput');
 const titleInput = document.getElementById('titleInput');
 const descInput = document.getElementById('descInput');
 const searchInput = document.getElementById('searchInput');
+const headerSearch = document.querySelector('.header-search');
 const bookmarksContainer = document.getElementById('bookmarksContainer');
+const bookmarksTableContainer = document.getElementById('bookmarksTableContainer');
 const bookmarkCount = document.getElementById('bookmarkCount');
 const themeToggle = document.getElementById('themeToggle');
 const loadingState = document.getElementById('loadingState');
 const addToggleBtn = document.getElementById('addToggleBtn');
 const fetchStatus = document.getElementById('fetchStatus');
+const bookmarkViewToggle = document.getElementById('bookmarkViewToggle');
+const bookmarkCardsViewBtn = document.getElementById('bookmarkCardsViewBtn');
+const bookmarkTableViewBtn = document.getElementById('bookmarkTableViewBtn');
 
 // Status indicator elements
 const dateTimeDisplay = document.getElementById('dateTimeDisplay');
@@ -89,7 +94,10 @@ let isNotesPageVisible = false;
 let allNotes = [];
 let noteSaveTimeouts = {};
 let draggedNoteId = null;
+let currentBookmarkView = 'cards';
+let bookmarkTableApi = null;
 const SETTINGS_STORAGE_KEY = 'bmSettings';
+const UI_STATE_STORAGE_KEY = 'bmUiState';
 const BOOKMARK_ALLOWED_PROTOCOLS = new Set(['http:', 'https:']);
 
 // Settings state (with defaults)
@@ -166,12 +174,18 @@ async function init() {
         
         // Load settings
         await loadSettings();
+
+        // Load persisted UI state
+        await loadUiState();
         
         // Load bookmarks
         await loadBookmarks();
         
         // Setup event listeners
         setupEventListeners();
+
+        // Apply restored page mode after listeners are ready
+        applyPageState();
         
         // Initialize status indicators
         initStatusIndicators();
@@ -203,6 +217,13 @@ function setupEventListeners() {
     
     // Delete button clicks (event delegation)
     bookmarksContainer.addEventListener('click', handleContainerClick);
+
+    if (bookmarkCardsViewBtn) {
+        bookmarkCardsViewBtn.addEventListener('click', () => switchBookmarkView('cards'));
+    }
+    if (bookmarkTableViewBtn) {
+        bookmarkTableViewBtn.addEventListener('click', () => switchBookmarkView('table'));
+    }
     
     // Theme toggle
     themeToggle.addEventListener('click', toggleTheme);
@@ -331,8 +352,12 @@ function handleKeyboardShortcuts(e) {
     // Ctrl/Cmd + K = Focus search
     if (modifierKey && e.key.toLowerCase() === 'k') {
         e.preventDefault();
-        searchInput.focus();
-        searchInput.select();
+        if (currentBookmarkView === 'table' && bookmarkTableApi) {
+            bookmarkTableApi.focusSearch();
+        } else {
+            searchInput.focus();
+            searchInput.select();
+        }
     }
     
     // Ctrl/Cmd + N = Toggle add new bookmark form
@@ -435,6 +460,59 @@ function getStorageArea() {
     }
 
     return null;
+}
+
+async function loadUiState() {
+    const storageArea = getStorageArea();
+    let savedState = null;
+
+    if (storageArea) {
+        try {
+            const storedValues = await storageArea.get(UI_STATE_STORAGE_KEY);
+            savedState = storedValues?.[UI_STATE_STORAGE_KEY] ?? null;
+        } catch (error) {
+            console.error('Failed to load UI state:', error);
+        }
+    } else {
+        try {
+            savedState = localStorage.getItem(UI_STATE_STORAGE_KEY);
+        } catch (error) {
+            console.error('Failed to load UI state:', error);
+        }
+    }
+
+    if (!savedState) return;
+
+    try {
+        const parsedState = typeof savedState === 'string' ? JSON.parse(savedState) : savedState;
+        if (parsedState?.bookmarkView === 'cards' || parsedState?.bookmarkView === 'table') {
+            currentBookmarkView = parsedState.bookmarkView;
+        }
+        isNotesPageVisible = Boolean(parsedState?.isNotesPageVisible);
+    } catch (error) {
+        console.error('Failed to parse UI state:', error);
+    }
+}
+
+async function saveUiState() {
+    const storageArea = getStorageArea();
+    const state = {
+        bookmarkView: currentBookmarkView,
+        isNotesPageVisible
+    };
+
+    try {
+        if (storageArea) {
+            await storageArea.set({ [UI_STATE_STORAGE_KEY]: state });
+            return true;
+        }
+
+        localStorage.setItem(UI_STATE_STORAGE_KEY, JSON.stringify(state));
+        return true;
+    } catch (error) {
+        console.error('Failed to save UI state:', error);
+        return false;
+    }
 }
 
 /**
@@ -710,9 +788,102 @@ async function loadBookmarks() {
 }
 
 /**
- * Render bookmarks to the UI (XSS-safe with Neumorphic design)
+ * Clear the card-view search state.
+ */
+function clearCardSearchState() {
+    if (searchInput) {
+        searchInput.value = '';
+    }
+
+    updateCount(allBookmarks.length);
+    renderBookmarkCards(allBookmarks);
+}
+
+/**
+ * Update bookmark view controls and visible containers.
+ */
+function updateBookmarkViewControls() {
+    const isTableView = currentBookmarkView === 'table';
+
+    if (bookmarkCardsViewBtn) {
+        bookmarkCardsViewBtn.classList.toggle('active', !isTableView);
+    }
+    if (bookmarkTableViewBtn) {
+        bookmarkTableViewBtn.classList.toggle('active', isTableView);
+    }
+    if (headerSearch) {
+        headerSearch.classList.toggle('hidden', isTableView);
+    }
+    if (bookmarksContainer) {
+        bookmarksContainer.classList.toggle('hidden', isTableView);
+    }
+    if (bookmarksTableContainer) {
+        bookmarksTableContainer.classList.toggle('hidden', !isTableView);
+    }
+}
+
+function applyPageState() {
+    if (isNotesPageVisible) {
+        if (bookmarksPage) bookmarksPage.classList.add('hidden');
+        if (notesPage) notesPage.classList.remove('hidden');
+        if (notesToggleBtn) notesToggleBtn.classList.add('active');
+        if (addToggleBtn) addToggleBtn.style.display = 'none';
+        if (bookmarkViewToggle) bookmarkViewToggle.style.display = 'none';
+
+        const container = document.querySelector('.container');
+        if (container) container.classList.add('notes-active');
+
+        loadNotes();
+        return;
+    }
+
+    if (bookmarksPage) bookmarksPage.classList.remove('hidden');
+    if (notesPage) notesPage.classList.add('hidden');
+    if (notesToggleBtn) notesToggleBtn.classList.remove('active');
+    if (addToggleBtn) addToggleBtn.style.display = '';
+    if (bookmarkViewToggle) bookmarkViewToggle.style.display = '';
+
+    const container = document.querySelector('.container');
+    if (container) container.classList.remove('notes-active');
+
+    updateBookmarkViewControls();
+}
+
+/**
+ * Switch between bookmark card and table views.
+ */
+function switchBookmarkView(view) {
+    if (view !== 'cards' && view !== 'table') return;
+    if (isNotesPageVisible) return;
+
+    if (view === 'table') {
+        clearCardSearchState();
+        if (bookmarkTableApi) {
+            bookmarkTableApi.reset();
+        }
+    }
+
+    currentBookmarkView = view;
+    updateBookmarkViewControls();
+    renderBookmarks(allBookmarks);
+    void saveUiState();
+}
+
+/**
+ * Render bookmarks in the active view while keeping both representations in sync.
  */
 function renderBookmarks(bookmarks) {
+    renderBookmarkCards(bookmarks);
+    renderBookmarkTable(bookmarks);
+    updateBookmarkViewControls();
+}
+
+/**
+ * Render bookmarks to the card UI (XSS-safe with Neumorphic design)
+ */
+function renderBookmarkCards(bookmarks) {
+    if (!bookmarksContainer) return;
+
     // Clear container
     bookmarksContainer.innerHTML = '';
     
@@ -790,6 +961,655 @@ function renderBookmarks(bookmarks) {
 }
 
 /**
+ * Open a bookmark in a new tab if it uses a safe URL scheme.
+ */
+function openBookmarkUrl(rawUrl) {
+    const safeUrl = parseSafeBookmarkUrl(rawUrl);
+    if (!safeUrl) {
+        showToast('Blocked unsafe URL', 'error');
+        return;
+    }
+
+    window.open(safeUrl.toString(), '_blank', 'noopener,noreferrer');
+}
+
+function formatBookmarkTableDate(isoString) {
+    const date = new Date(isoString);
+    if (Number.isNaN(date.getTime())) {
+        return { primary: 'Unknown', secondary: '' };
+    }
+
+    return {
+        primary: date.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+        }),
+        secondary: date.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit'
+        })
+    };
+}
+
+function getBookmarkTableColumns() {
+    return [
+        {
+            key: 'title',
+            label: 'Title',
+            sortable: true,
+            getSortValue: (bookmark) => (bookmark.title || '').toLowerCase(),
+            getSearchValue: (bookmark) => `${bookmark.title || ''} ${bookmark.description || ''}`,
+            renderCell: (cell, bookmark) => {
+                const safeUrl = parseSafeBookmarkUrl(bookmark.url);
+                const titleElement = createBookmarkTitleElement(bookmark, safeUrl);
+                titleElement.classList.add('bookmark-table-title-link');
+
+                const main = document.createElement('div');
+                main.className = 'bookmark-table-cell-main';
+                main.appendChild(titleElement);
+
+                cell.appendChild(main);
+            }
+        },
+        {
+            key: 'url',
+            label: 'Domain / URL',
+            sortable: true,
+            getSortValue: (bookmark) => {
+                const safeUrl = parseSafeBookmarkUrl(bookmark.url);
+                return (safeUrl?.hostname || bookmark.url || '').toLowerCase();
+            },
+            getSearchValue: (bookmark) => bookmark.url || '',
+            renderCell: (cell, bookmark) => {
+                const safeUrl = parseSafeBookmarkUrl(bookmark.url);
+                const main = document.createElement('div');
+                main.className = 'bookmark-table-cell-main';
+                main.textContent = safeUrl ? safeUrl.hostname : 'Blocked unsafe URL';
+
+                const sub = document.createElement('div');
+                sub.className = 'bookmark-table-cell-sub';
+                sub.textContent = bookmark.url || 'Unavailable';
+
+                cell.appendChild(main);
+                cell.appendChild(sub);
+            }
+        },
+        {
+            key: 'description',
+            label: 'Description',
+            getSortValue: (bookmark) => (bookmark.description || '').toLowerCase(),
+            getSearchValue: (bookmark) => bookmark.description || '',
+            renderCell: (cell, bookmark) => {
+                const description = document.createElement('div');
+                description.className = 'bookmark-table-desc';
+                description.textContent = bookmark.description || 'No description';
+                cell.appendChild(description);
+            }
+        },
+        {
+            key: 'createdAt',
+            label: 'Added',
+            sortable: true,
+            getSortValue: (bookmark) => bookmark.createdAt || '',
+            getSearchValue: (bookmark) => bookmark.createdAt || '',
+            renderCell: (cell, bookmark) => {
+                const { primary, secondary } = formatBookmarkTableDate(bookmark.createdAt);
+                const main = document.createElement('div');
+                main.className = 'bookmark-table-cell-main';
+                main.textContent = primary;
+
+                const sub = document.createElement('div');
+                sub.className = 'bookmark-table-cell-sub';
+                sub.textContent = secondary;
+
+                cell.appendChild(main);
+                if (secondary) {
+                    cell.appendChild(sub);
+                }
+            }
+        }
+    ];
+}
+
+/**
+ * Render bookmarks in table view using an extension-local data table implementation.
+ */
+function renderBookmarkTable(bookmarks) {
+    if (!bookmarksTableContainer) return;
+
+    if (!bookmarkTableApi) {
+        if (currentBookmarkView !== 'table') {
+            return;
+        }
+
+        bookmarkTableApi = createBookmarkTable(bookmarksTableContainer, {
+            columns: getBookmarkTableColumns(),
+            actions: [
+                { key: 'open', label: '↗ Open' },
+                { divider: true },
+                { key: 'delete', label: '✕ Delete', danger: true }
+            ],
+            defaultPerPage: 10,
+            perPageOptions: [5, 10, 25, 50],
+            onAction: async (action, bookmark) => {
+                if (action === 'open') {
+                    openBookmarkUrl(bookmark.url);
+                    return;
+                }
+
+                if (action === 'delete') {
+                    await deleteBookmark(bookmark.id);
+                }
+            }
+        });
+    }
+
+    bookmarkTableApi.setData(bookmarks);
+}
+
+/**
+ * Create a bookmark-specific data table with local behavior only.
+ */
+function createBookmarkTable(container, config) {
+    const columns = config.columns || [];
+    const actions = config.actions || [];
+    const onAction = config.onAction || (() => {});
+    const perPageOptions = config.perPageOptions || [5, 10, 25, 50];
+    const defaultPerPage = config.defaultPerPage || 10;
+
+    let allData = [];
+    let filteredData = [];
+    let searchTerm = '';
+    let currentPage = 1;
+    let perPage = defaultPerPage;
+    let sortKey = '';
+    let sortDirection = 'asc';
+    const hiddenColumns = new Set();
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'bookmark-table-shell';
+
+    const toolbar = document.createElement('div');
+    toolbar.className = 'bookmark-table-toolbar';
+
+    const toolbarLeft = document.createElement('div');
+    toolbarLeft.className = 'bookmark-table-toolbar-left';
+
+    const search = document.createElement('label');
+    search.className = 'bookmark-table-search';
+
+    const searchIcon = document.createElement('span');
+    searchIcon.className = 'bookmark-table-search-icon';
+    searchIcon.textContent = '🔍';
+
+    const searchField = document.createElement('input');
+    searchField.type = 'text';
+    searchField.placeholder = 'Search bookmarks...';
+
+    search.appendChild(searchIcon);
+    search.appendChild(searchField);
+
+    const resetBtn = document.createElement('button');
+    resetBtn.type = 'button';
+    resetBtn.className = 'bookmark-table-reset';
+    resetBtn.textContent = '↻ Reset';
+
+    toolbarLeft.appendChild(search);
+    toolbarLeft.appendChild(resetBtn);
+
+    const toolbarRight = document.createElement('div');
+    toolbarRight.className = 'bookmark-table-toolbar-right';
+
+    const columnManager = document.createElement('div');
+    columnManager.className = 'bookmark-table-col-manager';
+
+    const columnBtn = document.createElement('button');
+    columnBtn.type = 'button';
+    columnBtn.className = 'bookmark-table-col-btn';
+    columnBtn.textContent = '⚙ Columns';
+
+    const columnPanel = document.createElement('div');
+    columnPanel.className = 'bookmark-table-col-panel hidden';
+
+    columnManager.appendChild(columnBtn);
+    columnManager.appendChild(columnPanel);
+
+    const perPageWrap = document.createElement('label');
+    perPageWrap.className = 'bookmark-table-per-page';
+    perPageWrap.textContent = 'Show';
+
+    const perPageSelect = document.createElement('select');
+    perPageOptions.forEach((option) => {
+        const optionEl = document.createElement('option');
+        optionEl.value = String(option);
+        optionEl.textContent = option;
+        if (option === defaultPerPage) optionEl.selected = true;
+        perPageSelect.appendChild(optionEl);
+    });
+    perPageWrap.appendChild(perPageSelect);
+
+    toolbarRight.appendChild(columnManager);
+    toolbarRight.appendChild(perPageWrap);
+
+    toolbar.appendChild(toolbarLeft);
+    toolbar.appendChild(toolbarRight);
+
+    const tableWrap = document.createElement('div');
+    tableWrap.className = 'bookmark-table-wrap';
+
+    const table = document.createElement('table');
+    table.className = 'bookmark-table-grid';
+
+    const thead = document.createElement('thead');
+    const tbody = document.createElement('tbody');
+    table.appendChild(thead);
+    table.appendChild(tbody);
+    tableWrap.appendChild(table);
+
+    const footer = document.createElement('div');
+    footer.className = 'bookmark-table-footer';
+
+    const info = document.createElement('div');
+    info.className = 'bookmark-table-info';
+
+    const pages = document.createElement('div');
+    pages.className = 'bookmark-table-pages';
+
+    footer.appendChild(info);
+    footer.appendChild(pages);
+
+    wrapper.appendChild(toolbar);
+    wrapper.appendChild(tableWrap);
+    wrapper.appendChild(footer);
+
+    container.innerHTML = '';
+    container.appendChild(wrapper);
+
+    function normalizeValue(value) {
+        if (value == null) return '';
+        if (typeof value === 'string' || typeof value === 'number') return String(value);
+        if (Array.isArray(value)) return value.map(normalizeValue).join(' ');
+        if (typeof value === 'object') return Object.values(value).map(normalizeValue).join(' ');
+        return String(value);
+    }
+
+    function getVisibleColumns() {
+        const visible = columns.filter((column) => !hiddenColumns.has(column.key));
+        return visible.length > 0 ? visible : [columns[0]].filter(Boolean);
+    }
+
+    function getSearchableText(bookmark) {
+        return columns
+            .map((column) => {
+                if (typeof column.getSearchValue === 'function') {
+                    return normalizeValue(column.getSearchValue(bookmark));
+                }
+                return normalizeValue(bookmark[column.key]);
+            })
+            .join(' ')
+            .toLowerCase();
+    }
+
+    function compareValues(left, right) {
+        const normalizedLeft = normalizeValue(left).toLowerCase();
+        const normalizedRight = normalizeValue(right).toLowerCase();
+
+        if (normalizedLeft < normalizedRight) return -1;
+        if (normalizedLeft > normalizedRight) return 1;
+        return 0;
+    }
+
+    function sortData(rows) {
+        if (!sortKey) return rows;
+        const column = columns.find((item) => item.key === sortKey);
+        if (!column) return rows;
+
+        rows.sort((left, right) => {
+            const leftValue = typeof column.getSortValue === 'function' ? column.getSortValue(left) : left[column.key];
+            const rightValue = typeof column.getSortValue === 'function' ? column.getSortValue(right) : right[column.key];
+            const comparison = compareValues(leftValue, rightValue);
+            return sortDirection === 'asc' ? comparison : -comparison;
+        });
+
+        return rows;
+    }
+
+    function closeActionMenus() {
+        wrapper.querySelectorAll('.bookmark-table-action-menu').forEach((menu) => {
+            menu.classList.add('hidden');
+        });
+    }
+
+    function renderColumnPanel() {
+        columnPanel.innerHTML = '';
+
+        const title = document.createElement('div');
+        title.className = 'bookmark-table-col-title';
+        title.textContent = 'Manage Columns';
+        columnPanel.appendChild(title);
+
+        columns.forEach((column) => {
+            const option = document.createElement('label');
+            option.className = 'bookmark-table-col-option';
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = !hiddenColumns.has(column.key);
+            checkbox.dataset.columnKey = column.key;
+
+            const text = document.createElement('span');
+            text.textContent = column.label;
+
+            option.appendChild(checkbox);
+            option.appendChild(text);
+            columnPanel.appendChild(option);
+        });
+    }
+
+    function renderHeader() {
+        const visibleColumns = getVisibleColumns();
+        thead.innerHTML = '';
+
+        const row = document.createElement('tr');
+        visibleColumns.forEach((column) => {
+            const cell = document.createElement('th');
+            if (column.sortable) {
+                const sortBtn = document.createElement('button');
+                sortBtn.type = 'button';
+                sortBtn.className = 'bookmark-table-sort-btn';
+                sortBtn.dataset.sortKey = column.key;
+                if (sortKey === column.key) {
+                    sortBtn.dataset.sort = sortDirection;
+                }
+
+                const label = document.createElement('span');
+                label.textContent = column.label;
+
+                const icon = document.createElement('span');
+                icon.className = 'bookmark-table-sort-icon';
+                icon.textContent = sortDirection === 'desc' && sortKey === column.key ? '▼' : '▲';
+
+                sortBtn.appendChild(label);
+                sortBtn.appendChild(icon);
+                cell.appendChild(sortBtn);
+            } else {
+                cell.textContent = column.label;
+            }
+            row.appendChild(cell);
+        });
+
+        if (actions.length > 0) {
+            const actionsHeader = document.createElement('th');
+            actionsHeader.textContent = 'Actions';
+            row.appendChild(actionsHeader);
+        }
+
+        thead.appendChild(row);
+    }
+
+    function renderBody() {
+        const visibleColumns = getVisibleColumns();
+        const totalRows = filteredData.length;
+        const totalPages = totalRows === 0 ? 1 : Math.ceil(totalRows / perPage);
+        if (currentPage > totalPages) {
+            currentPage = totalPages;
+        }
+
+        const startIndex = (currentPage - 1) * perPage;
+        const pageRows = filteredData.slice(startIndex, startIndex + perPage);
+
+        tbody.innerHTML = '';
+        if (pageRows.length === 0) {
+            const emptyRow = document.createElement('tr');
+            emptyRow.className = 'bookmark-table-empty-row';
+
+            const emptyCell = document.createElement('td');
+            emptyCell.colSpan = visibleColumns.length + (actions.length > 0 ? 1 : 0);
+            emptyCell.textContent = totalRows === 0 ? 'No bookmarks to show.' : 'No bookmarks match the current table search.';
+
+            emptyRow.appendChild(emptyCell);
+            tbody.appendChild(emptyRow);
+            return;
+        }
+
+        pageRows.forEach((bookmark) => {
+            const row = document.createElement('tr');
+
+            visibleColumns.forEach((column) => {
+                const cell = document.createElement('td');
+                column.renderCell(cell, bookmark);
+                row.appendChild(cell);
+            });
+
+            if (actions.length > 0) {
+                const actionCell = document.createElement('td');
+                actionCell.className = 'bookmark-table-action-cell';
+
+                const actionBtn = document.createElement('button');
+                actionBtn.type = 'button';
+                actionBtn.className = 'bookmark-table-action-trigger';
+                actionBtn.dataset.actionToggle = String(bookmark.id);
+                actionBtn.textContent = '⋮';
+
+                const actionMenu = document.createElement('div');
+                actionMenu.className = 'bookmark-table-action-menu hidden';
+
+                actions.forEach((action) => {
+                    if (action.divider) {
+                        const divider = document.createElement('div');
+                        divider.className = 'bookmark-table-action-divider';
+                        actionMenu.appendChild(divider);
+                        return;
+                    }
+
+                    const item = document.createElement('button');
+                    item.type = 'button';
+                    item.className = `bookmark-table-action-item${action.danger ? ' danger' : ''}`;
+                    item.dataset.actionKey = action.key;
+                    item.dataset.rowId = String(bookmark.id);
+                    item.textContent = action.label;
+                    actionMenu.appendChild(item);
+                });
+
+                actionCell.appendChild(actionBtn);
+                actionCell.appendChild(actionMenu);
+                row.appendChild(actionCell);
+            }
+
+            tbody.appendChild(row);
+        });
+    }
+
+    function renderFooter() {
+        const totalRows = filteredData.length;
+        const totalPages = totalRows === 0 ? 1 : Math.ceil(totalRows / perPage);
+        const from = totalRows === 0 ? 0 : (currentPage - 1) * perPage + 1;
+        const to = totalRows === 0 ? 0 : Math.min(currentPage * perPage, totalRows);
+
+        info.textContent = `Showing ${from}-${to} of ${totalRows} bookmarks`;
+        pages.innerHTML = '';
+
+        if (totalPages <= 1) return;
+
+        const pageButtons = ['prev'];
+        for (let page = 1; page <= totalPages; page += 1) {
+            pageButtons.push(page);
+        }
+        pageButtons.push('next');
+
+        pageButtons.forEach((page) => {
+            if (typeof page === 'number') {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = `bookmark-table-page-btn${page === currentPage ? ' active' : ''}`;
+                button.dataset.page = String(page);
+                button.textContent = String(page);
+                pages.appendChild(button);
+                return;
+            }
+
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'bookmark-table-page-btn';
+            button.dataset.page = page;
+            button.disabled = page === 'prev' ? currentPage === 1 : currentPage === totalPages;
+            button.textContent = page === 'prev' ? '‹' : '›';
+            pages.appendChild(button);
+        });
+    }
+
+    function render() {
+        renderColumnPanel();
+        renderHeader();
+        renderBody();
+        renderFooter();
+        closeActionMenus();
+    }
+
+    function applyFilters() {
+        const rows = [...allData];
+        filteredData = rows.filter((bookmark) => getSearchableText(bookmark).includes(searchTerm));
+        sortData(filteredData);
+        render();
+    }
+
+    function reset() {
+        searchTerm = '';
+        sortKey = '';
+        sortDirection = 'asc';
+        currentPage = 1;
+        hiddenColumns.clear();
+        searchField.value = '';
+        perPage = defaultPerPage;
+        perPageSelect.value = String(defaultPerPage);
+        applyFilters();
+    }
+
+    searchField.addEventListener('input', (event) => {
+        searchTerm = event.target.value.trim().toLowerCase();
+        currentPage = 1;
+        applyFilters();
+    });
+
+    resetBtn.addEventListener('click', reset);
+
+    perPageSelect.addEventListener('change', (event) => {
+        perPage = parseInt(event.target.value, 10);
+        currentPage = 1;
+        render();
+    });
+
+    columnBtn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        columnPanel.classList.toggle('hidden');
+    });
+
+    columnPanel.addEventListener('change', (event) => {
+        const checkbox = event.target;
+        if (!checkbox.matches('input[type="checkbox"][data-column-key]')) return;
+
+        const selectedColumns = Array.from(columnPanel.querySelectorAll('input[type="checkbox"][data-column-key]:checked'));
+        if (selectedColumns.length === 0) {
+            checkbox.checked = true;
+            return;
+        }
+
+        const columnKey = checkbox.dataset.columnKey;
+        if (checkbox.checked) {
+            hiddenColumns.delete(columnKey);
+        } else {
+            hiddenColumns.add(columnKey);
+        }
+
+        render();
+    });
+
+    thead.addEventListener('click', (event) => {
+        const sortBtn = event.target.closest('.bookmark-table-sort-btn');
+        if (!sortBtn) return;
+
+        const nextSortKey = sortBtn.dataset.sortKey;
+        if (sortKey === nextSortKey) {
+            sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            sortKey = nextSortKey;
+            sortDirection = 'asc';
+        }
+
+        applyFilters();
+    });
+
+    wrapper.addEventListener('click', async (event) => {
+        const actionToggle = event.target.closest('[data-action-toggle]');
+        if (actionToggle) {
+            event.stopPropagation();
+            const menu = actionToggle.nextElementSibling;
+            const shouldOpen = menu?.classList.contains('hidden');
+            closeActionMenus();
+            if (menu && shouldOpen) {
+                menu.classList.remove('hidden');
+            }
+            return;
+        }
+
+        const actionItem = event.target.closest('[data-action-key][data-row-id]');
+        if (actionItem) {
+            const actionKey = actionItem.dataset.actionKey;
+            const rowId = parseInt(actionItem.dataset.rowId, 10);
+            const bookmark = allData.find((row) => row.id === rowId);
+            closeActionMenus();
+
+            if (bookmark && actionKey) {
+                await onAction(actionKey, bookmark);
+            }
+            return;
+        }
+
+        const pageBtn = event.target.closest('[data-page]');
+        if (pageBtn) {
+            const page = pageBtn.dataset.page;
+            const totalPages = filteredData.length === 0 ? 1 : Math.ceil(filteredData.length / perPage);
+            if (page === 'prev' && currentPage > 1) {
+                currentPage -= 1;
+            } else if (page === 'next' && currentPage < totalPages) {
+                currentPage += 1;
+            } else if (page !== 'prev' && page !== 'next') {
+                currentPage = parseInt(page, 10);
+            }
+
+            render();
+        }
+    });
+
+    document.addEventListener('click', (event) => {
+        if (!wrapper.contains(event.target)) {
+            columnPanel.classList.add('hidden');
+            closeActionMenus();
+        }
+    });
+
+    return {
+        setData(newData) {
+            allData = Array.isArray(newData) ? [...newData] : [];
+            filteredData = [...allData];
+            reset();
+        },
+        refresh() {
+            applyFilters();
+        },
+        focusSearch() {
+            searchField.focus();
+            searchField.select();
+        },
+        getFilteredData() {
+            return [...filteredData];
+        },
+        reset
+    };
+}
+
+/**
  * Handle clicks on the container (event delegation)
  */
 async function handleContainerClick(event) {
@@ -819,6 +1639,10 @@ async function deleteBookmark(id) {
  * Handle search functionality
  */
 async function handleSearch(query) {
+    if (currentBookmarkView !== 'cards') {
+        return;
+    }
+
     if (!query) {
         renderBookmarks(allBookmarks);
         updateCount(allBookmarks.length);
@@ -1723,31 +2547,9 @@ const NOTES_STORAGE_KEY = 'bmNotes';
  */
 function toggleNotesPage() {
     isNotesPageVisible = !isNotesPageVisible;
-    
-    if (isNotesPageVisible) {
-        // Show notes, hide bookmarks
-        if (bookmarksPage) bookmarksPage.classList.add('hidden');
-        if (notesPage) notesPage.classList.remove('hidden');
-        if (notesToggleBtn) notesToggleBtn.classList.add('active');
-        // Hide bookmark-specific header actions
-        if (addToggleBtn) addToggleBtn.style.display = 'none';
-        // Expand container to full width for notes
-        const container = document.querySelector('.container');
-        if (container) container.classList.add('notes-active');
-        
-        // Load and render notes
-        loadNotes();
-    } else {
-        // Show bookmarks, hide notes
-        if (bookmarksPage) bookmarksPage.classList.remove('hidden');
-        if (notesPage) notesPage.classList.add('hidden');
-        if (notesToggleBtn) notesToggleBtn.classList.remove('active');
-        // Restore bookmark-specific header actions
-        if (addToggleBtn) addToggleBtn.style.display = '';
-        // Restore container max-width for bookmarks
-        const container = document.querySelector('.container');
-        if (container) container.classList.remove('notes-active');
-    }
+
+    applyPageState();
+    void saveUiState();
 }
 
 /**
