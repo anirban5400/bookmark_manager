@@ -8,6 +8,10 @@ const addBookmarkForm = document.getElementById('addBookmarkForm');
 const urlInput = document.getElementById('urlInput');
 const titleInput = document.getElementById('titleInput');
 const descInput = document.getElementById('descInput');
+const bookmarkFormLabel = document.getElementById('bookmarkFormLabel');
+const bookmarkSubmitIcon = document.getElementById('bookmarkSubmitIcon');
+const bookmarkSubmitText = document.getElementById('bookmarkSubmitText');
+const cancelBookmarkEditBtn = document.getElementById('cancelBookmarkEditBtn');
 const searchInput = document.getElementById('searchInput');
 const headerSearch = document.querySelector('.header-search');
 const bookmarksContainer = document.getElementById('bookmarksContainer');
@@ -96,6 +100,7 @@ let noteSaveTimeouts = {};
 let draggedNoteId = null;
 let currentBookmarkView = 'cards';
 let bookmarkTableApi = null;
+let editingBookmarkId = null;
 const SETTINGS_STORAGE_KEY = 'bmSettings';
 const UI_STATE_STORAGE_KEY = 'bmUiState';
 const BOOKMARK_ALLOWED_PROTOCOLS = new Set(['http:', 'https:']);
@@ -231,6 +236,9 @@ function setupEventListeners() {
     // Add form toggle button
     if (addToggleBtn) {
         addToggleBtn.addEventListener('click', toggleAddForm);
+    }
+    if (cancelBookmarkEditBtn) {
+        cancelBookmarkEditBtn.addEventListener('click', cancelBookmarkEdit);
     }
     
     // Keyboard shortcuts
@@ -380,20 +388,82 @@ function handleKeyboardShortcuts(e) {
  * Toggle the add bookmark form visibility
  */
 function toggleAddForm() {
-    isFormVisible = !isFormVisible;
-    
     if (isFormVisible) {
-        addBookmarkForm.classList.remove('hidden');
-        addToggleBtn.classList.add('active');
-        // Focus on URL input after animation
-        setTimeout(() => urlInput.focus(), 300);
-    } else {
+        resetBookmarkFormState();
+        isFormVisible = false;
         addBookmarkForm.classList.add('hidden');
         addToggleBtn.classList.remove('active');
-        // Reset fetch status
-        setFetchStatus('', '');
-        fetchedMetadata = null;
+        updateBookmarkFormUi();
+    } else {
+        isFormVisible = true;
+        addBookmarkForm.classList.remove('hidden');
+        addToggleBtn.classList.add('active');
+        updateBookmarkFormUi();
+        // Focus on URL input after animation
+        setTimeout(() => urlInput.focus(), 300);
     }
+}
+
+function updateBookmarkFormUi() {
+    const isEditing = editingBookmarkId !== null;
+
+    if (bookmarkFormLabel) {
+        bookmarkFormLabel.textContent = isEditing ? 'Edit Bookmark' : 'Add Bookmark';
+    }
+    if (bookmarkSubmitIcon) {
+        bookmarkSubmitIcon.textContent = isEditing ? '💾' : '➕';
+    }
+    if (bookmarkSubmitText) {
+        bookmarkSubmitText.textContent = isEditing ? 'Save' : 'Add';
+    }
+    if (cancelBookmarkEditBtn) {
+        cancelBookmarkEditBtn.classList.toggle('hidden', !isEditing || !isFormVisible);
+    }
+}
+
+function resetBookmarkFormState() {
+    addBookmarkForm.reset();
+    editingBookmarkId = null;
+    fetchedMetadata = null;
+    setFetchStatus('', '');
+    updateBookmarkFormUi();
+}
+
+function openBookmarkForm() {
+    if (!isFormVisible) {
+        isFormVisible = true;
+        addBookmarkForm.classList.remove('hidden');
+    }
+    if (addToggleBtn) {
+        addToggleBtn.classList.add('active');
+    }
+    updateBookmarkFormUi();
+}
+
+function closeBookmarkForm() {
+    resetBookmarkFormState();
+    isFormVisible = false;
+    addBookmarkForm.classList.add('hidden');
+    if (addToggleBtn) {
+        addToggleBtn.classList.remove('active');
+    }
+}
+
+function startBookmarkEdit(bookmark) {
+    if (!bookmark) return;
+
+    editingBookmarkId = bookmark.id;
+    fetchedMetadata = null;
+    setFetchStatus('Editing bookmark', 'success');
+    urlInput.value = bookmark.url || '';
+    titleInput.value = bookmark.title || '';
+    descInput.value = bookmark.description || '';
+    openBookmarkForm();
+    setTimeout(() => titleInput.focus(), 100);
+}
+
+function cancelBookmarkEdit() {
+    closeBookmarkForm();
 }
 
 /**
@@ -746,27 +816,41 @@ async function handleAddBookmark(event) {
     }
     
     try {
-        // Add to database
+        if (editingBookmarkId !== null) {
+            const existingBookmark = allBookmarks.find((bookmark) => bookmark.id === editingBookmarkId);
+            if (!existingBookmark) {
+                showToast('Bookmark not found', 'error');
+                return;
+            }
+
+            await bookmarkDB.updateBookmark({
+                ...existingBookmark,
+                title,
+                url,
+                description,
+                favicon: faviconUrl
+            });
+
+            closeBookmarkForm();
+            await loadBookmarks();
+            showToast('Bookmark updated successfully!', 'success');
+            return;
+        }
+
         await bookmarkDB.addBookmark({
             title: title,
             url: url,
             description: description,
             favicon: faviconUrl
         });
-        
-        // Clear form
-        addBookmarkForm.reset();
-        fetchedMetadata = null;
-        setFetchStatus('', '');
+
+        resetBookmarkFormState();
         urlInput.focus();
-        
-        // Reload bookmarks
         await loadBookmarks();
-        
         showToast('Bookmark added successfully!', 'success');
     } catch (error) {
-        console.error('Failed to add bookmark:', error);
-        showToast('Failed to add bookmark', 'error');
+        console.error('Failed to save bookmark:', error);
+        showToast(editingBookmarkId !== null ? 'Failed to update bookmark' : 'Failed to add bookmark', 'error');
     }
 }
 
@@ -1087,6 +1171,7 @@ function renderBookmarkTable(bookmarks) {
             columns: getBookmarkTableColumns(),
             actions: [
                 { key: 'open', label: '↗ Open' },
+                { key: 'edit', label: '✎ Edit' },
                 { divider: true },
                 { key: 'delete', label: '✕ Delete', danger: true }
             ],
@@ -1095,6 +1180,11 @@ function renderBookmarkTable(bookmarks) {
             onAction: async (action, bookmark) => {
                 if (action === 'open') {
                     openBookmarkUrl(bookmark.url);
+                    return;
+                }
+
+                if (action === 'edit') {
+                    startBookmarkEdit(bookmark);
                     return;
                 }
 
@@ -1126,6 +1216,7 @@ function createBookmarkTable(container, config) {
     let sortKey = '';
     let sortDirection = 'asc';
     const hiddenColumns = new Set();
+    const columnWidths = new Map();
 
     const wrapper = document.createElement('div');
     wrapper.className = 'bookmark-table-shell';
@@ -1239,6 +1330,10 @@ function createBookmarkTable(container, config) {
         return visible.length > 0 ? visible : [columns[0]].filter(Boolean);
     }
 
+    function allHeaderCells() {
+        return Array.from(thead.querySelectorAll('th'));
+    }
+
     function getSearchableText(bookmark) {
         return columns
             .map((column) => {
@@ -1314,6 +1409,11 @@ function createBookmarkTable(container, config) {
         const row = document.createElement('tr');
         visibleColumns.forEach((column) => {
             const cell = document.createElement('th');
+            cell.dataset.columnKey = column.key;
+            const storedWidth = columnWidths.get(column.key);
+            if (storedWidth) {
+                cell.style.width = `${storedWidth}px`;
+            }
             if (column.sortable) {
                 const sortBtn = document.createElement('button');
                 sortBtn.type = 'button';
@@ -1346,6 +1446,59 @@ function createBookmarkTable(container, config) {
         }
 
         thead.appendChild(row);
+        attachResizeHandles();
+    }
+
+    function attachResizeHandles() {
+        allHeaderCells().forEach((headerCell) => {
+            if (!headerCell.dataset.columnKey || headerCell.querySelector('.bookmark-table-resize-handle')) {
+                return;
+            }
+
+            const handle = document.createElement('div');
+            handle.className = 'bookmark-table-resize-handle';
+            headerCell.appendChild(handle);
+
+            let startX = 0;
+            let startWidth = 0;
+
+            handle.addEventListener('mousedown', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+
+                if (!table.classList.contains('bookmark-table-grid-resizable')) {
+                    allHeaderCells().forEach((cell) => {
+                        const width = cell.offsetWidth;
+                        cell.style.width = `${width}px`;
+                        if (cell.dataset.columnKey) {
+                            columnWidths.set(cell.dataset.columnKey, width);
+                        }
+                    });
+                    table.classList.add('bookmark-table-grid-resizable');
+                }
+
+                startX = event.pageX;
+                startWidth = headerCell.offsetWidth;
+                handle.classList.add('active');
+                document.body.classList.add('bookmark-table-resizing');
+
+                const onMove = (moveEvent) => {
+                    const nextWidth = Math.max(90, startWidth + (moveEvent.pageX - startX));
+                    headerCell.style.width = `${nextWidth}px`;
+                    columnWidths.set(headerCell.dataset.columnKey, nextWidth);
+                };
+
+                const onUp = () => {
+                    handle.classList.remove('active');
+                    document.body.classList.remove('bookmark-table-resizing');
+                    document.removeEventListener('mousemove', onMove);
+                    document.removeEventListener('mouseup', onUp);
+                };
+
+                document.addEventListener('mousemove', onMove);
+                document.addEventListener('mouseup', onUp);
+            });
+        });
     }
 
     function renderBody() {

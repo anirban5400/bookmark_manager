@@ -84,7 +84,7 @@
             <!-- Add Bookmark Form (Hidden by default) -->
             <form id="addBookmarkForm" class="bookmark-form hidden">
                 <div class="form-header">
-                    <span class="form-label">Add Bookmark</span>
+                    <span class="form-label" id="bookmarkFormLabel">Add Bookmark</span>
                     <span class="fetch-status" id="fetchStatus"></span>
                 </div>
                 <div class="form-row">
@@ -126,10 +126,13 @@
                             ></textarea>
                         </div>
                     </div>
-                    <button type="submit" class="btn-primary">
-                        <span>➕</span>
-                        <span>Add</span>
-                    </button>
+                    <div class="bookmark-form-actions">
+                        <button type="button" class="btn-secondary hidden" id="cancelBookmarkEditBtn">Cancel</button>
+                        <button type="submit" class="btn-primary">
+                            <span id="bookmarkSubmitIcon">➕</span>
+                            <span id="bookmarkSubmitText">Add</span>
+                        </button>
+                    </div>
                 </div>
             </form>
 

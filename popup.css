@@ -1124,6 +1124,7 @@ body {
     align-items: center;
     justify-content: space-between;
     margin-bottom: var(--gap-md);
+    gap: var(--gap-sm);
 }
 
 .form-label {
@@ -1272,6 +1273,39 @@ body {
 
 .btn-primary span:first-child {
     font-size: 1.2rem;
+}
+
+.bookmark-form-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-sm);
+}
+
+.btn-secondary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-base);
+    color: var(--text-secondary);
+    border: none;
+    padding: 1rem 1.4rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    font-family: inherit;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    box-shadow: var(--neu-convex);
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+}
+
+.btn-secondary:hover {
+    box-shadow: var(--neu-flat);
+    color: var(--text-primary);
+}
+
+.btn-secondary:active {
+    box-shadow: var(--neu-concave);
 }
 
 /* Bookmark Grid */
@@ -1614,6 +1648,11 @@ body {
     min-width: 760px;
     border-collapse: separate;
     border-spacing: 0;
+    table-layout: auto;
+}
+
+.bookmark-table-grid.bookmark-table-grid-resizable {
+    table-layout: fixed;
 }
 
 .bookmark-table-grid thead tr {
@@ -1633,6 +1672,7 @@ body {
     text-transform: uppercase;
     color: var(--text-muted);
     white-space: nowrap;
+    position: relative;
 }
 
 .bookmark-table-grid td {
@@ -1672,6 +1712,43 @@ body {
 .bookmark-table-sort-btn[data-sort="asc"] .bookmark-table-sort-icon,
 .bookmark-table-sort-btn[data-sort="desc"] .bookmark-table-sort-icon {
     color: var(--accent-color);
+}
+
+.bookmark-table-resize-handle {
+    position: absolute;
+    top: 0;
+    right: -2px;
+    bottom: 0;
+    width: 6px;
+    cursor: col-resize;
+    z-index: 3;
+}
+
+.bookmark-table-resize-handle::after {
+    content: '';
+    position: absolute;
+    top: 18%;
+    bottom: 18%;
+    right: 2px;
+    width: 1px;
+    background: transparent;
+    transition: background var(--transition-fast);
+}
+
+.bookmark-table-grid th:hover .bookmark-table-resize-handle::after {
+    background: rgba(99, 110, 114, 0.35);
+}
+
+.bookmark-table-resize-handle:hover::after,
+.bookmark-table-resize-handle.active::after {
+    width: 2px;
+    background: var(--accent-color);
+}
+
+body.bookmark-table-resizing,
+body.bookmark-table-resizing * {
+    cursor: col-resize !important;
+    user-select: none !important;
 }
 
 .bookmark-table-cell-main {
@@ -1962,6 +2039,15 @@ body {
     }
     
     .btn-primary {
+        width: 100%;
+    }
+
+    .bookmark-form-actions {
+        width: 100%;
+        flex-direction: column-reverse;
+    }
+
+    .btn-secondary {
         width: 100%;
     }
     
