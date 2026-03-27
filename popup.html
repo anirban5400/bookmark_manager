@@ -11,183 +11,175 @@
 </head>
 <body>
     <div class="container">
-        <!-- Header -->
-        <header class="header">
-            <h1><img src="icon48.png" alt="logo" class="header-logo"> BM</h1>
-            
-            <!-- Search Section in Header -->
-            <div class="header-search">
-                <div class="search-wrapper">
-                    <span class="icon">🔍</span>
-                    <input 
-                        type="text" 
-                        id="searchInput" 
-                        class="search-input" 
-                        placeholder="⌘/Ctrl + K to Search bookmarks..."
-                        autocomplete="off"
-                    >
-                    <div class="stats-count" id="statsCount">
-                        <span id="bookmarkCount">0</span>
-                    </div>
+        <!-- Dashboard Shell -->
+        <header class="dashboard-shell">
+            <div class="dashboard-brand">
+                <div class="dashboard-brand-mark">
+                    <img src="icon48.png" alt="Bookmark Manager logo" class="header-logo">
+                </div>
+                <div class="dashboard-brand-copy">
+                    <!-- <span class="dashboard-eyebrow">Dashboard</span> -->
+                    <h1>BM</h1>
+                </div>
+                <div class="dashboard-nav-row">
+                    <nav class="dashboard-nav" aria-label="Dashboard sections">
+                        <button class="dashboard-nav-btn active" id="bookmarksNavBtn" type="button" title="Go to bookmarks">
+                            <span class="btn-icon">📚</span>
+                            <span class="btn-text">Bookmarks</span>
+                        </button>
+                        <button class="dashboard-nav-btn" id="notesToggleBtn" type="button" title="Go to notes">
+                            <span class="btn-icon">📝</span>
+                            <span class="btn-text">Notes</span>
+                        </button>
+                    </nav>
                 </div>
             </div>
+
             
-            <div class="header-actions">
-                <!-- Date/Time Display -->
-                <div class="status-indicator" id="dateTimeDisplay" title="Current time">
-                    <span class="status-icon" id="timeIcon">🕐</span>
-                    <span class="status-text" id="timeText">--:--</span>
-                </div>
-                <!-- Network Status -->
-                <div class="status-indicator" id="networkStatus" title="Network connection">
-                    <span class="status-icon" id="networkIcon">📶</span>
-                </div>
-                <!-- Memory Usage -->
-                <div class="status-indicator" id="memoryStatus" title="Browser memory usage">
-                    <span class="status-icon">💾</span>
-                    <span class="status-text" id="memoryText">--</span>
-                </div>
-                <!-- Notes Toggle Button -->
-                <button class="btn-notes-toggle" id="notesToggleBtn" title="Toggle Notes">
-                    <span class="btn-icon">📝</span>
-                    <span class="btn-text">Notes</span>
-                </button>
-                <!-- Bookmark View Toggle -->
-                <div class="bookmark-view-toggle" id="bookmarkViewToggle" aria-label="Bookmark layout">
-                    <button class="bookmark-view-btn active" id="bookmarkCardsViewBtn" type="button" title="Card view">
-                        <span class="btn-icon">🧱</span>
-                        <span class="btn-text">Cards</span>
+
+            <div class="dashboard-topbar">
+                <div class="header-actions">
+                    <!-- Date/Time Display -->
+                    <div class="status-indicator" id="dateTimeDisplay" title="Current time">
+                        <span class="status-icon" id="timeIcon">🕐</span>
+                        <span class="status-text" id="timeText">--:--</span>
+                    </div>
+                    <!-- Network Status -->
+                    <div class="status-indicator" id="networkStatus" title="Network connection">
+                        <span class="status-icon" id="networkIcon">📶</span>
+                    </div>
+                    <!-- Memory Usage -->
+                    <div class="status-indicator" id="memoryStatus" title="Browser memory usage">
+                        <span class="status-icon">💾</span>
+                        <span class="status-text" id="memoryText">--</span>
+                    </div>
+                    <!-- Theme Toggle -->
+                    <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+                        <span class="theme-icon" id="themeIcon">🌙</span>
                     </button>
-                    <button class="bookmark-view-btn" id="bookmarkTableViewBtn" type="button" title="Table view">
-                        <span class="btn-icon">📋</span>
-                        <span class="btn-text">Table</span>
+                    <!-- Settings Button -->
+                    <button class="settings-toggle" id="settingsToggle" title="Settings">
+                        <span class="settings-icon">⚙️</span>
                     </button>
                 </div>
-                <!-- Add New Bookmark Toggle Button -->
-                <button class="btn-add-toggle" id="addToggleBtn" title="Add new bookmark (⌘/Ctrl+N)">
-                    <span class="btn-icon">➕</span>
-                    <span class="btn-text">New</span>
-                </button>
-                <!-- Theme Toggle -->
-                <button class="theme-toggle" id="themeToggle" title="Toggle theme">
-                    <span class="theme-icon" id="themeIcon">🌙</span>
-                </button>
-                <!-- Settings Button -->
-                <button class="settings-toggle" id="settingsToggle" title="Settings">
-                    <span class="settings-icon">⚙️</span>
-                </button>
             </div>
         </header>
 
         <!-- ========== BOOKMARKS PAGE ========== -->
         <div id="bookmarksPage">
-            <!-- Add Bookmark Form (Hidden by default) -->
-            <form id="addBookmarkForm" class="bookmark-form hidden">
-                <div class="form-header">
-                    <span class="form-label" id="bookmarkFormLabel">Add Bookmark</span>
-                    <span class="fetch-status" id="fetchStatus"></span>
+            <div class="bookmark-modal-anchor">
+                <!-- Weather Card - Compact like bookmark-card -->
+                <div id="weatherCard" class="weather-card hidden">
+                    <!-- Refresh Button (corner) -->
+                    <button class="weather-refresh-btn" id="weatherRefreshBtn" title="Refresh weather"><span style="scale:2;">↻</span></button>
+                    <div class="weather-loading hidden" id="weatherLoading">
+                        <div class="spinner"></div>
+                        <span>Loading...</span>
+                    </div>
+                    <div class="weather-content hidden" id="weatherContent">
+                        <!-- Current Weather Row -->
+                        <div class="weather-current">
+                            <!-- Icon on left like favicon -->
+                            <div class="weather-icon-wrapper" id="weatherIconWrapper">
+                                <span class="weather-icon" id="weatherIcon">☀️</span>
+                            </div>
+                            <!-- Info on right like bookmark-info -->
+                            <div class="weather-info">
+                                <div class="weather-header">
+                                    <span class="weather-location" id="weatherLocation">--</span>
+                                    <span class="weather-updated" id="weatherUpdated">--</span>
+                                </div>
+                                <div class="weather-main">
+                                    <div class="weather-temp-section">
+                                        <span class="weather-temp" id="weatherTemp">--°</span>
+                                        <span class="weather-condition" id="weatherCondition">--</span>
+                                    </div>
+                                </div>
+                                <div class="weather-stats">
+                                    <div class="weather-stat">
+                                        <span class="stat-icon">💧</span>
+                                        <span class="stat-value" id="weatherHumidity">--%</span>
+                                    </div>
+                                    <div class="weather-stat">
+                                        <span class="stat-icon">💨</span>
+                                        <span class="stat-value" id="weatherWind">--</span>
+                                    </div>
+                                    <div class="weather-stat">
+                                        <span class="stat-icon">🌡️</span>
+                                        <span class="stat-value" id="weatherFeelsLike">--°</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 5-Day Forecast -->
+                        <div class="weather-forecast" id="weatherForecast">
+                            <!-- Forecast days will be rendered by JS -->
+                        </div>
+                    </div>
+                    <div class="weather-error hidden" id="weatherError">
+                        <span class="error-icon">⚠️</span>
+                        <span class="error-text" id="weatherErrorText">Unable to load weather</span>
+                    </div>
                 </div>
-                <div class="form-row">
-                    <div class="input-group input-url-group">
-                        <div class="input-wrapper">
-                            <span class="icon">🔗</span>
-                            <input 
-                                type="url" 
-                                id="urlInput" 
-                                class="form-control" 
-                                placeholder="Paste URL and we'll fetch the details..." 
-                                required
-                                autocomplete="off"
-                            >
+            </div>
+
+            <div id="bookmarksTableContainer" class="bookmark-table-container">
+                <div class="bookmark-workspace-toolbar bookmark-table-toolbar">
+                    <div class="bookmark-table-toolbar-left bookmark-workspace-toolbar-left">
+                        <div class="header-search">
+                            <div class="search-wrapper">
+                                <span class="icon">🔍</span>
+                                <input
+                                    type="text"
+                                    id="searchInput"
+                                    class="search-input"
+                                    placeholder="⌘/Ctrl + K to search bookmarks..."
+                                    autocomplete="off"
+                                >
+                                <div class="stats-count" id="statsCount">
+                                    <span id="bookmarkCount">0</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="input-group">
-                        <div class="input-wrapper">
-                            <span class="icon">📝</span>
-                            <input 
-                                type="text" 
-                                id="titleInput" 
-                                class="form-control" 
-                                placeholder="Title (auto-fetched if empty)" 
-                                autocomplete="off"
-                            >
+
+                    <div class="bookmark-table-toolbar-right bookmark-workspace-toolbar-right">
+                        <button type="button" class="bookmark-table-reset hidden" id="bookmarkToolbarResetBtn">↻ Reset</button>
+
+                        <div class="bookmark-table-col-manager hidden" id="bookmarkToolbarColumnManager">
+                            <button type="button" class="bookmark-table-col-btn" id="bookmarkToolbarColumnsBtn">⚙ Columns</button>
+                            <div class="bookmark-table-col-panel hidden" id="bookmarkToolbarColumnsPanel"></div>
                         </div>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="input-group input-desc-group">
-                        <div class="input-wrapper">
-                            <span class="icon icon-top">📄</span>
-                            <textarea 
-                                id="descInput" 
-                                class="form-control form-textarea" 
-                                placeholder="Description (auto-fetched if empty)"
-                                rows="2"
-                            ></textarea>
+
+                        <label class="bookmark-table-per-page hidden" id="bookmarkToolbarPerPageWrap">
+                            <span>Show</span>
+                            <select id="bookmarkToolbarPerPage">
+                                <option value="5">5</option>
+                                <option value="10" selected>10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                            </select>
+                        </label>
+
+                        <div class="bookmark-view-toggle" id="bookmarkViewToggle" aria-label="Bookmark layout">
+                            <button class="bookmark-view-btn active" id="bookmarkCardsViewBtn" type="button" title="Card view">
+                                <span class="btn-icon">🧱</span>
+                                <span class="btn-text">Cards</span>
+                            </button>
+                            <button class="bookmark-view-btn" id="bookmarkTableViewBtn" type="button" title="Table view">
+                                <span class="btn-icon">📋</span>
+                                <span class="btn-text">Table</span>
+                            </button>
                         </div>
-                    </div>
-                    <div class="bookmark-form-actions">
-                        <button type="button" class="btn-secondary hidden" id="cancelBookmarkEditBtn">Cancel</button>
-                        <button type="submit" class="btn-primary">
-                            <span id="bookmarkSubmitIcon">➕</span>
-                            <span id="bookmarkSubmitText">Add</span>
+
+                        <button class="btn-add-toggle" id="addToggleBtn" title="Add new bookmark (⌘/Ctrl+N)">
+                            <span class="btn-icon">➕</span>
+                            <span class="btn-text">New Bookmark</span>
                         </button>
                     </div>
                 </div>
-            </form>
 
-            <!-- Weather Card - Compact like bookmark-card -->
-            <div id="weatherCard" class="weather-card hidden">
-                <!-- Refresh Button (corner) -->
-                <button class="weather-refresh-btn" id="weatherRefreshBtn" title="Refresh weather"><span style="scale:2;">↻</span></button>
-                <div class="weather-loading hidden" id="weatherLoading">
-                    <div class="spinner"></div>
-                    <span>Loading...</span>
-                </div>
-                <div class="weather-content hidden" id="weatherContent">
-                    <!-- Current Weather Row -->
-                    <div class="weather-current">
-                        <!-- Icon on left like favicon -->
-                        <div class="weather-icon-wrapper" id="weatherIconWrapper">
-                            <span class="weather-icon" id="weatherIcon">☀️</span>
-                        </div>
-                        <!-- Info on right like bookmark-info -->
-                        <div class="weather-info">
-                            <div class="weather-header">
-                                <span class="weather-location" id="weatherLocation">--</span>
-                                <span class="weather-updated" id="weatherUpdated">--</span>
-                            </div>
-                            <div class="weather-main">
-                                <div class="weather-temp-section">
-                                    <span class="weather-temp" id="weatherTemp">--°</span>
-                                    <span class="weather-condition" id="weatherCondition">--</span>
-                                </div>
-                            </div>
-                            <div class="weather-stats">
-                                <div class="weather-stat">
-                                    <span class="stat-icon">💧</span>
-                                    <span class="stat-value" id="weatherHumidity">--%</span>
-                                </div>
-                                <div class="weather-stat">
-                                    <span class="stat-icon">💨</span>
-                                    <span class="stat-value" id="weatherWind">--</span>
-                                </div>
-                                <div class="weather-stat">
-                                    <span class="stat-icon">🌡️</span>
-                                    <span class="stat-value" id="weatherFeelsLike">--°</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- 5-Day Forecast -->
-                    <div class="weather-forecast" id="weatherForecast">
-                        <!-- Forecast days will be rendered by JS -->
-                    </div>
-                </div>
-                <div class="weather-error hidden" id="weatherError">
-                    <span class="error-icon">⚠️</span>
-                    <span class="error-text" id="weatherErrorText">Unable to load weather</span>
-                </div>
+                <div id="bookmarkTableMount" class="hidden"></div>
             </div>
 
             <!-- Bookmark List -->
@@ -197,7 +189,6 @@
                     <div class="spinner"></div>
                 </div>
             </div>
-            <div id="bookmarksTableContainer" class="bookmark-table-container hidden"></div>
         </div>
 
         <!-- ========== NOTES PAGE (Hidden by default) ========== -->
@@ -228,6 +219,74 @@
             <!-- Notes Grid -->
             <div id="notesContainer" class="notes-grid">
                 <!-- Note cards will be rendered by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Bookmark Modal -->
+    <div class="modal-overlay hidden" id="bookmarkModal">
+        <div class="modal-content bookmark-modal-content">
+            <div class="modal-header">
+                <div class="bookmark-modal-heading">
+                    <span class="page-kicker">Bookmark editor</span>
+                    <h2 id="bookmarkModalTitle">Add Bookmark</h2>
+                </div>
+                <button class="modal-close" id="bookmarkModalClose">✕</button>
+            </div>
+            <div class="modal-body bookmark-modal-body">
+                <form id="addBookmarkForm" class="bookmark-form">
+                    <div class="form-header">
+                        <span class="form-label" id="bookmarkFormLabel">Add Bookmark</span>
+                        <span class="fetch-status" id="fetchStatus"></span>
+                    </div>
+                    <div class="form-row">
+                        <div class="input-group input-url-group">
+                            <div class="input-wrapper">
+                                <span class="icon">🔗</span>
+                                <input
+                                    type="url"
+                                    id="urlInput"
+                                    class="form-control"
+                                    placeholder="Paste URL and we'll fetch the details..."
+                                    required
+                                    autocomplete="off"
+                                >
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <div class="input-wrapper">
+                                <span class="icon">📝</span>
+                                <input
+                                    type="text"
+                                    id="titleInput"
+                                    class="form-control"
+                                    placeholder="Title (auto-fetched if empty)"
+                                    autocomplete="off"
+                                >
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="input-group input-desc-group">
+                            <div class="input-wrapper">
+                                <span class="icon icon-top">📄</span>
+                                <textarea
+                                    id="descInput"
+                                    class="form-control form-textarea"
+                                    placeholder="Description (auto-fetched if empty)"
+                                    rows="4"
+                                ></textarea>
+                            </div>
+                        </div>
+                        <div class="bookmark-form-actions">
+                            <button type="button" class="btn-secondary hidden" id="cancelBookmarkEditBtn">Cancel</button>
+                            <button type="submit" class="btn-primary">
+                                <span id="bookmarkSubmitIcon">➕</span>
+                                <span id="bookmarkSubmitText">Add</span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

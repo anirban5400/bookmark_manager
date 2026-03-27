@@ -12,18 +12,28 @@ const bookmarkFormLabel = document.getElementById('bookmarkFormLabel');
 const bookmarkSubmitIcon = document.getElementById('bookmarkSubmitIcon');
 const bookmarkSubmitText = document.getElementById('bookmarkSubmitText');
 const cancelBookmarkEditBtn = document.getElementById('cancelBookmarkEditBtn');
+const bookmarkModal = document.getElementById('bookmarkModal');
+const bookmarkModalClose = document.getElementById('bookmarkModalClose');
+const bookmarkModalTitle = document.getElementById('bookmarkModalTitle');
+const bookmarksNavBtn = document.getElementById('bookmarksNavBtn');
 const searchInput = document.getElementById('searchInput');
 const headerSearch = document.querySelector('.header-search');
 const bookmarksContainer = document.getElementById('bookmarksContainer');
 const bookmarksTableContainer = document.getElementById('bookmarksTableContainer');
+const bookmarkTableMount = document.getElementById('bookmarkTableMount');
 const bookmarkCount = document.getElementById('bookmarkCount');
 const themeToggle = document.getElementById('themeToggle');
 const loadingState = document.getElementById('loadingState');
 const addToggleBtn = document.getElementById('addToggleBtn');
 const fetchStatus = document.getElementById('fetchStatus');
-const bookmarkViewToggle = document.getElementById('bookmarkViewToggle');
 const bookmarkCardsViewBtn = document.getElementById('bookmarkCardsViewBtn');
 const bookmarkTableViewBtn = document.getElementById('bookmarkTableViewBtn');
+const bookmarkToolbarResetBtn = document.getElementById('bookmarkToolbarResetBtn');
+const bookmarkToolbarColumnManager = document.getElementById('bookmarkToolbarColumnManager');
+const bookmarkToolbarColumnsBtn = document.getElementById('bookmarkToolbarColumnsBtn');
+const bookmarkToolbarColumnsPanel = document.getElementById('bookmarkToolbarColumnsPanel');
+const bookmarkToolbarPerPageWrap = document.getElementById('bookmarkToolbarPerPageWrap');
+const bookmarkToolbarPerPage = document.getElementById('bookmarkToolbarPerPage');
 
 // Status indicator elements
 const dateTimeDisplay = document.getElementById('dateTimeDisplay');
@@ -101,6 +111,8 @@ let draggedNoteId = null;
 let currentBookmarkView = 'cards';
 let bookmarkTableApi = null;
 let editingBookmarkId = null;
+let cardViewLimit = 10;
+const hiddenCardFields = new Set();
 const SETTINGS_STORAGE_KEY = 'bmSettings';
 const UI_STATE_STORAGE_KEY = 'bmUiState';
 const BOOKMARK_ALLOWED_PROTOCOLS = new Set(['http:', 'https:']);
@@ -229,6 +241,74 @@ function setupEventListeners() {
     if (bookmarkTableViewBtn) {
         bookmarkTableViewBtn.addEventListener('click', () => switchBookmarkView('table'));
     }
+    if (bookmarkToolbarResetBtn) {
+        bookmarkToolbarResetBtn.addEventListener('click', () => {
+            if (currentBookmarkView === 'table' && bookmarkTableApi) {
+                bookmarkTableApi.reset();
+                return;
+            }
+
+            if (searchInput) {
+                searchInput.value = '';
+            }
+            hiddenCardFields.clear();
+            cardViewLimit = 10;
+            if (bookmarkToolbarPerPage) {
+                bookmarkToolbarPerPage.value = String(cardViewLimit);
+            }
+            if (bookmarkToolbarColumnsPanel) {
+                bookmarkToolbarColumnsPanel.classList.add('hidden');
+            }
+            rerenderCurrentCardView();
+        });
+    }
+    if (bookmarkToolbarPerPage) {
+        bookmarkToolbarPerPage.addEventListener('change', (event) => {
+            const nextLimit = parseInt(event.target.value, 10);
+            if (currentBookmarkView === 'table' && bookmarkTableApi) {
+                bookmarkTableApi.setPerPage(nextLimit);
+                return;
+            }
+
+            cardViewLimit = nextLimit;
+            rerenderCurrentCardView();
+        });
+    }
+    if (bookmarkToolbarColumnsBtn) {
+        bookmarkToolbarColumnsBtn.addEventListener('click', (event) => {
+            event.stopPropagation();
+            renderBookmarkToolbarColumnsPanel();
+            if (bookmarkToolbarColumnsPanel) {
+                bookmarkToolbarColumnsPanel.classList.toggle('hidden');
+            }
+        });
+    }
+    if (bookmarkToolbarColumnsPanel) {
+        bookmarkToolbarColumnsPanel.addEventListener('change', (event) => {
+            const checkbox = event.target;
+            if (!checkbox.matches('input[type="checkbox"][data-column-key]')) return;
+
+            const columnKey = checkbox.dataset.columnKey;
+            if (currentBookmarkView === 'table' && bookmarkTableApi) {
+                bookmarkTableApi.setColumnVisibility(columnKey, checkbox.checked);
+                renderBookmarkToolbarColumnsPanel();
+                return;
+            }
+
+            if (checkbox.checked) {
+                hiddenCardFields.delete(columnKey);
+            } else {
+                hiddenCardFields.add(columnKey);
+            }
+            renderBookmarkToolbarColumnsPanel();
+            rerenderCurrentCardView();
+        });
+    }
+    document.addEventListener('click', (event) => {
+        if (!bookmarkToolbarColumnManager?.contains(event.target)) {
+            bookmarkToolbarColumnsPanel?.classList.add('hidden');
+        }
+    });
     
     // Theme toggle
     themeToggle.addEventListener('click', toggleTheme);
@@ -254,6 +334,14 @@ function setupEventListeners() {
     if (settingsModal) {
         settingsModal.addEventListener('click', (e) => {
             if (e.target === settingsModal) closeSettingsModal();
+        });
+    }
+    if (bookmarkModalClose) {
+        bookmarkModalClose.addEventListener('click', () => closeBookmarkForm());
+    }
+    if (bookmarkModal) {
+        bookmarkModal.addEventListener('click', (e) => {
+            if (e.target === bookmarkModal) closeBookmarkForm();
         });
     }
     
@@ -304,11 +392,13 @@ function setupEventListeners() {
     if (openRouterKeyInput) openRouterKeyInput.addEventListener('change', handleSettingsChange);
     if (openRouterModelInput) openRouterModelInput.addEventListener('change', handleSettingsChange);
 
-    // AI Rewrite Selectionts
-    if (notesToggleBtn) {
-        notesToggleBtn.addEventListener('click', toggleNotesPage);
+    if (bookmarksNavBtn) {
+        bookmarksNavBtn.addEventListener('click', () => setActivePage('bookmarks'));
     }
-    
+    if (notesToggleBtn) {
+        notesToggleBtn.addEventListener('click', () => setActivePage('notes'));
+    }
+
     // AI Rewrite Selection
     document.addEventListener('selectionchange', () => {
         setTimeout(() => {
@@ -360,16 +450,19 @@ function handleKeyboardShortcuts(e) {
     // Ctrl/Cmd + K = Focus search
     if (modifierKey && e.key.toLowerCase() === 'k') {
         e.preventDefault();
-        if (currentBookmarkView === 'table' && bookmarkTableApi) {
+        if (isNotesPageVisible && notesSearchInput) {
+            notesSearchInput.focus();
+            notesSearchInput.select();
+        } else if (currentBookmarkView === 'table' && bookmarkTableApi) {
             bookmarkTableApi.focusSearch();
-        } else {
+        } else if (searchInput) {
             searchInput.focus();
             searchInput.select();
         }
     }
     
     // Ctrl/Cmd + N = Toggle add new bookmark form
-    if (modifierKey && e.key.toLowerCase() === 'n') {
+    if (!isNotesPageVisible && modifierKey && e.key.toLowerCase() === 'n') {
         e.preventDefault();
         toggleAddForm();
         // If form is now visible, focus URL input
@@ -378,9 +471,9 @@ function handleKeyboardShortcuts(e) {
         }
     }
     
-    // Escape = Close add form if open
+    // Escape = Close add/edit modal if open
     if (e.key === 'Escape' && isFormVisible) {
-        toggleAddForm();
+        closeBookmarkForm();
     }
 }
 
@@ -388,19 +481,14 @@ function handleKeyboardShortcuts(e) {
  * Toggle the add bookmark form visibility
  */
 function toggleAddForm() {
+    if (isNotesPageVisible) return;
+
     if (isFormVisible) {
-        resetBookmarkFormState();
-        isFormVisible = false;
-        addBookmarkForm.classList.add('hidden');
-        addToggleBtn.classList.remove('active');
-        updateBookmarkFormUi();
+        closeBookmarkForm();
     } else {
-        isFormVisible = true;
-        addBookmarkForm.classList.remove('hidden');
-        addToggleBtn.classList.add('active');
-        updateBookmarkFormUi();
-        // Focus on URL input after animation
-        setTimeout(() => urlInput.focus(), 300);
+        resetBookmarkFormState();
+        openBookmarkForm();
+        setTimeout(() => urlInput.focus(), 150);
     }
 }
 
@@ -409,6 +497,9 @@ function updateBookmarkFormUi() {
 
     if (bookmarkFormLabel) {
         bookmarkFormLabel.textContent = isEditing ? 'Edit Bookmark' : 'Add Bookmark';
+    }
+    if (bookmarkModalTitle) {
+        bookmarkModalTitle.textContent = isEditing ? 'Edit Bookmark' : 'Add Bookmark';
     }
     if (bookmarkSubmitIcon) {
         bookmarkSubmitIcon.textContent = isEditing ? '💾' : '➕';
@@ -422,18 +513,28 @@ function updateBookmarkFormUi() {
 }
 
 function resetBookmarkFormState() {
-    addBookmarkForm.reset();
+    if (addBookmarkForm) {
+        addBookmarkForm.reset();
+    }
     editingBookmarkId = null;
     fetchedMetadata = null;
     setFetchStatus('', '');
     updateBookmarkFormUi();
 }
 
-function openBookmarkForm() {
-    if (!isFormVisible) {
-        isFormVisible = true;
-        addBookmarkForm.classList.remove('hidden');
+function showBookmarkModal() {
+    if (bookmarkModal) {
+        bookmarkModal.classList.remove('hidden');
     }
+}
+
+function openBookmarkForm() {
+    if (isNotesPageVisible) {
+        setActivePage('bookmarks');
+    }
+
+    isFormVisible = true;
+    showBookmarkModal();
     if (addToggleBtn) {
         addToggleBtn.classList.add('active');
     }
@@ -441,12 +542,14 @@ function openBookmarkForm() {
 }
 
 function closeBookmarkForm() {
-    resetBookmarkFormState();
     isFormVisible = false;
-    addBookmarkForm.classList.add('hidden');
+    if (bookmarkModal) {
+        bookmarkModal.classList.add('hidden');
+    }
     if (addToggleBtn) {
         addToggleBtn.classList.remove('active');
     }
+    resetBookmarkFormState();
 }
 
 function startBookmarkEdit(bookmark) {
@@ -844,8 +947,7 @@ async function handleAddBookmark(event) {
             favicon: faviconUrl
         });
 
-        resetBookmarkFormState();
-        urlInput.focus();
+        closeBookmarkForm();
         await loadBookmarks();
         showToast('Bookmark added successfully!', 'success');
     } catch (error) {
@@ -862,25 +964,15 @@ async function loadBookmarks() {
         showLoading(true);
         allBookmarks = await bookmarkDB.getAllBookmarks();
         renderBookmarks(allBookmarks);
-        updateCount(allBookmarks.length);
+        if (currentBookmarkView === 'cards') {
+            updateCount(Math.min(allBookmarks.length, cardViewLimit), allBookmarks.length);
+        }
     } catch (error) {
         console.error('Failed to load bookmarks:', error);
         showToast('Failed to load bookmarks', 'error');
     } finally {
         showLoading(false);
     }
-}
-
-/**
- * Clear the card-view search state.
- */
-function clearCardSearchState() {
-    if (searchInput) {
-        searchInput.value = '';
-    }
-
-    updateCount(allBookmarks.length);
-    renderBookmarkCards(allBookmarks);
 }
 
 /**
@@ -896,41 +988,77 @@ function updateBookmarkViewControls() {
         bookmarkTableViewBtn.classList.toggle('active', isTableView);
     }
     if (headerSearch) {
-        headerSearch.classList.toggle('hidden', isTableView);
+        headerSearch.classList.remove('hidden');
+    }
+    if (bookmarkToolbarResetBtn) {
+        bookmarkToolbarResetBtn.classList.remove('hidden');
+    }
+    if (bookmarkToolbarColumnManager) {
+        bookmarkToolbarColumnManager.classList.remove('hidden');
+    }
+    if (bookmarkToolbarPerPageWrap) {
+        bookmarkToolbarPerPageWrap.classList.remove('hidden');
+    }
+    if (bookmarkToolbarPerPage) {
+        bookmarkToolbarPerPage.value = String(
+            isTableView && bookmarkTableApi ? bookmarkTableApi.getPerPage() : cardViewLimit
+        );
+    }
+    if (bookmarkToolbarColumnsPanel && !bookmarkToolbarColumnsPanel.classList.contains('hidden')) {
+        renderBookmarkToolbarColumnsPanel();
     }
     if (bookmarksContainer) {
         bookmarksContainer.classList.toggle('hidden', isTableView);
     }
-    if (bookmarksTableContainer) {
-        bookmarksTableContainer.classList.toggle('hidden', !isTableView);
+    if (bookmarkTableMount) {
+        bookmarkTableMount.classList.toggle('hidden', !isTableView);
     }
+
+    updateDashboardContext();
 }
 
 function applyPageState() {
     if (isNotesPageVisible) {
         if (bookmarksPage) bookmarksPage.classList.add('hidden');
         if (notesPage) notesPage.classList.remove('hidden');
-        if (notesToggleBtn) notesToggleBtn.classList.add('active');
-        if (addToggleBtn) addToggleBtn.style.display = 'none';
-        if (bookmarkViewToggle) bookmarkViewToggle.style.display = 'none';
 
         const container = document.querySelector('.container');
         if (container) container.classList.add('notes-active');
 
         loadNotes();
+        updateDashboardContext();
         return;
     }
 
     if (bookmarksPage) bookmarksPage.classList.remove('hidden');
     if (notesPage) notesPage.classList.add('hidden');
-    if (notesToggleBtn) notesToggleBtn.classList.remove('active');
-    if (addToggleBtn) addToggleBtn.style.display = '';
-    if (bookmarkViewToggle) bookmarkViewToggle.style.display = '';
 
     const container = document.querySelector('.container');
     if (container) container.classList.remove('notes-active');
 
     updateBookmarkViewControls();
+}
+
+function updateDashboardContext() {
+    if (bookmarksNavBtn) {
+        bookmarksNavBtn.classList.toggle('active', !isNotesPageVisible);
+    }
+    if (notesToggleBtn) {
+        notesToggleBtn.classList.toggle('active', isNotesPageVisible);
+    }
+}
+
+function setActivePage(page) {
+    const nextIsNotesPage = page === 'notes';
+    if (isNotesPageVisible === nextIsNotesPage) return;
+
+    if (nextIsNotesPage && isFormVisible) {
+        closeBookmarkForm();
+    }
+
+    isNotesPageVisible = nextIsNotesPage;
+    applyPageState();
+    void saveUiState();
 }
 
 /**
@@ -940,16 +1068,21 @@ function switchBookmarkView(view) {
     if (view !== 'cards' && view !== 'table') return;
     if (isNotesPageVisible) return;
 
-    if (view === 'table') {
-        clearCardSearchState();
-        if (bookmarkTableApi) {
-            bookmarkTableApi.reset();
-        }
+    currentBookmarkView = view;
+    renderBookmarks(allBookmarks);
+
+    const currentQuery = searchInput?.value.trim() || '';
+    if (view === 'table' && bookmarkTableApi) {
+        bookmarkTableApi.setSearchTerm(currentQuery);
+    } else if (currentQuery) {
+        void handleSearch(currentQuery);
+    } else {
+        updateCount(
+            view === 'cards' ? Math.min(allBookmarks.length, cardViewLimit) : allBookmarks.length,
+            allBookmarks.length
+        );
     }
 
-    currentBookmarkView = view;
-    updateBookmarkViewControls();
-    renderBookmarks(allBookmarks);
     void saveUiState();
 }
 
@@ -960,6 +1093,59 @@ function renderBookmarks(bookmarks) {
     renderBookmarkCards(bookmarks);
     renderBookmarkTable(bookmarks);
     updateBookmarkViewControls();
+}
+
+function getCardColumnState() {
+    return [
+        { key: 'favicon', label: 'Icon', checked: !hiddenCardFields.has('favicon') },
+        { key: 'url', label: 'Domain', checked: !hiddenCardFields.has('url') },
+        { key: 'description', label: 'Description', checked: !hiddenCardFields.has('description') },
+        { key: 'createdAt', label: 'Added', checked: !hiddenCardFields.has('createdAt') }
+    ];
+}
+
+function renderBookmarkToolbarColumnsPanel() {
+    if (!bookmarkToolbarColumnsPanel) return;
+
+    const isTableView = currentBookmarkView === 'table';
+    const options = isTableView && bookmarkTableApi
+        ? bookmarkTableApi.getColumnState()
+        : getCardColumnState();
+
+    bookmarkToolbarColumnsPanel.innerHTML = '';
+
+    const title = document.createElement('div');
+    title.className = 'bookmark-table-col-title';
+    title.textContent = isTableView ? 'Manage Columns' : 'Manage Card Fields';
+    bookmarkToolbarColumnsPanel.appendChild(title);
+
+    options.forEach((optionConfig) => {
+        const option = document.createElement('label');
+        option.className = 'bookmark-table-col-option';
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = optionConfig.checked;
+        checkbox.dataset.columnKey = optionConfig.key;
+
+        const text = document.createElement('span');
+        text.textContent = optionConfig.label;
+
+        option.appendChild(checkbox);
+        option.appendChild(text);
+        bookmarkToolbarColumnsPanel.appendChild(option);
+    });
+}
+
+function rerenderCurrentCardView() {
+    const query = searchInput?.value.trim() || '';
+    if (query) {
+        void handleSearch(query);
+        return;
+    }
+
+    renderBookmarks(allBookmarks);
+    updateCount(Math.min(allBookmarks.length, cardViewLimit), allBookmarks.length);
 }
 
 /**
@@ -984,8 +1170,10 @@ function renderBookmarkCards(bookmarks) {
         return;
     }
     
+    const visibleBookmarks = bookmarks.slice(0, cardViewLimit);
+
     // Render each bookmark (XSS-safe using textContent)
-    bookmarks.forEach((bookmark, index) => {
+    visibleBookmarks.forEach((bookmark, index) => {
         const card = document.createElement('div');
         card.className = 'bookmark-card';
         card.style.animationDelay = `${index * 0.05}s`;
@@ -1018,14 +1206,23 @@ function renderBookmarkCards(bookmarks) {
         urlDisplay.textContent = safeUrl ? safeUrl.hostname : 'Blocked unsafe URL';
         
         info.appendChild(link);
-        info.appendChild(urlDisplay);
+        if (!hiddenCardFields.has('url')) {
+            info.appendChild(urlDisplay);
+        }
         
         // Show description if available
-        if (bookmark.description) {
+        if (bookmark.description && !hiddenCardFields.has('description')) {
             const descDisplay = document.createElement('div');
             descDisplay.className = 'bookmark-desc';
             descDisplay.textContent = bookmark.description;
             info.appendChild(descDisplay);
+        }
+
+        if (!hiddenCardFields.has('createdAt')) {
+            const addedDisplay = document.createElement('div');
+            addedDisplay.className = 'bookmark-added';
+            addedDisplay.textContent = `Added ${formatBookmarkTableDate(bookmark.createdAt).primary}`;
+            info.appendChild(addedDisplay);
         }
         
         // Delete button (Neumorphic circle)
@@ -1036,7 +1233,9 @@ function renderBookmarkCards(bookmarks) {
         deleteBtn.title = 'Delete bookmark';
         
         // Assemble card
-        card.appendChild(faviconWrapper);
+        if (!hiddenCardFields.has('favicon')) {
+            card.appendChild(faviconWrapper);
+        }
         card.appendChild(info);
         card.appendChild(deleteBtn);
         
@@ -1160,14 +1359,14 @@ function getBookmarkTableColumns() {
  * Render bookmarks in table view using an extension-local data table implementation.
  */
 function renderBookmarkTable(bookmarks) {
-    if (!bookmarksTableContainer) return;
+    if (!bookmarkTableMount) return;
 
     if (!bookmarkTableApi) {
         if (currentBookmarkView !== 'table') {
             return;
         }
 
-        bookmarkTableApi = createBookmarkTable(bookmarksTableContainer, {
+        bookmarkTableApi = createBookmarkTable(bookmarkTableMount, {
             columns: getBookmarkTableColumns(),
             actions: [
                 { key: 'open', label: '↗ Open' },
@@ -1221,71 +1420,6 @@ function createBookmarkTable(container, config) {
     const wrapper = document.createElement('div');
     wrapper.className = 'bookmark-table-shell';
 
-    const toolbar = document.createElement('div');
-    toolbar.className = 'bookmark-table-toolbar';
-
-    const toolbarLeft = document.createElement('div');
-    toolbarLeft.className = 'bookmark-table-toolbar-left';
-
-    const search = document.createElement('label');
-    search.className = 'bookmark-table-search';
-
-    const searchIcon = document.createElement('span');
-    searchIcon.className = 'bookmark-table-search-icon';
-    searchIcon.textContent = '🔍';
-
-    const searchField = document.createElement('input');
-    searchField.type = 'text';
-    searchField.placeholder = 'Search bookmarks...';
-
-    search.appendChild(searchIcon);
-    search.appendChild(searchField);
-
-    const resetBtn = document.createElement('button');
-    resetBtn.type = 'button';
-    resetBtn.className = 'bookmark-table-reset';
-    resetBtn.textContent = '↻ Reset';
-
-    toolbarLeft.appendChild(search);
-    toolbarLeft.appendChild(resetBtn);
-
-    const toolbarRight = document.createElement('div');
-    toolbarRight.className = 'bookmark-table-toolbar-right';
-
-    const columnManager = document.createElement('div');
-    columnManager.className = 'bookmark-table-col-manager';
-
-    const columnBtn = document.createElement('button');
-    columnBtn.type = 'button';
-    columnBtn.className = 'bookmark-table-col-btn';
-    columnBtn.textContent = '⚙ Columns';
-
-    const columnPanel = document.createElement('div');
-    columnPanel.className = 'bookmark-table-col-panel hidden';
-
-    columnManager.appendChild(columnBtn);
-    columnManager.appendChild(columnPanel);
-
-    const perPageWrap = document.createElement('label');
-    perPageWrap.className = 'bookmark-table-per-page';
-    perPageWrap.textContent = 'Show';
-
-    const perPageSelect = document.createElement('select');
-    perPageOptions.forEach((option) => {
-        const optionEl = document.createElement('option');
-        optionEl.value = String(option);
-        optionEl.textContent = option;
-        if (option === defaultPerPage) optionEl.selected = true;
-        perPageSelect.appendChild(optionEl);
-    });
-    perPageWrap.appendChild(perPageSelect);
-
-    toolbarRight.appendChild(columnManager);
-    toolbarRight.appendChild(perPageWrap);
-
-    toolbar.appendChild(toolbarLeft);
-    toolbar.appendChild(toolbarRight);
-
     const tableWrap = document.createElement('div');
     tableWrap.className = 'bookmark-table-wrap';
 
@@ -1310,7 +1444,6 @@ function createBookmarkTable(container, config) {
     footer.appendChild(info);
     footer.appendChild(pages);
 
-    wrapper.appendChild(toolbar);
     wrapper.appendChild(tableWrap);
     wrapper.appendChild(footer);
 
@@ -1373,32 +1506,6 @@ function createBookmarkTable(container, config) {
     function closeActionMenus() {
         wrapper.querySelectorAll('.bookmark-table-action-menu').forEach((menu) => {
             menu.classList.add('hidden');
-        });
-    }
-
-    function renderColumnPanel() {
-        columnPanel.innerHTML = '';
-
-        const title = document.createElement('div');
-        title.className = 'bookmark-table-col-title';
-        title.textContent = 'Manage Columns';
-        columnPanel.appendChild(title);
-
-        columns.forEach((column) => {
-            const option = document.createElement('label');
-            option.className = 'bookmark-table-col-option';
-
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.checked = !hiddenColumns.has(column.key);
-            checkbox.dataset.columnKey = column.key;
-
-            const text = document.createElement('span');
-            text.textContent = column.label;
-
-            option.appendChild(checkbox);
-            option.appendChild(text);
-            columnPanel.appendChild(option);
         });
     }
 
@@ -1613,11 +1720,18 @@ function createBookmarkTable(container, config) {
     }
 
     function render() {
-        renderColumnPanel();
         renderHeader();
         renderBody();
         renderFooter();
         closeActionMenus();
+
+        if (bookmarkToolbarPerPage) {
+            bookmarkToolbarPerPage.value = String(perPage);
+        }
+        if (currentBookmarkView === 'table') {
+            renderBookmarkToolbarColumnsPanel();
+            updateCount(filteredData.length, allData.length);
+        }
     }
 
     function applyFilters() {
@@ -1627,56 +1741,25 @@ function createBookmarkTable(container, config) {
         render();
     }
 
-    function reset() {
+    function applySearchTerm(nextSearchTerm) {
+        searchTerm = nextSearchTerm.trim().toLowerCase();
+        currentPage = 1;
+        applyFilters();
+    }
+
+    function reset(options = {}) {
+        const preserveSearchInput = Boolean(options.preserveSearchInput);
         searchTerm = '';
         sortKey = '';
         sortDirection = 'asc';
         currentPage = 1;
         hiddenColumns.clear();
-        searchField.value = '';
         perPage = defaultPerPage;
-        perPageSelect.value = String(defaultPerPage);
+        if (!preserveSearchInput && searchInput) {
+            searchInput.value = '';
+        }
         applyFilters();
     }
-
-    searchField.addEventListener('input', (event) => {
-        searchTerm = event.target.value.trim().toLowerCase();
-        currentPage = 1;
-        applyFilters();
-    });
-
-    resetBtn.addEventListener('click', reset);
-
-    perPageSelect.addEventListener('change', (event) => {
-        perPage = parseInt(event.target.value, 10);
-        currentPage = 1;
-        render();
-    });
-
-    columnBtn.addEventListener('click', (event) => {
-        event.stopPropagation();
-        columnPanel.classList.toggle('hidden');
-    });
-
-    columnPanel.addEventListener('change', (event) => {
-        const checkbox = event.target;
-        if (!checkbox.matches('input[type="checkbox"][data-column-key]')) return;
-
-        const selectedColumns = Array.from(columnPanel.querySelectorAll('input[type="checkbox"][data-column-key]:checked'));
-        if (selectedColumns.length === 0) {
-            checkbox.checked = true;
-            return;
-        }
-
-        const columnKey = checkbox.dataset.columnKey;
-        if (checkbox.checked) {
-            hiddenColumns.delete(columnKey);
-        } else {
-            hiddenColumns.add(columnKey);
-        }
-
-        render();
-    });
 
     thead.addEventListener('click', (event) => {
         const sortBtn = event.target.closest('.bookmark-table-sort-btn');
@@ -1737,7 +1820,6 @@ function createBookmarkTable(container, config) {
 
     document.addEventListener('click', (event) => {
         if (!wrapper.contains(event.target)) {
-            columnPanel.classList.add('hidden');
             closeActionMenus();
         }
     });
@@ -1746,19 +1828,61 @@ function createBookmarkTable(container, config) {
         setData(newData) {
             allData = Array.isArray(newData) ? [...newData] : [];
             filteredData = [...allData];
-            reset();
+            reset({ preserveSearchInput: true });
+            if (searchInput?.value.trim()) {
+                applySearchTerm(searchInput.value.trim());
+                return;
+            }
+            if (currentBookmarkView === 'table') {
+                updateCount(allData.length);
+            }
         },
         refresh() {
             applyFilters();
         },
         focusSearch() {
-            searchField.focus();
-            searchField.select();
+            if (searchInput) {
+                searchInput.focus();
+                searchInput.select();
+            }
         },
         getFilteredData() {
             return [...filteredData];
         },
-        reset
+        reset,
+        setSearchTerm(query) {
+            applySearchTerm(query);
+        },
+        setPerPage(nextPerPage) {
+            perPage = nextPerPage;
+            currentPage = 1;
+            render();
+        },
+        getPerPage() {
+            return perPage;
+        },
+        getColumnState() {
+            return columns.map((column) => ({
+                key: column.key,
+                label: column.label,
+                checked: !hiddenColumns.has(column.key)
+            }));
+        },
+        setColumnVisibility(columnKey, isVisible) {
+            if (!columnKey) return;
+
+            if (isVisible) {
+                hiddenColumns.delete(columnKey);
+            } else {
+                const checkedCount = columns.filter((column) => !hiddenColumns.has(column.key)).length;
+                if (checkedCount <= 1) {
+                    return;
+                }
+                hiddenColumns.add(columnKey);
+            }
+
+            render();
+        }
     };
 }
 
@@ -1792,20 +1916,26 @@ async function deleteBookmark(id) {
  * Handle search functionality
  */
 async function handleSearch(query) {
-    if (currentBookmarkView !== 'cards') {
+    if (currentBookmarkView === 'table') {
+        if (!bookmarkTableApi) {
+            renderBookmarkTable(allBookmarks);
+        }
+        if (bookmarkTableApi) {
+            bookmarkTableApi.setSearchTerm(query);
+        }
         return;
     }
 
     if (!query) {
         renderBookmarks(allBookmarks);
-        updateCount(allBookmarks.length);
+        updateCount(Math.min(allBookmarks.length, cardViewLimit), allBookmarks.length);
         return;
     }
     
     try {
         const filtered = await bookmarkDB.searchBookmarks(query);
         renderBookmarks(filtered);
-        updateCount(filtered.length, allBookmarks.length);
+        updateCount(Math.min(filtered.length, cardViewLimit), filtered.length);
     } catch (error) {
         console.error('Search failed:', error);
     }
@@ -2694,16 +2824,6 @@ function renderForecast(data) {
 // ==========================================
 
 const NOTES_STORAGE_KEY = 'bmNotes';
-
-/**
- * Toggle between Bookmarks page and Notes page
- */
-function toggleNotesPage() {
-    isNotesPageVisible = !isNotesPageVisible;
-
-    applyPageState();
-    void saveUiState();
-}
 
 /**
  * Load notes from localStorage
