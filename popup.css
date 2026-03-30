@@ -853,6 +853,7 @@ body {
 
 .modal-body {
     padding: var(--gap-md);
+    padding-top: 0;
     max-height: 60vh;
     overflow-y: auto;
 }

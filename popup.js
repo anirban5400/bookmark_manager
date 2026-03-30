@@ -116,6 +116,12 @@ const hiddenCardFields = new Set();
 const SETTINGS_STORAGE_KEY = 'bmSettings';
 const UI_STATE_STORAGE_KEY = 'bmUiState';
 const BOOKMARK_ALLOWED_PROTOCOLS = new Set(['http:', 'https:']);
+const PREVIOUS_DEFAULT_AI_SYSTEM_PROMPT = 'You are an expert executive writing assistant. First, analyze the type of text given to you (e.g., an email, a chat message, or a task list). Then, rewrite it to be highly professional, articulate, and polished for business communication. Use sophisticated but clear vocabulary.\n\nRules:\n1. Only return the final rewritten text.\n2. Do not add any greetings, explanations, or quotes around the text.\n3. If the text has no meaning (like just dots or random letters), return it exactly as it is without changes.\n4. IMPORTANT: Always preserve any structural formatting from the original text (such as numbering like "1)" or bullet points).';
+const DEFAULT_AI_SYSTEM_PROMPT = 'You are a precise writing assistant. Rewrite the user text so it reads clearly and professionally while preserving its exact meaning.\n\nRules:\n1. Only return the final rewritten text.\n2. Do not add greetings, explanations, markdown fences, or quotes around the answer.\n3. Preserve the original structure, line breaks, numbering, bullets, and indentation.\n4. If the text contains technical content, keep every literal exactly unchanged unless the user explicitly changed it.\n5. Technical content includes API routes, URLs, JSON, code, config, comments, keys, identifiers, and values such as 0, 1, "", true, false, and null.\n6. If the text has no clear meaning, return it exactly as it is.';
+const LEGACY_AI_SYSTEM_PROMPT_PREFIXES = [
+    'You are an expert editor.',
+    'You are a helpful writing assistant.'
+];
 
 // Settings state (with defaults)
 let settings = {
@@ -135,7 +141,7 @@ let settings = {
     ollamaModel: 'llama3',
     openRouterKey: '',
     openRouterModel: 'google/gemini-2.5-flash',
-    ollamaSystemPrompt: 'You are an expert executive writing assistant. First, analyze the type of text given to you (e.g., an email, a chat message, or a task list). Then, rewrite it to be highly professional, articulate, and polished for business communication. Use sophisticated but clear vocabulary.\n\nRules:\n1. Only return the final rewritten text.\n2. Do not add any greetings, explanations, or quotes around the text.\n3. If the text has no meaning (like just dots or random letters), return it exactly as it is without changes.\n4. IMPORTANT: Always preserve any structural formatting from the original text (such as numbering like "1)" or bullet points).'
+    ollamaSystemPrompt: DEFAULT_AI_SYSTEM_PROMPT
 };
 
 /**
@@ -2202,9 +2208,8 @@ async function loadSettings() {
             const parsedSettings = typeof saved === 'string' ? JSON.parse(saved) : saved;
             settings = { ...settings, ...parsedSettings };
 
-            // Auto-migrate old system prompts to the highly professional default
-            if (settings.ollamaSystemPrompt && (settings.ollamaSystemPrompt.startsWith('You are an expert editor.') || settings.ollamaSystemPrompt.startsWith('You are a helpful writing assistant.'))) {
-                settings.ollamaSystemPrompt = 'You are an expert executive writing assistant. First, analyze the type of text given to you (e.g., an email, a chat message, or a task list). Then, rewrite it to be highly professional, articulate, and polished for business communication. Use sophisticated but clear vocabulary.\n\nRules:\n1. Only return the final rewritten text.\n2. Do not add any greetings, explanations, or quotes around the text.\n3. If the text has no meaning (like just dots or random letters), return it exactly as it is without changes.\n4. IMPORTANT: Always preserve any structural formatting from the original text (such as numbering like "1)" or bullet points).';
+            if (shouldMigrateAiSystemPrompt(settings.ollamaSystemPrompt)) {
+                settings.ollamaSystemPrompt = DEFAULT_AI_SYSTEM_PROMPT;
                 migrationSaved = await saveSettings();
             } else if (migratedFromLocalStorage) {
                 migrationSaved = await saveSettings();
@@ -2310,7 +2315,7 @@ function handleSettingsChange() {
     settings.ollamaModel = ollamaModelInput?.value?.trim() || 'llama3';
     settings.openRouterKey = openRouterKeyInput?.value?.trim() || '';
     settings.openRouterModel = openRouterModelInput?.value?.trim() || 'google/gemini-2.5-flash';
-    settings.ollamaSystemPrompt = ollamaSystemPromptInput?.value?.trim() || 'You are an expert executive writing assistant. First, analyze the type of text given to you (e.g., an email, a chat message, or a task list). Then, rewrite it to be highly professional, articulate, and polished for business communication. Use sophisticated but clear vocabulary.\n\nRules:\n1. Only return the final rewritten text.\n2. Do not add any greetings, explanations, or quotes around the text.\n3. If the text has no meaning (like just dots or random letters), return it exactly as it is without changes.\n4. IMPORTANT: Always preserve any structural formatting from the original text (such as numbering like "1)" or bullet points).';
+    settings.ollamaSystemPrompt = ollamaSystemPromptInput?.value?.trim() || DEFAULT_AI_SYSTEM_PROMPT;
     
     saveSettings();
     applySettings();
@@ -3214,6 +3219,65 @@ function formatNoteDate(isoString) {
     }
 }
 
+function shouldMigrateAiSystemPrompt(prompt) {
+    if (!prompt) return false;
+    if (prompt === PREVIOUS_DEFAULT_AI_SYSTEM_PROMPT) return true;
+    return LEGACY_AI_SYSTEM_PROMPT_PREFIXES.some((prefix) => prompt.startsWith(prefix));
+}
+
+function shouldPreserveAiLine(line) {
+    const trimmed = line.trim();
+    if (!trimmed) return false;
+
+    return /^(api\/|\/api\/|https?:\/\/)/i.test(trimmed)
+        || /[`{}[\]]/.test(line)
+        || /\/\/|\/\*/.test(line)
+        || /^["'][^"']+["']\s*:/.test(trimmed)
+        || /:\s*(?:["']|[0-9]|true|false|null|\[|\{)/i.test(line);
+}
+
+function protectInlineTechnicalTokens(line, reserveToken) {
+    return line.replace(
+        /`[^`]+`|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|\b(?:true|false|null)\b|\b\d+\b|\b[a-z]+_[a-z0-9_]+\b|\bapi\/[A-Za-z0-9_./-]+\b|\bhttps?:\/\/\S+\b/gi,
+        (match) => reserveToken(match)
+    );
+}
+
+function protectTechnicalContent(text) {
+    const placeholders = [];
+    const reserveToken = (value) => {
+        const token = `[[AI_LOCK_${placeholders.length}]]`;
+        placeholders.push({ token, value });
+        return token;
+    };
+
+    const protectedText = text
+        .split('\n')
+        .map((line) => shouldPreserveAiLine(line) ? reserveToken(line) : protectInlineTechnicalTokens(line, reserveToken))
+        .join('\n');
+
+    return { protectedText, placeholders };
+}
+
+function restoreProtectedContent(text, placeholders) {
+    return placeholders.reduce((restored, { token, value }) => restored.split(token).join(value), text);
+}
+
+function buildAiRewritePrompt(text) {
+    const { protectedText, placeholders } = protectTechnicalContent(text);
+
+    return {
+        placeholders,
+        prompt: [
+            'Rewrite the text below for clarity and professionalism.',
+            'Any token in the format [[AI_LOCK_N]] is locked content. Keep it exactly unchanged and in the same position.',
+            'Return only the rewritten text.',
+            '',
+            protectedText
+        ].join('\n')
+    };
+}
+
 // ==========================================
 // AI REWRITE FUNCTIONS
 // ==========================================
@@ -3223,10 +3287,10 @@ function handleTextSelection(e) {
     if (!settings.ollamaEnabled || !aiRewriteBtn || !isNotesPageVisible) return;
     
     const textarea = e.target;
-    const selectedText = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd).trim();
+    const selectedText = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd);
     
     // Only show button if there is text AND it contains at least one alphanumeric character
-    if (!selectedText || !/[a-zA-Z0-9]/.test(selectedText)) {
+    if (!selectedText.trim() || !/[a-zA-Z0-9]/.test(selectedText)) {
         aiRewriteBtn.classList.add('hidden');
         currentAiTextarea = null;
         return;
@@ -3247,9 +3311,11 @@ async function handleAiRewrite(e) {
     
     const start = currentAiTextarea.selectionStart;
     const end = currentAiTextarea.selectionEnd;
-    const selectedText = currentAiTextarea.value.substring(start, end).trim();
+    const selectedText = currentAiTextarea.value.substring(start, end);
     
-    if (!selectedText) return;
+    if (!selectedText.trim()) return;
+
+    const rewriteRequest = buildAiRewritePrompt(selectedText);
     
     const originalText = aiRewriteBtn.innerHTML;
     aiRewriteBtn.innerHTML = '<span class="btn-icon">⏳</span><span class="btn-text">Rewriting...</span>';
@@ -3272,9 +3338,10 @@ async function handleAiRewrite(e) {
                 },
                 body: JSON.stringify({
                     model: settings.openRouterModel,
+                    temperature: 0.2,
                     messages: [
                         { role: 'system', content: settings.ollamaSystemPrompt },
-                        { role: 'user', content: selectedText }
+                        { role: 'user', content: rewriteRequest.prompt }
                     ]
                 })
             });
@@ -3283,7 +3350,7 @@ async function handleAiRewrite(e) {
 
             const data = await response.json();
             if (data.choices && data.choices.length > 0) {
-                rewrittenText = data.choices[0].message.content.trim();
+                rewrittenText = data.choices[0].message.content || '';
             } else {
                 throw new Error('OpenRouter returned an empty response.');
             }
@@ -3294,9 +3361,12 @@ async function handleAiRewrite(e) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     model: settings.ollamaModel,
-                    prompt: selectedText,
+                    prompt: rewriteRequest.prompt,
                     system: settings.ollamaSystemPrompt,
-                    stream: false
+                    stream: false,
+                    options: {
+                        temperature: 0.2
+                    }
                 })
             });
 
@@ -3306,15 +3376,18 @@ async function handleAiRewrite(e) {
             }
 
             const data = await response.json();
-            rewrittenText = (data.response || '').trim();
+            rewrittenText = data.response || '';
         }
+
+        rewrittenText = restoreProtectedContent(rewrittenText, rewriteRequest.placeholders);
         
         // Strip wrapping quotes if the model added them
-        if (rewrittenText.startsWith('"') && rewrittenText.endsWith('"')) {
-            rewrittenText = rewrittenText.substring(1, rewrittenText.length - 1);
+        const trimmedRewrite = rewrittenText.trim();
+        if (trimmedRewrite.startsWith('"') && trimmedRewrite.endsWith('"')) {
+            rewrittenText = trimmedRewrite.substring(1, trimmedRewrite.length - 1);
         }
         
-        if (rewrittenText) {
+        if (rewrittenText.trim()) {
             // Using execCommand ensures perfect compatibility with Chrome's native Undo/Redo stack
             currentAiTextarea.focus();
             currentAiTextarea.setSelectionRange(start, end);
