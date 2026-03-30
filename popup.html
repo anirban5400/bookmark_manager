@@ -11,33 +11,45 @@
 </head>
 <body>
     <div class="container">
-        <!-- Dashboard Shell -->
-        <header class="dashboard-shell">
-            <div class="dashboard-brand">
-                <div class="dashboard-brand-mark">
-                    <img src="icon48.png" alt="Bookmark Manager logo" class="header-logo">
+        <aside class="dashboard-shell">
+            <div class="dashboard-sidebar-main">
+                <div class="dashboard-brand">
+                    <div class="dashboard-brand-mark">
+                        <img src="icon48.png" alt="Bookmark Manager logo" class="header-logo">
+                    </div>
+                    <div class="dashboard-brand-copy">
+                        <span class="dashboard-brand-name">BM</span>
+                        <p>Bookmarks &amp; Quick Notes</p>
+                    </div>
                 </div>
-                <div class="dashboard-brand-copy">
-                    <!-- <span class="dashboard-eyebrow">Dashboard</span> -->
-                    <h1>BM</h1>
-                </div>
-                <div class="dashboard-nav-row">
-                    <nav class="dashboard-nav" aria-label="Dashboard sections">
-                        <button class="dashboard-nav-btn active" id="bookmarksNavBtn" type="button" title="Go to bookmarks">
-                            <span class="btn-icon">📚</span>
-                            <span class="btn-text">Bookmarks</span>
-                        </button>
-                        <button class="dashboard-nav-btn" id="notesToggleBtn" type="button" title="Go to notes">
-                            <span class="btn-icon">📝</span>
-                            <span class="btn-text">Notes</span>
-                        </button>
-                    </nav>
+
+                <div class="dashboard-sidebar-sections">
+                    <section class="dashboard-nav-section" aria-labelledby="sidebarMainLabel">
+                        <span class="dashboard-nav-label" id="sidebarMainLabel">Workspace</span>
+                        <nav class="dashboard-nav" aria-label="Main navigation">
+                            <button class="dashboard-nav-btn active" id="bookmarksNavBtn" type="button" title="Go to bookmarks">
+                                <span class="btn-icon">🔖</span>
+                                <span class="btn-text">Bookmarks</span>
+                            </button>
+                            <button class="dashboard-nav-btn" id="notesToggleBtn" type="button" title="Go to quick notes">
+                                <span class="btn-icon">📝</span>
+                                <span class="btn-text">Quick Notes</span>
+                            </button>
+                        </nav>
+                    </section>
                 </div>
             </div>
 
-            
+            <div class="dashboard-sidebar-footer">
+                <button class="dashboard-nav-btn dashboard-nav-footer" id="settingsToggle" type="button" title="Open settings">
+                    <span class="btn-icon">⚙</span>
+                    <span class="btn-text">Settings</span>
+                </button>
+            </div>
+        </aside>
 
-            <div class="dashboard-topbar">
+        <main class="dashboard-main">
+            <header class="dashboard-topbar">
                 <div class="header-actions">
                     <!-- Date/Time Display -->
                     <div class="status-indicator" id="dateTimeDisplay" title="Current time">
@@ -57,16 +69,11 @@
                     <button class="theme-toggle" id="themeToggle" title="Toggle theme">
                         <span class="theme-icon" id="themeIcon">🌙</span>
                     </button>
-                    <!-- Settings Button -->
-                    <button class="settings-toggle" id="settingsToggle" title="Settings">
-                        <span class="settings-icon">⚙️</span>
-                    </button>
                 </div>
-            </div>
-        </header>
+            </header>
 
-        <!-- ========== BOOKMARKS PAGE ========== -->
-        <div id="bookmarksPage">
+            <!-- ========== BOOKMARKS PAGE ========== -->
+            <div id="bookmarksPage">
             <div class="bookmark-modal-anchor">
                 <!-- Weather Card - Compact like bookmark-card -->
                 <div id="weatherCard" class="weather-card hidden">
@@ -191,8 +198,8 @@
             </div>
         </div>
 
-        <!-- ========== NOTES PAGE (Hidden by default) ========== -->
-        <div id="notesPage" class="hidden">
+            <!-- ========== NOTES PAGE (Hidden by default) ========== -->
+            <div id="notesPage" class="hidden">
             <!-- Notes Header -->
             <div class="notes-toolbar">
                 <div class="notes-toolbar-left">
@@ -220,7 +227,8 @@
             <div id="notesContainer" class="notes-grid">
                 <!-- Note cards will be rendered by JS -->
             </div>
-        </div>
+            </div>
+        </main>
     </div>
 
     <!-- Bookmark Modal -->
