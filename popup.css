@@ -57,6 +57,8 @@
     --radius-md: 20px;
     --radius-lg: 30px;
     --radius-full: 50px;
+    --sidebar-width: 248px;
+    --sidebar-width-collapsed: 92px;
     
     /* Transitions */
     --transition-fast: 0.2s ease;
@@ -200,9 +202,10 @@ body {
     padding: var(--container-padding);
     min-height: 100vh;
     display: grid;
-    grid-template-columns: 248px minmax(0, 1fr);
+    grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
     gap: 1.25rem;
     align-items: start;
+    transition: grid-template-columns var(--transition-normal);
 }
 
 /* Dashboard Shell */
@@ -268,21 +271,29 @@ body {
 .dashboard-brand {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 0.85rem;
     min-width: 0;
     padding: 0 0.4rem;
 }
 
+.dashboard-brand-main {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
 .dashboard-brand-mark {
-    width: 48px;
-    height: 48px;
+    width: 52px;
+    height: 52px;
     border-radius: 16px;
-    background: linear-gradient(145deg, var(--accent-light), var(--accent-color));
-    box-shadow: var(--neu-convex);
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    overflow: hidden;
 }
 
 .dashboard-brand-copy {
@@ -304,6 +315,33 @@ body {
     font-size: 0.7rem;
     font-weight: 600;
     letter-spacing: 0.03em;
+}
+
+.sidebar-toggle-btn {
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 14px;
+    background: var(--bg-base);
+    color: var(--text-secondary);
+    box-shadow: var(--neu-flat);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: inherit;
+    font-size: 1rem;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all var(--transition-fast);
+}
+
+.sidebar-toggle-btn:hover {
+    color: var(--accent-dark);
+    box-shadow: var(--neu-convex);
+}
+
+.sidebar-toggle-btn:active {
+    box-shadow: var(--neu-concave);
 }
 
 .dashboard-nav {
@@ -336,7 +374,7 @@ body {
 }
 
 .dashboard-nav-btn .btn-icon {
-    width: 1rem;
+    font-size: 2rem;
     color: inherit;
     text-align: center;
     flex-shrink: 0;
@@ -376,10 +414,64 @@ body {
 }
 
 .header-logo {
-    width: 26px;
-    height: 26px;
+    width: 100%;
+    height: 100%;
     object-fit: contain;
-    filter: brightness(0) invert(1);
+    display: block;
+    transform: scale(1.28);
+    transform-origin: center;
+}
+
+@media (min-width: 769px) {
+    .container.sidebar-collapsed {
+        grid-template-columns: var(--sidebar-width-collapsed) minmax(0, 1fr);
+    }
+
+    .container.sidebar-collapsed .dashboard-shell {
+        padding-left: 0.7rem;
+        padding-right: 0.7rem;
+    }
+
+    .container.sidebar-collapsed .dashboard-brand {
+        flex-direction: column;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0;
+    }
+
+    .container.sidebar-collapsed .dashboard-brand-main {
+        justify-content: center;
+    }
+
+    .container.sidebar-collapsed .dashboard-brand-mark {
+        width: 58px;
+        height: 58px;
+    }
+
+    .container.sidebar-collapsed .dashboard-brand-copy,
+    .container.sidebar-collapsed .dashboard-nav-label,
+    .container.sidebar-collapsed .dashboard-nav-btn .btn-text {
+        display: none;
+    }
+
+    .container.sidebar-collapsed .dashboard-sidebar-sections,
+    .container.sidebar-collapsed .dashboard-nav-section,
+    .container.sidebar-collapsed .dashboard-nav,
+    .container.sidebar-collapsed .dashboard-sidebar-footer {
+        align-items: center;
+    }
+
+    .container.sidebar-collapsed .dashboard-nav-btn {
+        width: 52px;
+        min-height: 52px;
+        padding: 0;
+        justify-content: center;
+        border-radius: 18px;
+    }
+
+    .container.sidebar-collapsed .dashboard-sidebar-footer {
+        padding-top: 0.75rem;
+    }
 }
 
 /* Page Toolbar */
@@ -1778,7 +1870,7 @@ body {
     gap: var(--gap-md);
     box-shadow: var(--neu-convex);
     transition: all var(--transition-normal);
-    cursor: pointer;
+    cursor: default;
     position: relative;
 }
 
@@ -1872,6 +1964,96 @@ body {
     color: var(--text-muted);
     margin-top: 0.45rem;
     font-weight: 500;
+}
+
+.bookmark-card-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.55rem;
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+.bookmark-drag-handle {
+    position: absolute;
+    top: 0rem;
+    left: 0rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 12px;
+    background: transparent;
+    box-shadow: none;
+    color: var(--text-muted);
+    cursor: grab;
+    font-size: 0.95rem;
+    line-height: 1;
+    opacity: 0.5;
+    transition: all var(--transition-fast);
+}
+
+.bookmark-drag-handle:hover {
+    color: var(--accent-dark);
+    opacity: 1;
+    background: var(--bg-base);
+    box-shadow: var(--neu-flat);
+}
+
+.bookmark-drag-handle:active {
+    cursor: grabbing;
+    opacity: 1;
+    background: var(--bg-base);
+    box-shadow: var(--neu-concave);
+}
+
+.bookmark-drag-handle.disabled {
+    opacity: 0.3;
+    background: transparent;
+    box-shadow: none;
+    cursor: not-allowed;
+}
+
+.bookmark-card.dragging {
+    opacity: 0.96;
+    transform: scale(0.992);
+    background: linear-gradient(145deg, rgba(108, 92, 231, 0.08), rgba(255, 255, 255, 0.24));
+    box-shadow:
+        0 0 0 1px rgba(108, 92, 231, 0.16),
+        0 14px 24px rgba(163, 177, 198, 0.22);
+    z-index: 10;
+}
+
+.bookmark-card.drag-over-before,
+.bookmark-card.drag-over-after {
+    background: linear-gradient(145deg, rgba(108, 92, 231, 0.06), rgba(255, 255, 255, 0.2));
+    box-shadow:
+        0 0 0 1px rgba(108, 92, 231, 0.12),
+        0 10px 18px rgba(163, 177, 198, 0.18);
+}
+
+.bookmark-card.drag-over-before::after,
+.bookmark-card.drag-over-after::after {
+    content: '';
+    position: absolute;
+    left: 1rem;
+    right: 1rem;
+    height: 2px;
+    background: linear-gradient(90deg, rgba(162, 155, 254, 0.9), rgba(108, 92, 231, 0.95));
+    box-shadow: 0 0 12px rgba(108, 92, 231, 0.22);
+    border-radius: 999px;
+    pointer-events: none;
+}
+
+.bookmark-card.drag-over-before::after {
+    top: -2px;
+}
+
+.bookmark-card.drag-over-after::after {
+    bottom: -2px;
 }
 
 /* Neumorphic Delete Button */
@@ -2172,6 +2354,80 @@ body {
 
 [data-theme="dark"] .bookmark-table-grid tbody tr:hover td {
     background: rgba(255, 255, 255, 0.04);
+}
+
+.bookmark-table-grid tbody tr.dragging td {
+    opacity: 0.96;
+    background: linear-gradient(145deg, rgba(108, 92, 231, 0.08), rgba(255, 255, 255, 0.18));
+}
+
+.bookmark-table-grid tbody tr.drag-over-before td,
+.bookmark-table-grid tbody tr.drag-over-after td {
+    position: relative;
+    background: linear-gradient(145deg, rgba(108, 92, 231, 0.06), rgba(255, 255, 255, 0.16));
+}
+
+.bookmark-table-grid tbody tr.drag-over-before td::before,
+.bookmark-table-grid tbody tr.drag-over-after td::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, rgba(162, 155, 254, 0.9), rgba(108, 92, 231, 0.95));
+    box-shadow: 0 0 12px rgba(108, 92, 231, 0.22);
+    pointer-events: none;
+}
+
+.bookmark-table-grid tbody tr.drag-over-before td::before {
+    top: -1px;
+}
+
+.bookmark-table-grid tbody tr.drag-over-after td::after {
+    bottom: -1px;
+}
+
+.bookmark-table-reorder-header,
+.bookmark-table-reorder-cell {
+    width: 60px;
+    text-align: center;
+}
+
+.bookmark-table-reorder-header {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+}
+
+.bookmark-table-drag-handle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border: none;
+    border-radius: 50%;
+    background: var(--bg-base);
+    box-shadow: var(--neu-flat);
+    color: var(--text-muted);
+    cursor: grab;
+    font-size: 0.95rem;
+    line-height: 1;
+    transition: all var(--transition-fast);
+}
+
+.bookmark-table-drag-handle:hover {
+    color: var(--accent-dark);
+    box-shadow: var(--neu-convex);
+}
+
+.bookmark-table-drag-handle:active {
+    cursor: grabbing;
+    box-shadow: var(--neu-concave);
+}
+
+.bookmark-table-drag-handle.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
 }
 
 .bookmark-table-sort-btn {

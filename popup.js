@@ -34,6 +34,9 @@ const bookmarkToolbarColumnsBtn = document.getElementById('bookmarkToolbarColumn
 const bookmarkToolbarColumnsPanel = document.getElementById('bookmarkToolbarColumnsPanel');
 const bookmarkToolbarPerPageWrap = document.getElementById('bookmarkToolbarPerPageWrap');
 const bookmarkToolbarPerPage = document.getElementById('bookmarkToolbarPerPage');
+const appContainer = document.querySelector('.container');
+const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
+const sidebarToggleIcon = document.getElementById('sidebarToggleIcon');
 
 // Status indicator elements
 const dateTimeDisplay = document.getElementById('dateTimeDisplay');
@@ -108,10 +111,15 @@ let isNotesPageVisible = false;
 let allNotes = [];
 let noteSaveTimeouts = {};
 let draggedNoteId = null;
+let draggedBookmarkId = null;
 let currentBookmarkView = 'cards';
 let bookmarkTableApi = null;
 let editingBookmarkId = null;
-let cardViewLimit = 10;
+const DEFAULT_CARD_VIEW_LIMIT = 10;
+const CARD_FIELD_KEYS = new Set(['favicon', 'url', 'description', 'createdAt']);
+const BOOKMARK_TABLE_REORDER_KEY = '__reorder__';
+let cardViewLimit = DEFAULT_CARD_VIEW_LIMIT;
+let isSidebarCollapsed = false;
 const hiddenCardFields = new Set();
 const SETTINGS_STORAGE_KEY = 'bmSettings';
 const UI_STATE_STORAGE_KEY = 'bmUiState';
@@ -209,6 +217,7 @@ async function init() {
 
         // Apply restored page mode after listeners are ready
         applyPageState();
+        applySidebarState();
         
         // Initialize status indicators
         initStatusIndicators();
@@ -258,7 +267,7 @@ function setupEventListeners() {
                 searchInput.value = '';
             }
             hiddenCardFields.clear();
-            cardViewLimit = 10;
+            cardViewLimit = DEFAULT_CARD_VIEW_LIMIT;
             if (bookmarkToolbarPerPage) {
                 bookmarkToolbarPerPage.value = String(cardViewLimit);
             }
@@ -266,6 +275,7 @@ function setupEventListeners() {
                 bookmarkToolbarColumnsPanel.classList.add('hidden');
             }
             rerenderCurrentCardView();
+            void saveUiState();
         });
     }
     if (bookmarkToolbarPerPage) {
@@ -278,6 +288,7 @@ function setupEventListeners() {
 
             cardViewLimit = nextLimit;
             rerenderCurrentCardView();
+            void saveUiState();
         });
     }
     if (bookmarkToolbarColumnsBtn) {
@@ -308,6 +319,7 @@ function setupEventListeners() {
             }
             renderBookmarkToolbarColumnsPanel();
             rerenderCurrentCardView();
+            void saveUiState();
         });
     }
     document.addEventListener('click', (event) => {
@@ -333,6 +345,9 @@ function setupEventListeners() {
     // Settings modal events
     if (settingsToggle) {
         settingsToggle.addEventListener('click', openSettingsModal);
+    }
+    if (sidebarToggleBtn) {
+        sidebarToggleBtn.addEventListener('click', toggleSidebar);
     }
     if (settingsClose) {
         settingsClose.addEventListener('click', closeSettingsModal);
@@ -668,6 +683,18 @@ async function loadUiState() {
             currentBookmarkView = parsedState.bookmarkView;
         }
         isNotesPageVisible = Boolean(parsedState?.isNotesPageVisible);
+        isSidebarCollapsed = Boolean(parsedState?.isSidebarCollapsed);
+        if (Number.isInteger(parsedState?.cardViewLimit) && parsedState.cardViewLimit > 0) {
+            cardViewLimit = parsedState.cardViewLimit;
+        }
+        hiddenCardFields.clear();
+        if (Array.isArray(parsedState?.hiddenCardFields)) {
+            parsedState.hiddenCardFields.forEach((fieldKey) => {
+                if (CARD_FIELD_KEYS.has(fieldKey)) {
+                    hiddenCardFields.add(fieldKey);
+                }
+            });
+        }
     } catch (error) {
         console.error('Failed to parse UI state:', error);
     }
@@ -677,7 +704,10 @@ async function saveUiState() {
     const storageArea = getStorageArea();
     const state = {
         bookmarkView: currentBookmarkView,
-        isNotesPageVisible
+        isNotesPageVisible,
+        isSidebarCollapsed,
+        cardViewLimit,
+        hiddenCardFields: Array.from(hiddenCardFields)
     };
 
     try {
@@ -1054,6 +1084,28 @@ function updateDashboardContext() {
     }
 }
 
+function applySidebarState() {
+    if (appContainer) {
+        appContainer.classList.toggle('sidebar-collapsed', isSidebarCollapsed);
+    }
+
+    if (sidebarToggleBtn) {
+        const label = isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar';
+        sidebarToggleBtn.setAttribute('aria-label', label);
+        sidebarToggleBtn.title = label;
+    }
+
+    if (sidebarToggleIcon) {
+        sidebarToggleIcon.textContent = isSidebarCollapsed ? '→' : '←';
+    }
+}
+
+function toggleSidebar() {
+    isSidebarCollapsed = !isSidebarCollapsed;
+    applySidebarState();
+    void saveUiState();
+}
+
 function setActivePage(page) {
     const nextIsNotesPage = page === 'notes';
     if (isNotesPageVisible === nextIsNotesPage) return;
@@ -1154,11 +1206,53 @@ function rerenderCurrentCardView() {
     updateCount(Math.min(allBookmarks.length, cardViewLimit), allBookmarks.length);
 }
 
+function hasBookmarkSearchQuery() {
+    return Boolean(searchInput?.value.trim());
+}
+
+function canReorderBookmarkCards() {
+    return !hasBookmarkSearchQuery();
+}
+
+function reorderItemsByPlacement(items, draggedId, targetId, placeAfter) {
+    const draggedIndex = items.findIndex((item) => item.id === draggedId);
+    const targetIndex = items.findIndex((item) => item.id === targetId);
+    if (draggedIndex === -1 || targetIndex === -1) {
+        return [...items];
+    }
+
+    const nextItems = [...items];
+    const [draggedItem] = nextItems.splice(draggedIndex, 1);
+    const nextTargetIndex = nextItems.findIndex((item) => item.id === targetId);
+    const insertIndex = placeAfter ? nextTargetIndex + 1 : nextTargetIndex;
+
+    nextItems.splice(insertIndex, 0, draggedItem);
+    return nextItems;
+}
+
+function haveSameBookmarkOrder(left, right) {
+    if (left.length !== right.length) return false;
+    return left.every((bookmark, index) => bookmark.id === right[index]?.id);
+}
+
+async function persistBookmarkOrder(nextBookmarks) {
+    const previousBookmarks = [...allBookmarks];
+    allBookmarks = [...nextBookmarks];
+
+    try {
+        await bookmarkDB.reorderBookmarks(allBookmarks.map((bookmark) => bookmark.id));
+    } catch (error) {
+        allBookmarks = previousBookmarks;
+        throw error;
+    }
+}
+
 /**
  * Render bookmarks to the card UI (XSS-safe with Neumorphic design)
  */
 function renderBookmarkCards(bookmarks) {
     if (!bookmarksContainer) return;
+    const canReorder = canReorderBookmarkCards();
 
     // Clear container
     bookmarksContainer.innerHTML = '';
@@ -1182,6 +1276,7 @@ function renderBookmarkCards(bookmarks) {
     visibleBookmarks.forEach((bookmark, index) => {
         const card = document.createElement('div');
         card.className = 'bookmark-card';
+        card.dataset.bookmarkId = String(bookmark.id);
         card.style.animationDelay = `${index * 0.05}s`;
         const safeUrl = parseSafeBookmarkUrl(bookmark.url);
         
@@ -1237,13 +1332,112 @@ function renderBookmarkCards(bookmarks) {
         deleteBtn.dataset.id = bookmark.id; // Use unique ID, not array index!
         deleteBtn.textContent = '✕';
         deleteBtn.title = 'Delete bookmark';
-        
+
+        const controls = document.createElement('div');
+        controls.className = 'bookmark-card-controls';
+
+        const dragHandle = document.createElement('button');
+        dragHandle.type = 'button';
+        dragHandle.className = `bookmark-drag-handle${canReorder ? '' : ' disabled'}`;
+        dragHandle.dataset.bookmarkId = String(bookmark.id);
+        dragHandle.title = canReorder
+            ? 'Drag to reorder'
+            : 'Drag to reorder is available only when search is cleared';
+        dragHandle.setAttribute('aria-label', dragHandle.title);
+        dragHandle.textContent = '⋮⋮';
+
+        dragHandle.addEventListener('mousedown', () => {
+            if (canReorder) {
+                card.setAttribute('draggable', 'true');
+            }
+        });
+        dragHandle.addEventListener('mouseup', () => card.removeAttribute('draggable'));
+        dragHandle.addEventListener('mouseleave', () => card.removeAttribute('draggable'));
+
+        card.addEventListener('dragstart', (event) => {
+            if (!canReorder) {
+                event.preventDefault();
+                return;
+            }
+
+            draggedBookmarkId = bookmark.id;
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('text/plain', String(bookmark.id));
+            setTimeout(() => card.classList.add('dragging'), 0);
+        });
+
+        card.addEventListener('dragend', () => {
+            draggedBookmarkId = null;
+            card.classList.remove('dragging');
+            card.removeAttribute('draggable');
+            document.querySelectorAll('.bookmark-card').forEach((bookmarkCard) => {
+                bookmarkCard.classList.remove('drag-over-before', 'drag-over-after');
+            });
+        });
+
+        card.addEventListener('dragover', (event) => {
+            if (!canReorder || !draggedBookmarkId || draggedBookmarkId === bookmark.id) return;
+
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'move';
+
+            const rect = card.getBoundingClientRect();
+            const placeAfter = (event.clientY - rect.top) >= (rect.height / 2);
+            card.classList.remove('drag-over-before', 'drag-over-after');
+            card.classList.add(placeAfter ? 'drag-over-after' : 'drag-over-before');
+        });
+
+        card.addEventListener('dragleave', () => {
+            card.classList.remove('drag-over-before', 'drag-over-after');
+        });
+
+        card.addEventListener('drop', async (event) => {
+            if (!canReorder || !draggedBookmarkId || draggedBookmarkId === bookmark.id) return;
+
+            event.preventDefault();
+            card.classList.remove('drag-over-before', 'drag-over-after');
+
+            const rect = card.getBoundingClientRect();
+            const placeAfter = (event.clientY - rect.top) >= (rect.height / 2);
+            const reorderedVisibleBookmarks = reorderItemsByPlacement(
+                visibleBookmarks,
+                draggedBookmarkId,
+                bookmark.id,
+                placeAfter,
+            );
+
+            if (haveSameBookmarkOrder(reorderedVisibleBookmarks, visibleBookmarks)) {
+                return;
+            }
+
+            const nextBookmarks = [...allBookmarks];
+            nextBookmarks.splice(0, reorderedVisibleBookmarks.length, ...reorderedVisibleBookmarks);
+            const previousBookmarks = [...allBookmarks];
+
+            allBookmarks = nextBookmarks;
+            renderBookmarks(allBookmarks);
+            updateCount(Math.min(allBookmarks.length, cardViewLimit), allBookmarks.length);
+
+            try {
+                await bookmarkDB.reorderBookmarks(allBookmarks.map((item) => item.id));
+            } catch (error) {
+                console.error('Failed to reorder bookmarks:', error);
+                allBookmarks = previousBookmarks;
+                renderBookmarks(allBookmarks);
+                updateCount(Math.min(allBookmarks.length, cardViewLimit), allBookmarks.length);
+                showToast('Failed to reorder bookmarks', 'error');
+            }
+        });
+
+        controls.appendChild(deleteBtn);
+
         // Assemble card
+        card.appendChild(dragHandle);
         if (!hiddenCardFields.has('favicon')) {
             card.appendChild(faviconWrapper);
         }
         card.appendChild(info);
-        card.appendChild(deleteBtn);
+        card.appendChild(controls);
         
         bookmarksContainer.appendChild(card);
     });
@@ -1283,6 +1477,26 @@ function formatBookmarkTableDate(isoString) {
 
 function getBookmarkTableColumns() {
     return [
+        {
+            key: BOOKMARK_TABLE_REORDER_KEY,
+            label: '',
+            manageable: false,
+            resizable: false,
+            getSearchValue: () => '',
+            renderCell: (cell, bookmark) => {
+                cell.classList.add('bookmark-table-reorder-cell');
+
+                const handle = document.createElement('button');
+                handle.type = 'button';
+                handle.className = 'bookmark-table-drag-handle';
+                handle.dataset.bookmarkId = String(bookmark.id);
+                handle.title = 'Drag to reorder';
+                handle.setAttribute('aria-label', 'Drag to reorder');
+                handle.textContent = '⋮⋮';
+
+                cell.appendChild(handle);
+            }
+        },
         {
             key: 'title',
             label: 'Title',
@@ -1396,6 +1610,9 @@ function renderBookmarkTable(bookmarks) {
                 if (action === 'delete') {
                     await deleteBookmark(bookmark.id);
                 }
+            },
+            onReorder: async (nextBookmarks) => {
+                await persistBookmarkOrder(nextBookmarks);
             }
         });
     }
@@ -1410,6 +1627,7 @@ function createBookmarkTable(container, config) {
     const columns = config.columns || [];
     const actions = config.actions || [];
     const onAction = config.onAction || (() => {});
+    const onReorder = config.onReorder || (async () => {});
     const perPageOptions = config.perPageOptions || [5, 10, 25, 50];
     const defaultPerPage = config.defaultPerPage || 10;
 
@@ -1420,6 +1638,7 @@ function createBookmarkTable(container, config) {
     let perPage = defaultPerPage;
     let sortKey = '';
     let sortDirection = 'asc';
+    let draggedRowId = null;
     const hiddenColumns = new Set();
     const columnWidths = new Map();
 
@@ -1494,6 +1713,10 @@ function createBookmarkTable(container, config) {
         return 0;
     }
 
+    function canReorderRows() {
+        return !searchTerm && !sortKey;
+    }
+
     function sortData(rows) {
         if (!sortKey) return rows;
         const column = columns.find((item) => item.key === sortKey);
@@ -1523,6 +1746,9 @@ function createBookmarkTable(container, config) {
         visibleColumns.forEach((column) => {
             const cell = document.createElement('th');
             cell.dataset.columnKey = column.key;
+            if (column.key === BOOKMARK_TABLE_REORDER_KEY) {
+                cell.classList.add('bookmark-table-reorder-header');
+            }
             const storedWidth = columnWidths.get(column.key);
             if (storedWidth) {
                 cell.style.width = `${storedWidth}px`;
@@ -1564,7 +1790,13 @@ function createBookmarkTable(container, config) {
 
     function attachResizeHandles() {
         allHeaderCells().forEach((headerCell) => {
-            if (!headerCell.dataset.columnKey || headerCell.querySelector('.bookmark-table-resize-handle')) {
+            const column = columns.find((item) => item.key === headerCell.dataset.columnKey);
+            if (
+                !headerCell.dataset.columnKey ||
+                !column ||
+                column.resizable === false ||
+                headerCell.querySelector('.bookmark-table-resize-handle')
+            ) {
                 return;
             }
 
@@ -1641,6 +1873,7 @@ function createBookmarkTable(container, config) {
 
         pageRows.forEach((bookmark) => {
             const row = document.createElement('tr');
+            row.dataset.rowId = String(bookmark.id);
 
             visibleColumns.forEach((column) => {
                 const cell = document.createElement('td');
@@ -1682,6 +1915,100 @@ function createBookmarkTable(container, config) {
                 actionCell.appendChild(actionMenu);
                 row.appendChild(actionCell);
             }
+
+            const dragHandle = row.querySelector('.bookmark-table-drag-handle');
+            if (dragHandle) {
+                const reorderEnabled = canReorderRows();
+                dragHandle.classList.toggle('disabled', !reorderEnabled);
+                dragHandle.title = reorderEnabled
+                    ? 'Drag to reorder'
+                    : 'Clear search and table sorting to reorder';
+                dragHandle.setAttribute('aria-label', dragHandle.title);
+
+                dragHandle.addEventListener('mousedown', () => {
+                    if (reorderEnabled) {
+                        row.setAttribute('draggable', 'true');
+                    }
+                });
+                dragHandle.addEventListener('mouseup', () => row.removeAttribute('draggable'));
+                dragHandle.addEventListener('mouseleave', () => row.removeAttribute('draggable'));
+            }
+
+            row.addEventListener('dragstart', (event) => {
+                if (!canReorderRows()) {
+                    event.preventDefault();
+                    return;
+                }
+
+                draggedRowId = bookmark.id;
+                draggedBookmarkId = bookmark.id;
+                event.dataTransfer.effectAllowed = 'move';
+                event.dataTransfer.setData('text/plain', String(bookmark.id));
+                setTimeout(() => row.classList.add('dragging'), 0);
+            });
+
+            row.addEventListener('dragend', () => {
+                draggedRowId = null;
+                draggedBookmarkId = null;
+                row.classList.remove('dragging');
+                row.removeAttribute('draggable');
+                tbody.querySelectorAll('tr').forEach((tableRow) => {
+                    tableRow.classList.remove('drag-over-before', 'drag-over-after');
+                });
+            });
+
+            row.addEventListener('dragover', (event) => {
+                if (!canReorderRows() || !draggedRowId || draggedRowId === bookmark.id) return;
+
+                event.preventDefault();
+                event.dataTransfer.dropEffect = 'move';
+
+                const rect = row.getBoundingClientRect();
+                const placeAfter = (event.clientY - rect.top) >= (rect.height / 2);
+                row.classList.remove('drag-over-before', 'drag-over-after');
+                row.classList.add(placeAfter ? 'drag-over-after' : 'drag-over-before');
+            });
+
+            row.addEventListener('dragleave', () => {
+                row.classList.remove('drag-over-before', 'drag-over-after');
+            });
+
+            row.addEventListener('drop', async (event) => {
+                if (!canReorderRows() || !draggedRowId || draggedRowId === bookmark.id) return;
+
+                event.preventDefault();
+                row.classList.remove('drag-over-before', 'drag-over-after');
+
+                const rect = row.getBoundingClientRect();
+                const placeAfter = (event.clientY - rect.top) >= (rect.height / 2);
+                const startIndex = (currentPage - 1) * perPage;
+                const visiblePageRows = allData.slice(startIndex, startIndex + perPage);
+                const reorderedPageRows = reorderItemsByPlacement(
+                    visiblePageRows,
+                    draggedRowId,
+                    bookmark.id,
+                    placeAfter,
+                );
+
+                if (haveSameBookmarkOrder(reorderedPageRows, visiblePageRows)) {
+                    return;
+                }
+
+                const previousData = [...allData];
+                allData.splice(startIndex, visiblePageRows.length, ...reorderedPageRows);
+                filteredData = [...allData];
+                render();
+
+                try {
+                    await onReorder([...allData]);
+                } catch (error) {
+                    console.error('Failed to reorder bookmarks:', error);
+                    allData = previousData;
+                    filteredData = [...allData];
+                    render();
+                    showToast('Failed to reorder bookmarks', 'error');
+                }
+            });
 
             tbody.appendChild(row);
         });
@@ -1726,6 +2053,7 @@ function createBookmarkTable(container, config) {
     }
 
     function render() {
+        wrapper.classList.toggle('bookmark-table-reorder-disabled', !canReorderRows());
         renderHeader();
         renderBody();
         renderFooter();
@@ -1868,19 +2196,25 @@ function createBookmarkTable(container, config) {
             return perPage;
         },
         getColumnState() {
-            return columns.map((column) => ({
+            return columns
+                .filter((column) => column.manageable !== false)
+                .map((column) => ({
                 key: column.key,
                 label: column.label,
                 checked: !hiddenColumns.has(column.key)
-            }));
+                }));
         },
         setColumnVisibility(columnKey, isVisible) {
             if (!columnKey) return;
+            const targetColumn = columns.find((column) => column.key === columnKey);
+            if (!targetColumn || targetColumn.manageable === false) return;
 
             if (isVisible) {
                 hiddenColumns.delete(columnKey);
             } else {
-                const checkedCount = columns.filter((column) => !hiddenColumns.has(column.key)).length;
+                const checkedCount = columns.filter(
+                    (column) => column.manageable !== false && !hiddenColumns.has(column.key),
+                ).length;
                 if (checkedCount <= 1) {
                     return;
                 }

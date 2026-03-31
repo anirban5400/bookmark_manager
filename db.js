@@ -6,9 +6,58 @@
 class BookmarkDB {
   constructor() {
     this.dbName = "BookmarkManagerDB";
-    this.dbVersion = 1;
+    this.dbVersion = 2;
     this.storeName = "bookmarks";
     this.db = null;
+  }
+
+  getSortOrderValue(bookmark) {
+    return Number.isFinite(bookmark?.sortOrder) ? bookmark.sortOrder : null;
+  }
+
+  sortBookmarks(bookmarks) {
+    return [...bookmarks].sort((left, right) => {
+      const leftOrder = this.getSortOrderValue(left);
+      const rightOrder = this.getSortOrderValue(right);
+
+      if (leftOrder !== null && rightOrder !== null && leftOrder !== rightOrder) {
+        return leftOrder - rightOrder;
+      }
+      if (leftOrder !== null) return -1;
+      if (rightOrder !== null) return 1;
+
+      const leftCreatedAt = new Date(left?.createdAt || 0).getTime();
+      const rightCreatedAt = new Date(right?.createdAt || 0).getTime();
+      if (leftCreatedAt !== rightCreatedAt) {
+        return rightCreatedAt - leftCreatedAt;
+      }
+
+      return (right?.id || 0) - (left?.id || 0);
+    });
+  }
+
+  migrateSortOrder(store) {
+    const request = store.getAll();
+
+    request.onsuccess = () => {
+      const sortedBookmarks = [...request.result].sort((left, right) => {
+        const leftCreatedAt = new Date(left?.createdAt || 0).getTime();
+        const rightCreatedAt = new Date(right?.createdAt || 0).getTime();
+        if (leftCreatedAt !== rightCreatedAt) {
+          return rightCreatedAt - leftCreatedAt;
+        }
+
+        return (right?.id || 0) - (left?.id || 0);
+      });
+
+      sortedBookmarks.forEach((bookmark, index) => {
+        if (bookmark.sortOrder === index) return;
+        store.put({
+          ...bookmark,
+          sortOrder: index,
+        });
+      });
+    };
   }
 
   /**
@@ -35,19 +84,33 @@ class BookmarkDB {
 
       request.onupgradeneeded = (event) => {
         const db = event.target.result;
+        let store;
 
         // Create bookmarks store if it doesn't exist
         if (!db.objectStoreNames.contains(this.storeName)) {
-          const store = db.createObjectStore(this.storeName, {
+          store = db.createObjectStore(this.storeName, {
             keyPath: "id",
             autoIncrement: true,
           });
+        } else {
+          store = event.target.transaction.objectStore(this.storeName);
+        }
 
-          // Create indexes for searching
+        // Create indexes for searching
+        if (!store.indexNames.contains("title")) {
           store.createIndex("title", "title", { unique: false });
+        }
+        if (!store.indexNames.contains("url")) {
           store.createIndex("url", "url", { unique: false });
+        }
+        if (!store.indexNames.contains("createdAt")) {
           store.createIndex("createdAt", "createdAt", { unique: false });
         }
+        if (!store.indexNames.contains("sortOrder")) {
+          store.createIndex("sortOrder", "sortOrder", { unique: false });
+        }
+
+        this.migrateSortOrder(store);
       };
     });
   }
@@ -63,26 +126,41 @@ class BookmarkDB {
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction([this.storeName], "readwrite");
       const store = transaction.objectStore(this.storeName);
+      const getAllRequest = store.getAll();
 
-      const bookmarkData = {
-        ...bookmark,
-        createdAt: new Date().toISOString(),
+      getAllRequest.onsuccess = () => {
+        const existingBookmarks = this.sortBookmarks(getAllRequest.result);
+        const topOrder = existingBookmarks.reduce((currentMin, existingBookmark) => {
+          const sortOrder = this.getSortOrderValue(existingBookmark);
+          if (sortOrder === null) return currentMin;
+          return Math.min(currentMin, sortOrder);
+        }, 0);
+
+        const bookmarkData = {
+          ...bookmark,
+          createdAt: new Date().toISOString(),
+          sortOrder: existingBookmarks.length === 0 ? 0 : topOrder - 1,
+        };
+
+        const request = store.add(bookmarkData);
+
+        request.onsuccess = () => {
+          resolve(request.result);
+        };
+
+        request.onerror = () => {
+          reject(new Error("Failed to add bookmark"));
+        };
       };
 
-      const request = store.add(bookmarkData);
-
-      request.onsuccess = () => {
-        resolve(request.result);
-      };
-
-      request.onerror = () => {
-        reject(new Error("Failed to add bookmark"));
+      getAllRequest.onerror = () => {
+        reject(new Error("Failed to prepare bookmark order"));
       };
     });
   }
 
   /**
-   * Get all bookmarks sorted by creation date (newest first)
+   * Get all bookmarks sorted by manual sort order, then creation date.
    * @returns {Promise<Array>}
    */
   async getAllBookmarks() {
@@ -94,10 +172,7 @@ class BookmarkDB {
       const request = store.getAll();
 
       request.onsuccess = () => {
-        // Sort by createdAt descending (newest first)
-        const bookmarks = request.result.sort(
-          (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
-        );
+        const bookmarks = this.sortBookmarks(request.result);
         resolve(bookmarks);
       };
 
@@ -172,6 +247,57 @@ class BookmarkDB {
 
       request.onerror = () => {
         reject(new Error("Failed to update bookmark"));
+      };
+    });
+  }
+
+  /**
+   * Persist a full manual bookmark order.
+   * @param {number[]} orderedIds
+   * @returns {Promise<void>}
+   */
+  async reorderBookmarks(orderedIds) {
+    await this.init();
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction([this.storeName], "readwrite");
+      const store = transaction.objectStore(this.storeName);
+      const request = store.getAll();
+
+      transaction.oncomplete = () => {
+        resolve();
+      };
+
+      transaction.onerror = () => {
+        reject(new Error("Failed to reorder bookmarks"));
+      };
+
+      request.onsuccess = () => {
+        const existingBookmarks = this.sortBookmarks(request.result);
+        const orderedPositionMap = new Map(
+          orderedIds.map((bookmarkId, index) => [bookmarkId, index]),
+        );
+
+        const includedBookmarks = existingBookmarks
+          .filter((bookmark) => orderedPositionMap.has(bookmark.id))
+          .sort(
+            (left, right) =>
+              orderedPositionMap.get(left.id) - orderedPositionMap.get(right.id),
+          );
+        const remainingBookmarks = existingBookmarks.filter(
+          (bookmark) => !orderedPositionMap.has(bookmark.id),
+        );
+
+        includedBookmarks.concat(remainingBookmarks).forEach((bookmark, index) => {
+          store.put({
+            ...bookmark,
+            sortOrder: index,
+          });
+        });
+      };
+
+      request.onerror = () => {
+        reject(new Error("Failed to load bookmarks for reorder"));
       };
     });
   }
