@@ -172,12 +172,22 @@ function handleNoteTitleInput(event) {
     
     if (titleSaveTimeouts[noteId]) clearTimeout(titleSaveTimeouts[noteId]);
     
-    titleSaveTimeouts[noteId] = setTimeout(() => {
+    titleSaveTimeouts[noteId] = setTimeout(async () => {
         const note = allNotes.find(n => n.id === noteId);
         if (note) {
             note.title = titleInput.value;
             note.updatedAt = new Date().toISOString();
-            saveNotes();
+            try {
+                await saveNotes();
+            } catch (error) {
+                console.error('Failed to save note title:', error);
+                if (indicator) {
+                    indicator.textContent = 'Save failed';
+                    indicator.className = 'note-save-indicator visible';
+                }
+                delete titleSaveTimeouts[noteId];
+                return;
+            }
             
             const timestampEl = card?.querySelector('.note-timestamp');
             if (timestampEl) timestampEl.textContent = formatNoteDate(note.updatedAt);
@@ -1061,7 +1071,7 @@ function applyPageState() {
         const container = document.querySelector('.container');
         if (container) container.classList.add('notes-active');
 
-        loadNotes();
+        void loadNotes();
         updateDashboardContext();
         return;
     }
@@ -3162,21 +3172,56 @@ function renderForecast(data) {
 // NOTES FUNCTIONS
 // ==========================================
 
-const NOTES_STORAGE_KEY = 'bmNotes';
+const LEGACY_NOTES_STORAGE_KEY = 'bmNotes';
+let notesSaveQueue = Promise.resolve();
+
+function cloneNotesSnapshot(notes) {
+    return (Array.isArray(notes) ? notes : []).map((note) => ({ ...note }));
+}
+
+function parseLegacyNotes(rawValue) {
+    if (!rawValue) return [];
+
+    try {
+        const parsed = JSON.parse(rawValue);
+        if (!Array.isArray(parsed)) return [];
+
+        return parsed
+            .filter((note) => note && typeof note === 'object' && note.id)
+            .map((note) => ({
+                ...note,
+                id: String(note.id),
+                title: note.title || '',
+                content: note.content || '',
+                createdAt: note.createdAt || new Date().toISOString(),
+                updatedAt: note.updatedAt || note.createdAt || new Date().toISOString(),
+            }));
+    } catch (error) {
+        console.error('Failed to parse legacy notes:', error);
+        return [];
+    }
+}
 
 /**
- * Load notes from localStorage
+ * Load notes from IndexedDB, importing localStorage notes once if present.
  */
-function loadNotes() {
+async function loadNotes() {
     try {
-        const saved = localStorage.getItem(NOTES_STORAGE_KEY);
-        if (saved) {
-            allNotes = JSON.parse(saved);
+        const storedNotes = await bookmarkDB.getAllNotes();
+        if (storedNotes.length > 0) {
+            allNotes = storedNotes;
         } else {
-            allNotes = [];
+            const legacyNotes = parseLegacyNotes(localStorage.getItem(LEGACY_NOTES_STORAGE_KEY));
+            if (legacyNotes.length > 0) {
+                await bookmarkDB.replaceAllNotes(legacyNotes);
+                localStorage.removeItem(LEGACY_NOTES_STORAGE_KEY);
+                allNotes = await bookmarkDB.getAllNotes();
+            } else {
+                allNotes = [];
+            }
         }
-    } catch (e) {
-        console.error('Failed to load notes:', e);
+    } catch (error) {
+        console.error('Failed to load notes:', error);
         allNotes = [];
     }
     renderNotes(allNotes);
@@ -3184,29 +3229,42 @@ function loadNotes() {
 }
 
 /**
- * Save notes to localStorage
+ * Save notes to IndexedDB in a serialized queue.
  */
-function saveNotes() {
-    try {
-        localStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(allNotes));
-    } catch (e) {
-        console.error('Failed to save notes:', e);
-    }
+function saveNotes(nextNotes = allNotes) {
+    const snapshot = cloneNotesSnapshot(nextNotes);
+
+    notesSaveQueue = notesSaveQueue
+        .catch(() => {})
+        .then(async () => {
+            await bookmarkDB.replaceAllNotes(snapshot);
+            localStorage.removeItem(LEGACY_NOTES_STORAGE_KEY);
+        });
+
+    return notesSaveQueue;
 }
 
 /**
  * Add a new empty note
  */
-function addNote() {
+async function addNote() {
     const note = {
         id: Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
         content: '',
+        title: '',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
     };
     
     allNotes.unshift(note);
-    saveNotes();
+    try {
+        await saveNotes();
+    } catch (error) {
+        console.error('Failed to create note:', error);
+        allNotes.shift();
+        showToast('Failed to create note', 'error');
+        return;
+    }
     renderNotes(allNotes);
     updateNotesCount(allNotes.length);
     
@@ -3222,9 +3280,17 @@ function addNote() {
 /**
  * Delete a note by ID
  */
-function deleteNote(noteId) {
+async function deleteNote(noteId) {
+    const previousNotes = [...allNotes];
     allNotes = allNotes.filter(n => n.id !== noteId);
-    saveNotes();
+    try {
+        await saveNotes();
+    } catch (error) {
+        console.error('Failed to delete note:', error);
+        allNotes = previousNotes;
+        showToast('Failed to delete note', 'error');
+        return;
+    }
     renderNotes(allNotes);
     updateNotesCount(allNotes.length);
     showToast('Note deleted', 'success');
@@ -3233,12 +3299,12 @@ function deleteNote(noteId) {
 /**
  * Handle clicks on notes container (event delegation for delete)
  */
-function handleNotesContainerClick(event) {
+async function handleNotesContainerClick(event) {
     const deleteBtn = event.target.closest('.note-delete-btn');
     if (deleteBtn) {
         const noteId = deleteBtn.dataset.noteId;
         if (noteId) {
-            deleteNote(noteId);
+            await deleteNote(noteId);
         }
     }
 }
@@ -3266,12 +3332,22 @@ function handleNoteInput(event) {
         clearTimeout(noteSaveTimeouts[noteId]);
     }
     
-    noteSaveTimeouts[noteId] = setTimeout(() => {
+    noteSaveTimeouts[noteId] = setTimeout(async () => {
         const note = allNotes.find(n => n.id === noteId);
         if (note) {
             note.content = textarea.value;
             note.updatedAt = new Date().toISOString();
-            saveNotes();
+            try {
+                await saveNotes();
+            } catch (error) {
+                console.error('Failed to save note content:', error);
+                if (indicator) {
+                    indicator.textContent = 'Save failed';
+                    indicator.className = 'note-save-indicator visible';
+                }
+                delete noteSaveTimeouts[noteId];
+                return;
+            }
             
             // Update timestamp display
             const timestampEl = card?.querySelector('.note-timestamp');
@@ -3313,7 +3389,7 @@ function handleNotesSearch(query) {
 
 /**
  * Create a debounced ResizeObserver callback for a note card.
- * Persists the card's width/height to the note data in localStorage.
+ * Persists the card's width/height to IndexedDB.
  */
 function debounceResize(noteId, card) {
     let timeout = null;
@@ -3343,7 +3419,7 @@ function debounceResize(noteId, card) {
             if (note) {
                 note.cardWidth = width;
                 note.cardHeight = height;
-                saveNotes();
+                void saveNotes();
             }
         }, 300);
     };
@@ -3485,7 +3561,7 @@ function renderNotes(notes) {
             card.classList.remove('drag-over-before', 'drag-over-after');
         });
         
-        card.addEventListener('drop', (e) => {
+        card.addEventListener('drop', async (e) => {
             e.preventDefault();
             card.classList.remove('drag-over-before', 'drag-over-after');
             
@@ -3498,15 +3574,23 @@ function renderNotes(notes) {
             const targetIndex = allNotes.findIndex(n => n.id === note.id);
             
             if (draggedIndex !== -1 && targetIndex !== -1) {
+                const previousNotes = [...allNotes];
                 const [draggedNoteObj] = allNotes.splice(draggedIndex, 1);
                 
                 const newTargetIndex = allNotes.findIndex(n => n.id === note.id);
                 const insertIndex = isBefore ? newTargetIndex : newTargetIndex + 1;
                 
                 allNotes.splice(insertIndex, 0, draggedNoteObj);
-                
-                saveNotes();
-                renderNotes(allNotes);
+
+                try {
+                    await saveNotes();
+                    renderNotes(allNotes);
+                } catch (error) {
+                    console.error('Failed to reorder notes:', error);
+                    allNotes = previousNotes;
+                    renderNotes(allNotes);
+                    showToast('Failed to reorder notes', 'error');
+                }
             }
         });
         

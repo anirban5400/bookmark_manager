@@ -6,8 +6,9 @@
 class BookmarkDB {
   constructor() {
     this.dbName = "BookmarkManagerDB";
-    this.dbVersion = 2;
+    this.dbVersion = 3;
     this.storeName = "bookmarks";
+    this.notesStoreName = "notes";
     this.db = null;
   }
 
@@ -60,6 +61,27 @@ class BookmarkDB {
     };
   }
 
+  sortNotes(notes) {
+    return [...notes].sort((left, right) => {
+      const leftOrder = Number.isFinite(left?.sortOrder) ? left.sortOrder : null;
+      const rightOrder = Number.isFinite(right?.sortOrder) ? right.sortOrder : null;
+
+      if (leftOrder !== null && rightOrder !== null && leftOrder !== rightOrder) {
+        return leftOrder - rightOrder;
+      }
+      if (leftOrder !== null) return -1;
+      if (rightOrder !== null) return 1;
+
+      const leftUpdatedAt = new Date(left?.updatedAt || left?.createdAt || 0).getTime();
+      const rightUpdatedAt = new Date(right?.updatedAt || right?.createdAt || 0).getTime();
+      if (leftUpdatedAt !== rightUpdatedAt) {
+        return rightUpdatedAt - leftUpdatedAt;
+      }
+
+      return String(left?.id || '').localeCompare(String(right?.id || ''));
+    });
+  }
+
   /**
    * Initialize the database connection
    * @returns {Promise<IDBDatabase>}
@@ -85,6 +107,7 @@ class BookmarkDB {
       request.onupgradeneeded = (event) => {
         const db = event.target.result;
         let store;
+        let notesStore;
 
         // Create bookmarks store if it doesn't exist
         if (!db.objectStoreNames.contains(this.storeName)) {
@@ -111,6 +134,24 @@ class BookmarkDB {
         }
 
         this.migrateSortOrder(store);
+
+        if (!db.objectStoreNames.contains(this.notesStoreName)) {
+          notesStore = db.createObjectStore(this.notesStoreName, {
+            keyPath: "id",
+          });
+        } else {
+          notesStore = event.target.transaction.objectStore(this.notesStoreName);
+        }
+
+        if (!notesStore.indexNames.contains("createdAt")) {
+          notesStore.createIndex("createdAt", "createdAt", { unique: false });
+        }
+        if (!notesStore.indexNames.contains("updatedAt")) {
+          notesStore.createIndex("updatedAt", "updatedAt", { unique: false });
+        }
+        if (!notesStore.indexNames.contains("sortOrder")) {
+          notesStore.createIndex("sortOrder", "sortOrder", { unique: false });
+        }
       };
     });
   }
@@ -358,6 +399,73 @@ class BookmarkDB {
 
       request.onerror = () => {
         reject(new Error("Failed to clear bookmarks"));
+      };
+    });
+  }
+
+  /**
+   * Get all notes sorted by manual order.
+   * @returns {Promise<Array>}
+   */
+  async getAllNotes() {
+    await this.init();
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction([this.notesStoreName], "readonly");
+      const store = transaction.objectStore(this.notesStoreName);
+      const request = store.getAll();
+
+      request.onsuccess = () => {
+        resolve(this.sortNotes(request.result));
+      };
+
+      request.onerror = () => {
+        reject(new Error("Failed to get notes"));
+      };
+    });
+  }
+
+  /**
+   * Replace the full notes list while preserving explicit order.
+   * @param {Array} notes
+   * @returns {Promise<void>}
+   */
+  async replaceAllNotes(notes) {
+    await this.init();
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction([this.notesStoreName], "readwrite");
+      const store = transaction.objectStore(this.notesStoreName);
+      const keysRequest = store.getAllKeys();
+
+      transaction.oncomplete = () => {
+        resolve();
+      };
+
+      transaction.onerror = () => {
+        reject(new Error("Failed to save notes"));
+      };
+
+      keysRequest.onsuccess = () => {
+        const nextNotes = Array.isArray(notes) ? notes : [];
+        const nextIds = new Set(nextNotes.map((note) => note.id));
+
+        keysRequest.result.forEach((existingKey) => {
+          if (!nextIds.has(existingKey)) {
+            store.delete(existingKey);
+          }
+        });
+
+        nextNotes.forEach((note, index) => {
+          store.put({
+            ...note,
+            sortOrder: index,
+          });
+        });
+      };
+
+      keysRequest.onerror = () => {
+        reject(new Error("Failed to prepare note save"));
       };
     });
   }
