@@ -109,6 +109,9 @@ const percentageRateInput = document.getElementById('percentageRateInput');
 const percentageBaseInput = document.getElementById('percentageBaseInput');
 const percentageResult = document.getElementById('percentageResult');
 const percentageSummary = document.getElementById('percentageSummary');
+const percentageModeToggle = document.getElementById('percentageModeToggle');
+const percentageValueLabel = document.getElementById('percentageValueLabel');
+const percentageResultLabel = document.getElementById('percentageResultLabel');
 const discountPriceInput = document.getElementById('discountPriceInput');
 const discountRateInput = document.getElementById('discountRateInput');
 const discountTaxInput = document.getElementById('discountTaxInput');
@@ -509,6 +512,9 @@ function setupEventListeners() {
     if (taxResetBtn) {
         taxResetBtn.addEventListener('click', resetTaxPlanner);
     }
+    if (taxTargetsList) {
+        taxTargetsList.addEventListener('change', handleTaxDeductionsListChange);
+    }
 
     // AI Rewrite Selection
     document.addEventListener('selectionchange', () => {
@@ -568,6 +574,16 @@ function setupCalculatorListeners() {
             }
         });
     });
+
+    if (percentageModeToggle) {
+        percentageModeToggle.addEventListener('click', (e) => {
+            const btn = e.target.closest('.percentage-mode-btn');
+            if (!btn || !percentageModeToggle.contains(btn)) return;
+            percentageModeToggle.querySelectorAll('.percentage-mode-btn').forEach((b) => b.classList.remove('active'));
+            btn.classList.add('active');
+            updatePercentageCalculator();
+        });
+    }
 }
 
 function setupCalculatorCardToggles() {
@@ -625,15 +641,41 @@ function initCalculators() {
 }
 
 function updatePercentageCalculator() {
+    const mode = percentageModeToggle?.querySelector('.percentage-mode-btn.active')?.dataset.mode || 'forward';
     const rate = Math.max(0, parseCalculatorValue(percentageRateInput));
-    const base = Math.max(0, parseCalculatorValue(percentageBaseInput));
-    const result = (rate / 100) * base;
+    const secondVal = Math.max(0, parseCalculatorValue(percentageBaseInput));
+
+    if (percentageValueLabel) {
+        percentageValueLabel.textContent = mode === 'reverse' ? 'Part (this %)' : 'Total value';
+    }
+    if (percentageResultLabel) {
+        percentageResultLabel.textContent = mode === 'reverse' ? 'Original (100%)' : 'Result';
+    }
+    if (percentageBaseInput) {
+        percentageBaseInput.placeholder = mode === 'reverse' ? 'e.g. 25' : '2400';
+    }
+
+    let result = 0;
+    let summary = '';
+
+    if (mode === 'forward') {
+        result = (rate / 100) * secondVal;
+        summary = `${formatCalculatorNumber(rate)}% of ${formatCalculatorNumber(secondVal)} = ${formatCalculatorNumber(result)}`;
+    } else {
+        if (rate <= 0) {
+            summary = 'Enter a percentage greater than 0 to find the original (100%).';
+        } else {
+            const rateFraction = rate / 100;
+            result = secondVal / rateFraction;
+            summary = `If ${formatCalculatorNumber(rate)}% = ${formatCalculatorNumber(secondVal)}, then 100% = ${formatCalculatorNumber(result)} (${formatCalculatorNumber(secondVal)} ÷ ${rateFraction})`;
+        }
+    }
 
     if (percentageResult) {
-        percentageResult.textContent = formatCalculatorNumber(result);
+        percentageResult.textContent = rate <= 0 && mode === 'reverse' ? '—' : formatCalculatorNumber(result);
     }
     if (percentageSummary) {
-        percentageSummary.textContent = `${formatCalculatorNumber(rate)}% of ${formatCalculatorNumber(base)} = ${formatCalculatorNumber(result)}`;
+        percentageSummary.textContent = summary;
     }
 }
 
@@ -861,6 +903,54 @@ function renderTaxDeductionsList({ viewRegime, hraAutoAmount, employerNpsCap, ol
     }));
 }
 
+function handleTaxDeductionsListChange(event) {
+    const row = event.target.closest('.tax-deduction-row');
+    if (!row) return;
+    const key = row.dataset.taxKey;
+    if (!key) return;
+
+    const checkbox = row.querySelector('.tax-deduction-checkbox');
+    const amountInput = row.querySelector('.tax-deduction-amount');
+
+    const enabled = checkbox ? checkbox.checked : false;
+    const amount = amountInput ? parseCalculatorValue(amountInput) : 0;
+
+    if (_taxDeductionViewRegime === 'old') {
+        if (key === 'hra') {
+            _taxDeductionsState.old.hra.enabled = enabled;
+            const modeSelect = row.querySelector('.tax-hra-mode');
+            if (modeSelect) {
+                _taxDeductionsState.old.hra.mode = modeSelect.value === 'manual' ? 'manual' : 'auto';
+            }
+            _taxDeductionsState.old.hra.manualAmount = clampCurrency(amount, 0, Number.POSITIVE_INFINITY);
+        } else if (key === 'sec80c') {
+            _taxDeductionsState.old.sec80c.enabled = enabled;
+            _taxDeductionsState.old.sec80c.amount = clampCurrency(amount, 0, 150000);
+        } else if (key === 'sec80d') {
+            _taxDeductionsState.old.sec80d.enabled = enabled;
+            const selfSelect = row.querySelector('.tax-80d-self');
+            const parentsSelect = row.querySelector('.tax-80d-parents');
+            if (selfSelect) _taxDeductionsState.old.sec80d.selfBand = selfSelect.value;
+            if (parentsSelect) _taxDeductionsState.old.sec80d.parentsBand = parentsSelect.value;
+            const caps80d = get80dCaps(_taxDeductionsState.old.sec80d.selfBand, _taxDeductionsState.old.sec80d.parentsBand);
+            _taxDeductionsState.old.sec80d.amount = clampCurrency(amount, 0, caps80d.totalCap);
+        } else if (key === 'sec80tta') {
+            _taxDeductionsState.old.sec80tta.enabled = enabled;
+            _taxDeductionsState.old.sec80tta.amount = clampCurrency(amount, 0, 10000);
+        } else if (key === 'homeLoan24b') {
+            _taxDeductionsState.old.homeLoan24b.enabled = enabled;
+            _taxDeductionsState.old.homeLoan24b.amount = clampCurrency(amount, 0, 200000);
+        }
+    } else {
+        if (key === 'employerNps80ccd2') {
+            _taxDeductionsState.new.employerNps80ccd2.enabled = enabled;
+            _taxDeductionsState.new.employerNps80ccd2.amount = clampCurrency(amount, 0, Number.POSITIVE_INFINITY);
+        }
+    }
+
+    updateTaxCalculator();
+}
+
 // --- TAX SLAB FUNCTIONS (top-level for reuse) ---
 function calcNewRegimeTax(income) {
     if (income <= 400000) return 0;
@@ -907,9 +997,33 @@ function calcOldRegimeTaxWithExemption(income, exemption) {
     return tax;
 }
 
+let _taxSanityChecksRun = false;
+function runTaxSanityChecks() {
+    if (_taxSanityChecksRun) return;
+    _taxSanityChecksRun = true;
+
+    const failures = [];
+    const approxEqual = (a, b, tolerance = 0.5) => Math.abs(a - b) <= tolerance;
+
+    // New regime slabs (FY 2025-26): up to 4L nil, 4-8L @5%, 8-12L @10%
+    if (!approxEqual(calcNewRegimeTax(400000), 0)) failures.push('New: tax(4,00,000) != 0');
+    if (!approxEqual(calcNewRegimeTax(800000), 20000)) failures.push('New: tax(8,00,000) != 20,000');
+    if (!approxEqual(calcNewRegimeTax(1200000), 60000)) failures.push('New: tax(12,00,000) != 60,000');
+
+    // Old regime (age <60): exemption 2.5L, 2.5-5L @5%
+    if (!approxEqual(calcOldRegimeTaxWithExemption(250000, 250000), 0)) failures.push('Old: tax(2,50,000) != 0');
+    if (!approxEqual(calcOldRegimeTaxWithExemption(500000, 250000), 12500)) failures.push('Old: tax(5,00,000) != 12,500');
+
+    if (failures.length) {
+        console.warn('[TaxSanityChecks] Failed checks:', failures);
+    }
+}
+
 function updateTaxCalculator(event) {
     const taxInHandInput = document.getElementById('taxInHandInput');
     if (!taxSalaryInput || !taxBasicSalaryInput || !taxRentPaidInput || !taxCityInput || !taxTargetsList) return;
+
+    runTaxSanityChecks();
 
     const sourceId = event?.target?.id || '';
 
@@ -1037,8 +1151,14 @@ function updateTaxCalculator(event) {
     const taxComparisonSection = document.getElementById('taxComparisonSection');
     const newTaxableIncomeEl = document.getElementById('newTaxableIncome');
     const newFinalTaxEl = document.getElementById('newFinalTax');
+    const newSlabTaxEl = document.getElementById('newSlabTax');
+    const newRebateEl = document.getElementById('newRebate');
+    const newCessEl = document.getElementById('newCess');
     const oldTaxableIncomeEl = document.getElementById('oldTaxableIncome');
     const oldFinalTaxEl = document.getElementById('oldFinalTax');
+    const oldSlabTaxEl = document.getElementById('oldSlabTax');
+    const oldRebateEl = document.getElementById('oldRebate');
+    const oldCessEl = document.getElementById('oldCess');
     const newRegimeCard = document.getElementById('newRegimeCard');
     const oldRegimeCard = document.getElementById('oldRegimeCard');
     const taxRecommendationBanner = document.getElementById('taxRecommendationBanner');
@@ -1049,21 +1169,43 @@ function updateTaxCalculator(event) {
 
     // --- NEW REGIME calculation ---
     let newTaxable = Math.max(0, totalSalary - newStdDed - newDeductionNps);
-    let newTax = calcNewRegimeTax(newTaxable);
-    if (isResident && newTaxable <= 1200000) newTax = 0;
-    if (newTax > 0) newTax = newTax * 1.04;
+    let newSlabTax = calcNewRegimeTax(newTaxable);
+    let newRebate = 0;
+    let newCess = 0;
+    let newTax = newSlabTax;
+    if (isResident && newTaxable <= 1200000) {
+        newRebate = newSlabTax;
+        newTax = 0;
+    } else if (newSlabTax > 0) {
+        newCess = newSlabTax * 0.04;
+        newTax = newSlabTax + newCess;
+    }
 
     // --- OLD REGIME calculation ---
     let oldTaxable = Math.max(0, totalSalary - oldTotalDeductions);
     const oldExemption = getOldRegimeExemptionForAgeBand(ageBand);
-    let oldTax = calcOldRegimeTaxWithExemption(oldTaxable, oldExemption);
-    if (isResident && oldTaxable <= 500000) oldTax = 0;
-    if (oldTax > 0) oldTax = oldTax * 1.04;
+    let oldSlabTax = calcOldRegimeTaxWithExemption(oldTaxable, oldExemption);
+    let oldRebate = 0;
+    let oldCess = 0;
+    let oldTax = oldSlabTax;
+    if (isResident && oldTaxable <= 500000) {
+        oldRebate = oldSlabTax;
+        oldTax = 0;
+    } else if (oldSlabTax > 0) {
+        oldCess = oldSlabTax * 0.04;
+        oldTax = oldSlabTax + oldCess;
+    }
 
     // Update DOM
     newTaxableIncomeEl.textContent = "₹" + formatCalculatorNumber(Math.round(newTaxable));
+    if (newSlabTaxEl) newSlabTaxEl.textContent = "₹" + formatCalculatorNumber(Math.round(newSlabTax));
+    if (newRebateEl) newRebateEl.textContent = "₹" + formatCalculatorNumber(Math.round(newRebate));
+    if (newCessEl) newCessEl.textContent = "₹" + formatCalculatorNumber(Math.round(newCess));
     newFinalTaxEl.textContent = "₹" + formatCalculatorNumber(Math.round(newTax));
     oldTaxableIncomeEl.textContent = "₹" + formatCalculatorNumber(Math.round(oldTaxable));
+    if (oldSlabTaxEl) oldSlabTaxEl.textContent = "₹" + formatCalculatorNumber(Math.round(oldSlabTax));
+    if (oldRebateEl) oldRebateEl.textContent = "₹" + formatCalculatorNumber(Math.round(oldRebate));
+    if (oldCessEl) oldCessEl.textContent = "₹" + formatCalculatorNumber(Math.round(oldCess));
     oldFinalTaxEl.textContent = "₹" + formatCalculatorNumber(Math.round(oldTax));
 
     // Highlight winner

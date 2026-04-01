@@ -252,18 +252,22 @@
                             <span class="calculator-card-toggle">▼</span>
                         </div>
                         <div class="calculator-card-body">
+                            <div class="percentage-mode-toggle" id="percentageModeToggle" role="group" aria-label="Percentage calculator mode">
+                                <button type="button" class="percentage-mode-btn active" data-mode="forward" title="What is X% of a total?">% of total</button>
+                                <button type="button" class="percentage-mode-btn" data-mode="reverse" title="If X% equals this amount, what is 100%?">Find 100%</button>
+                            </div>
                             <div class="calculator-inline-fields">
                                 <label class="calculator-field">
                                     <span>Percentage</span>
                                     <input type="number" id="percentageRateInput" class="calculator-input" value="15" min="0" step="0.01" placeholder="15">
                                 </label>
                                 <label class="calculator-field">
-                                    <span>Total value</span>
+                                    <span id="percentageValueLabel">Total value</span>
                                     <input type="number" id="percentageBaseInput" class="calculator-input" value="2400" min="0" step="0.01" placeholder="2400">
                                 </label>
                             </div>
                             <div class="calculator-result-panel">
-                                <span class="calculator-result-label">Result</span>
+                                <span class="calculator-result-label" id="percentageResultLabel">Result</span>
                                 <strong id="percentageResult">360.00</strong>
                                 <small id="percentageSummary">15% of 2,400.00 = 360.00</small>
                             </div>
@@ -521,6 +525,18 @@
                                                 <span>Taxable Income</span>
                                                 <strong id="newTaxableIncome">₹0</strong>
                                             </div>
+                                            <div class="tax-detail-row">
+                                                <span>Slab Tax</span>
+                                                <strong id="newSlabTax">₹0</strong>
+                                            </div>
+                                            <div class="tax-detail-row">
+                                                <span>87A Rebate</span>
+                                                <strong id="newRebate">₹0</strong>
+                                            </div>
+                                            <div class="tax-detail-row">
+                                                <span>Cess (4%)</span>
+                                                <strong id="newCess">₹0</strong>
+                                            </div>
                                             <div class="tax-detail-row highlight-tax">
                                                 <span>Final Tax</span>
                                                 <strong id="newFinalTax">₹0</strong>
@@ -536,6 +552,18 @@
                                             <div class="tax-detail-row">
                                                 <span>Taxable Income</span>
                                                 <strong id="oldTaxableIncome">₹0</strong>
+                                            </div>
+                                            <div class="tax-detail-row">
+                                                <span>Slab Tax</span>
+                                                <strong id="oldSlabTax">₹0</strong>
+                                            </div>
+                                            <div class="tax-detail-row">
+                                                <span>87A Rebate</span>
+                                                <strong id="oldRebate">₹0</strong>
+                                            </div>
+                                            <div class="tax-detail-row">
+                                                <span>Cess (4%)</span>
+                                                <strong id="oldCess">₹0</strong>
                                             </div>
                                             <div class="tax-detail-row highlight-tax">
                                                 <span>Final Tax</span>

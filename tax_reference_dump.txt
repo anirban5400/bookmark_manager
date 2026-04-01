@@ -1,0 +1,41 @@
+India Income Tax Reference (Extracted Notes)
+================================================
+
+Source: User-provided screenshots (OCR/manual transcription).
+Note: Some screenshots were not accessible as local files at extraction time. Re-upload them as attachments if you want the remaining sections populated.
+
+
+1) Salary Breakdown (Tax Planner UI)
+-----------------------------------
+Heading: "Salary Breakdown" (badge: "Using New Regime")
+
+Values shown:
+- Annual CTC: ₹411,818.00
+- Employer PF (12% of Basic): − ₹24,709.00
+- Gross Salary: ₹387,109.00
+- Employee PF (12% of Basic): − ₹24,709.00
+- Professional Tax: − ₹2,400.00
+- Income Tax (TDS): − ₹0.00
+- Annual In-Hand: ₹360,000.00
+- Monthly In-Hand: ₹30,000.00
+
+
+2) CA-style worksheet screenshots (pending)
+-------------------------------------------
+You shared multiple screenshots that look like a CA worksheet (e.g., MyOnlineCA sheet with columns for Old/New regime and line-items like HRA exemption, Standard deduction, Professional tax, 80C, 80D, etc.).
+
+Status: NOT EXTRACTED YET
+Reason: the image files were not readable from disk in this workspace session.
+
+Action needed:
+- Re-upload those worksheet screenshots as attachments in chat (preferred), or
+- Provide a single PDF/ZIP containing them.
+
+Once re-uploaded, I will append structured tables here:
+- Summary of return (Gross income, Deductions, Net income, Tax liability, Tax/Gross ratio)
+- HRA exemption inputs and computed exemption (least-of-three)
+- Salary after exemptions
+- Deductions under Ch VI-A (80C, 80CCD(1B), 80D, 80E, 80G, 80TTA/TTB, etc.)
+- Employer contribution to NPS u/s 80CCD(2)
+- Cess @ 4% and Net Tax Payable
+

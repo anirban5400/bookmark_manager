@@ -3749,6 +3749,40 @@ body.bookmark-table-resizing * {
     margin-top: -0.15rem;
 }
 
+.percentage-mode-toggle {
+    display: flex;
+    gap: 0.35rem;
+    padding: 3px;
+    border-radius: 18px;
+    background: var(--bg-base);
+    box-shadow: var(--neu-concave);
+}
+
+.percentage-mode-btn {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.35rem 0.5rem;
+    border-radius: 14px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.percentage-mode-btn.active {
+    background: linear-gradient(135deg, rgba(108, 92, 231, 0.22), rgba(255, 159, 67, 0.18));
+    color: var(--text-primary);
+    box-shadow: var(--neu-flat);
+}
+
+.percentage-mode-btn:not(.active):hover {
+    color: var(--text-primary);
+}
+
 .calculator-field {
     display: flex;
     flex-direction: column;
