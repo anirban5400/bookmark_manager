@@ -243,12 +243,13 @@
 
 
                 <div class="calculators-grid">
-                    <section class="calculator-card calculator-card-featured">
+                    <section class="calculator-card">
                         <div class="calculator-card-header">
+                            <span class="calculator-card-icon">%</span>
                             <div>
                                 <h3>Percentage calculator</h3>
                             </div>
-                            <span class="calculator-card-icon">%</span>
+                            <span class="calculator-card-toggle">▼</span>
                         </div>
                         <div class="calculator-card-body">
                             <div class="calculator-inline-fields">
@@ -271,10 +272,11 @@
 
                     <section class="calculator-card">
                         <div class="calculator-card-header">
+                            <span class="calculator-card-icon">🏷️</span>
                             <div>
                                 <h3>Discount calculator</h3>
                             </div>
-                            <span class="calculator-card-icon">🏷️</span>
+                            <span class="calculator-card-toggle">▼</span>
                         </div>
                         <div class="calculator-card-body">
                             <div class="calculator-inline-fields">
@@ -306,10 +308,11 @@
 
                     <section class="calculator-card">
                         <div class="calculator-card-header">
+                            <span class="calculator-card-icon">🍽️</span>
                             <div>
                                 <h3>Bill splitter</h3>
                             </div>
-                            <span class="calculator-card-icon">🍽️</span>
+                            <span class="calculator-card-toggle">▼</span>
                         </div>
                         <div class="calculator-card-body">
                             <div class="calculator-inline-fields">
@@ -341,10 +344,11 @@
 
                     <section class="calculator-card">
                         <div class="calculator-card-header">
+                            <span class="calculator-card-icon">📈</span>
                             <div>
                                 <h3>EMI calculator</h3>
                             </div>
-                            <span class="calculator-card-icon">📈</span>
+                            <span class="calculator-card-toggle">▼</span>
                         </div>
                         <div class="calculator-card-body">
                             <div class="calculator-inline-fields">
@@ -369,6 +373,152 @@
                                 <div class="calculator-metric">
                                     <span>Total payment</span>
                                     <strong id="emiTotalResult">568,097.43</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="calculator-card calculator-card-featured">
+                        <div class="calculator-card-header">
+                            <span class="calculator-card-icon">🏛️</span>
+                            <div>
+                                <h3>Tax Deduction Planner</h3>
+                            </div>
+                            <span class="calculator-card-toggle">▼</span>
+                        </div>
+                        <div class="calculator-card-body">
+                            <div class="calculator-inline-fields">
+                                <label class="calculator-field">
+                                    <span>Financial Year</span>
+                                    <select id="taxFYInput" class="calculator-input" style="appearance: none; background-color: var(--bg-base); cursor: pointer;">
+                                        <option value="2025-26" selected>2025-26</option>
+                                        <option value="2026-27">2026-27</option>
+                                    </select>
+                                </label>
+                                <label class="calculator-field">
+                                    <span>City Type</span>
+                                    <select id="taxCityInput" class="calculator-input" style="appearance: none; background-color: var(--bg-base); cursor: pointer;">
+                                        <option value="0.5">Metro (Delhi, Mumbai, Kolkata, Chennai)</option>
+                                        <option value="0.4">Non-Metro</option>
+                                    </select>
+                                </label>
+                            </div>
+                            <div class="calculator-inline-fields">
+                                <label class="calculator-field">
+                                    <span>Annual CTC</span>
+                                    <input type="number" id="taxSalaryInput" class="calculator-input" min="0" step="1000" placeholder="e.g. 1750000">
+                                </label>
+                                <label class="calculator-field">
+                                    <span>Monthly In-Hand</span>
+                                    <input type="number" id="taxInHandInput" class="calculator-input" min="0" step="1000" placeholder="Bank credit/mo">
+                                </label>
+                            </div>
+                            <div class="calculator-inline-fields">
+                                <label class="calculator-field">
+                                    <span>Basic Salary (Year)</span>
+                                    <input type="number" id="taxBasicSalaryInput" class="calculator-input" min="0" step="1000" placeholder="~50% of CTC">
+                                </label>
+                                <label class="calculator-field">
+                                    <span>Rent Paid (Year)</span>
+                                    <input type="number" id="taxRentPaidInput" class="calculator-input" min="0" step="1000" placeholder="Annual rent">
+                                </label>
+                            </div>
+                            <div class="calculator-actions">
+                                <button type="button" class="calculator-reset-btn" id="taxResetBtn" title="Reset all fields">↻ Reset</button>
+                            </div>
+
+                            <!-- Salary Breakdown Section -->
+                            <div class="tax-salary-breakdown" id="taxSalaryBreakdown" style="display: none;">
+                                <div class="tax-breakdown-header">
+                                    <span>💰 Salary Breakdown</span>
+                                    <small id="breakdownRegimeLabel">Best Regime</small>
+                                </div>
+                                <div class="tax-breakdown-rows">
+                                    <div class="tax-breakdown-row">
+                                        <span>Annual CTC</span>
+                                        <strong id="bkCTC">₹0</strong>
+                                    </div>
+                                    <div class="tax-breakdown-row deduction">
+                                        <span>Employer PF (12% of Basic, employer contribution)</span>
+                                        <strong id="bkEmployerPF">− ₹0</strong>
+                                    </div>
+                                    <div class="tax-breakdown-row subtotal">
+                                        <span>Gross Salary</span>
+                                        <strong id="bkGross">₹0</strong>
+                                    </div>
+                                    <div class="tax-breakdown-row deduction">
+                                        <span>Employee PF (12% of Basic, deducted from salary)</span>
+                                        <strong id="bkEmployeePF">− ₹0</strong>
+                                    </div>
+                                    <div class="tax-breakdown-row deduction">
+                                        <span>Professional Tax</span>
+                                        <strong id="bkPT">− ₹0</strong>
+                                    </div>
+                                    <div class="tax-breakdown-row deduction">
+                                        <span>Income Tax (TDS)</span>
+                                        <strong id="bkTDS">− ₹0</strong>
+                                    </div>
+                                    <div class="tax-breakdown-row total">
+                                        <span>Annual In-Hand</span>
+                                        <strong id="bkAnnualInHand">₹0</strong>
+                                    </div>
+                                    <div class="tax-breakdown-row highlight">
+                                        <span>📅 Monthly In-Hand</span>
+                                        <strong id="bkMonthlyInHand">₹0</strong>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="calculator-result-panel tax-result-panel" style="padding-bottom: 0.8rem;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span class="calculator-result-label">Available Deductions</span>
+                                    <div class="tax-regime-toggle" id="taxRegimeToggle">
+                                        <button class="tax-regime-toggle-btn active" data-regime="old">Old Regime</button>
+                                        <button class="tax-regime-toggle-btn" data-regime="new">New Regime</button>
+                                    </div>
+                                </div>
+                                <div id="taxTargetsList" class="tax-results-list">
+                                    <!-- Populated by JS -->
+                                </div>
+                            </div>
+
+                            <div class="tax-comparison-section" style="margin-top: 0.5rem; display: none;" id="taxComparisonSection">
+                                <h4 style="margin-bottom: 0.8rem; color: var(--text-primary); font-size: 0.95rem;">Final Tax Liability</h4>
+                                <div class="tax-comparison-grid">
+                                    <div class="tax-regime-card new-regime-card" id="newRegimeCard">
+                                        <div class="tax-regime-header">
+                                            <span>New Regime</span>
+                                            <small>(Default)</small>
+                                        </div>
+                                        <div class="tax-regime-details">
+                                            <div class="tax-detail-row">
+                                                <span>Taxable Income</span>
+                                                <strong id="newTaxableIncome">₹0</strong>
+                                            </div>
+                                            <div class="tax-detail-row highlight-tax">
+                                                <span>Final Tax</span>
+                                                <strong id="newFinalTax">₹0</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="tax-regime-card old-regime-card" id="oldRegimeCard">
+                                        <div class="tax-regime-header">
+                                            <span>Old Regime</span>
+                                            <small>(With Max Proofs)</small>
+                                        </div>
+                                        <div class="tax-regime-details">
+                                            <div class="tax-detail-row">
+                                                <span>Taxable Income</span>
+                                                <strong id="oldTaxableIncome">₹0</strong>
+                                            </div>
+                                            <div class="tax-detail-row highlight-tax">
+                                                <span>Final Tax</span>
+                                                <strong id="oldFinalTax">₹0</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="taxRecommendationBanner" class="tax-recommendation-banner">
+                                    <span id="taxRecommendationText"></span>
                                 </div>
                             </div>
                         </div>

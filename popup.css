@@ -932,6 +932,7 @@ body {
     right: 0;
     bottom: 0;
     background: rgba(0, 0, 0, 0.4);
+    -webkit-backdrop-filter: blur(4px);
     backdrop-filter: blur(4px);
     display: flex;
     align-items: center;
@@ -1948,6 +1949,76 @@ body {
 }
 
 /* Bookmark Description */
+
+.bookmark-card:active {
+    box-shadow: var(--neu-concave);
+    transform: translateY(0);
+}
+
+/* Favicon Container - Neumorphic Circle */
+.favicon-wrapper {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--bg-base);
+    box-shadow: var(--neu-concave);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.favicon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+/* Bookmark Info */
+.bookmark-info {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.bookmark-info a {
+    display: block;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-decoration: none;
+    margin-bottom: 0.25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color var(--transition-fast);
+}
+
+.bookmark-info .bookmark-title {
+    display: block;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.bookmark-info a:hover {
+    color: var(--accent-color);
+}
+
+.bookmark-url {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Bookmark Description */
 .bookmark-desc {
     font-size: 0.8rem;
     color: var(--text-secondary);
@@ -1955,6 +2026,7 @@ body {
     line-height: 1.4;
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
@@ -2515,6 +2587,7 @@ body.bookmark-table-resizing * {
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     overflow: hidden;
     line-height: 1.45;
     max-width: 320px;
@@ -3568,17 +3641,31 @@ body.bookmark-table-resizing * {
         var(--bg-base);
 }
 
+@media (min-width: 680px) {
+    .calculator-card-featured {
+        grid-column: span 2;
+    }
+}
+
 .calculator-card-header {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
     gap: 1rem;
+    cursor: pointer;
+    user-select: none;
+    padding: 0.1rem 0;
+    transition: opacity 0.2s;
+}
+
+.calculator-card-header:hover {
+    opacity: 0.85;
 }
 
 .calculator-card-header h3 {
     font-size: 1.1rem;
     color: var(--text-primary);
-    margin-top: 0.3rem;
+    margin: 0;
 }
 
 .calculator-card-header p {
@@ -3586,6 +3673,26 @@ body.bookmark-table-resizing * {
     font-size: 0.82rem;
     margin-top: 0.25rem;
     max-width: 34ch;
+}
+
+.calculator-card-toggle {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: var(--bg-base);
+    box-shadow: var(--neu-concave);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+    transition: transform 0.3s ease, background 0.2s;
+    color: var(--text-secondary);
+    margin-left: auto;
+}
+
+.calculator-card-expanded .calculator-card-toggle {
+    transform: rotate(180deg);
 }
 
 .calculator-badge {
@@ -3616,14 +3723,30 @@ body.bookmark-table-resizing * {
 }
 
 .calculator-card-body {
-    display: flex;
+    display: none;
     flex-direction: column;
     gap: 0.9rem;
+}
+
+.calculator-card-expanded .calculator-card-body {
+    display: flex;
+    animation: calcBodySlideDown 0.3s ease-out;
+}
+
+@keyframes calcBodySlideDown {
+    from { opacity: 0; max-height: 0; transform: translateY(-8px); }
+    to { opacity: 1; max-height: 2000px; transform: translateY(0); }
 }
 
 .calculator-inline-fields {
     display: flex;
     gap: 0.85rem;
+}
+
+.calculator-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: -0.15rem;
 }
 
 .calculator-field {
@@ -3647,7 +3770,7 @@ body.bookmark-table-resizing * {
     background: var(--bg-base);
     box-shadow: var(--neu-concave);
     color: var(--text-primary);
-    padding: 0.85rem 1rem;
+    padding: 0.30rem 1rem;
     font-family: inherit;
     font-size: 0.95rem;
     transition: box-shadow var(--transition-fast), transform var(--transition-fast);
@@ -3840,4 +3963,348 @@ body.bookmark-table-resizing * {
     0% { transform: translateX(-50%) scale(1); opacity: 1; }
     50% { transform: translateX(-50%) scale(1.03); opacity: 0.7; }
     100% { transform: translateX(-50%) scale(1); opacity: 1; }
+}
+
+/* Salary Breakdown Styles */
+.tax-salary-breakdown {
+    background: linear-gradient(135deg, #1e272e, #2d3436);
+    border-radius: 14px;
+    padding: 0.8rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.tax-breakdown-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.6rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tax-breakdown-header span {
+    font-weight: 700;
+    font-size: 0.88rem;
+    color: #f0f5fc;
+}
+
+.tax-breakdown-header small {
+    font-size: 0.68rem;
+    color: #00b894;
+    font-weight: 600;
+    background: rgba(0, 184, 148, 0.12);
+    padding: 0.15rem 0.5rem;
+    border-radius: 10px;
+}
+
+.tax-breakdown-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.tax-breakdown-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.3rem 0.4rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    color: #dfe6e9;
+}
+
+.tax-breakdown-row span {
+    color: #b2bec3;
+}
+
+.tax-breakdown-row strong {
+    font-weight: 600;
+    color: #f0f5fc;
+    font-size: 0.82rem;
+}
+
+.tax-breakdown-row.deduction {
+    opacity: 0.85;
+}
+
+.tax-breakdown-row.deduction strong {
+    color: #ff7675;
+}
+
+.tax-breakdown-row.subtotal {
+    background: rgba(255, 255, 255, 0.04);
+    border-top: 1px dashed rgba(255, 255, 255, 0.08);
+    margin-top: 0.1rem;
+}
+
+.tax-breakdown-row.subtotal strong {
+    color: #74b9ff;
+}
+
+.tax-breakdown-row.total {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: 0.2rem;
+    padding-top: 0.4rem;
+}
+
+.tax-breakdown-row.total strong {
+    color: #55efc4;
+    font-size: 0.9rem;
+}
+
+.tax-breakdown-row.highlight {
+    background: linear-gradient(135deg, rgba(0, 184, 148, 0.12), rgba(0, 206, 201, 0.08));
+    border-radius: 10px;
+    padding: 0.45rem 0.6rem;
+    margin-top: 0.2rem;
+}
+
+.tax-breakdown-row.highlight span {
+    color: #f0f5fc;
+    font-weight: 600;
+}
+
+.tax-breakdown-row.highlight strong {
+    color: #00b894;
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+/* Tax Calculator Specific Styles */
+.tax-result-panel {
+    background: #2d3436; /* Soft dark surface for readability */
+    color: #f0f5fc;
+    box-shadow: inset 2px 2px 6px rgba(0, 0, 0, 0.4), inset -1px -1px 2px rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tax-regime-toggle {
+    display: flex;
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 20px;
+    padding: 2px;
+    gap: 2px;
+}
+
+.tax-regime-toggle-btn {
+    border: none;
+    outline: none;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.25rem 0.7rem;
+    border-radius: 18px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    font-family: inherit;
+}
+
+.tax-regime-toggle-btn.active {
+    background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(108, 92, 231, 0.35);
+}
+
+.tax-regime-toggle-btn:not(.active):hover {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.calculator-reset-btn {
+    border: none;
+    outline: none;
+    background: rgba(0, 0, 0, 0.18);
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.28rem 0.7rem;
+    border-radius: 18px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.06), 1px 1px 0 rgba(0, 0, 0, 0.25);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.calculator-reset-btn:hover {
+    background: rgba(0, 0, 0, 0.25);
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.calculator-reset-btn:active {
+    transform: translateY(1px);
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.tax-results-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-top: 0.8rem;
+}
+
+.tax-result-card {
+    background: rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 0.6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.tax-result-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.tax-result-name {
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.tax-result-amount {
+    font-weight: 700;
+    color: var(--accent-light);
+    font-size: 0.9rem;
+}
+
+.tax-result-badges {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.tax-comparison-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.8rem;
+    margin-bottom: 0.8rem;
+}
+
+.tax-regime-card {
+    background: var(--bg-light);
+    border-radius: 12px;
+    padding: 0.8rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    box-shadow: var(--neu-flat);
+    border: 2px solid transparent;
+    transition: all var(--transition-normal);
+}
+
+[data-theme="dark"] .tax-regime-card {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.tax-regime-card.winning-regime {
+    border-color: #00b894;
+    background: rgba(0, 184, 148, 0.05);
+}
+
+.tax-regime-card.losing-regime {
+    opacity: 0.6;
+}
+
+.tax-regime-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 1px solid rgba(128, 128, 128, 0.15);
+    padding-bottom: 0.4rem;
+    margin-bottom: 0.2rem;
+}
+
+.tax-regime-header span {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.tax-regime-header small {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+}
+
+.tax-detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.tax-detail-row strong {
+    color: var(--text-primary);
+}
+
+.highlight-tax {
+    margin-top: 0.3rem;
+    padding-top: 0.4rem;
+    border-top: 1px dashed rgba(128, 128, 128, 0.2);
+}
+
+.highlight-tax span {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.highlight-tax strong {
+    font-size: 1.15rem;
+    color: var(--accent-color);
+}
+
+.winning-regime .highlight-tax strong {
+    color: #00b894;
+}
+
+.tax-recommendation-banner {
+    background: linear-gradient(135deg, #00b894, #00cec9);
+    color: white;
+    padding: 0.8rem;
+    border-radius: 12px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.9rem;
+    box-shadow: 0 4px 12px rgba(0, 184, 148, 0.2);
+}
+
+.tax-recommendation-banner.neutral {
+    background: var(--bg-dark);
+    color: var(--text-primary);
+    box-shadow: inset 1px 1px 3px rgba(0,0,0,0.1);
+}
+
+.tax-badge {
+    font-size: 0.65rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+}
+
+.tax-badge-doc {
+    background: rgba(46, 204, 113, 0.1);
+    border-color: rgba(46, 204, 113, 0.3);
+    color: #2ecc71;
+}
+
+.tax-badge-source {
+    background: rgba(52, 152, 219, 0.1);
+    border-color: rgba(52, 152, 219, 0.3);
+    color: #3498db;
+}
+
+.tax-result-desc {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    line-height: 1.3;
+    padding-top: 0.3rem;
+    border-top: 1px dashed rgba(255, 255, 255, 0.1);
 }

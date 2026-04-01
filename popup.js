@@ -124,7 +124,13 @@ const emiRateInput = document.getElementById('emiRateInput');
 const emiMonthsInput = document.getElementById('emiMonthsInput');
 const emiMonthlyResult = document.getElementById('emiMonthlyResult');
 const emiTotalResult = document.getElementById('emiTotalResult');
-
+const taxSalaryInput = document.getElementById('taxSalaryInput');
+const taxBasicSalaryInput = document.getElementById('taxBasicSalaryInput');
+const taxRentPaidInput = document.getElementById('taxRentPaidInput');
+const taxFYInput = document.getElementById('taxFYInput');
+const taxCityInput = document.getElementById('taxCityInput');
+const taxTargetsList = document.getElementById('taxTargetsList');
+const taxResetBtn = document.getElementById('taxResetBtn');
 // State
 let allBookmarks = [];
 let isFormVisible = false;
@@ -144,6 +150,7 @@ const BOOKMARK_TABLE_REORDER_KEY = '__reorder__';
 const VALID_PAGES = new Set(['bookmarks', 'notes', 'calculators']);
 let cardViewLimit = DEFAULT_CARD_VIEW_LIMIT;
 let isSidebarCollapsed = false;
+let calculatorCardTogglesBound = false;
 const hiddenCardFields = new Set();
 const SETTINGS_STORAGE_KEY = 'bmSettings';
 const UI_STATE_STORAGE_KEY = 'bmUiState';
@@ -494,6 +501,10 @@ function setupEventListeners() {
         calculatorsToggleBtn.addEventListener('click', () => setActivePage('calculators'));
     }
     setupCalculatorListeners();
+    setupCalculatorCardToggles();
+    if (taxResetBtn) {
+        taxResetBtn.addEventListener('click', resetTaxPlanner);
+    }
 
     // AI Rewrite Selection
     document.addEventListener('selectionchange', () => {
@@ -539,15 +550,61 @@ function setupCalculatorListeners() {
         { inputs: [percentageRateInput, percentageBaseInput], handler: updatePercentageCalculator },
         { inputs: [discountPriceInput, discountRateInput, discountTaxInput], handler: updateDiscountCalculator },
         { inputs: [splitBillInput, splitPeopleInput, splitTipInput], handler: updateBillSplitCalculator },
-        { inputs: [emiPrincipalInput, emiRateInput, emiMonthsInput], handler: updateEmiCalculator }
+        { inputs: [emiPrincipalInput, emiRateInput, emiMonthsInput], handler: updateEmiCalculator },
+        { inputs: [taxFYInput, taxSalaryInput, taxBasicSalaryInput, taxRentPaidInput, taxCityInput, document.getElementById('taxInHandInput')], handler: updateTaxCalculator }
     ];
 
     calculatorBindings.forEach(({ inputs, handler }) => {
         inputs.forEach((input) => {
             if (!input) return;
             input.addEventListener('input', handler);
+            // Select elements fire 'change', not 'input'
+            if (input.tagName === 'SELECT') {
+                input.addEventListener('change', handler);
+            }
         });
     });
+}
+
+function setupCalculatorCardToggles() {
+    if (calculatorCardTogglesBound) return;
+    if (!calculatorsPage) return;
+
+    calculatorsPage.addEventListener('click', (event) => {
+        const header = event.target.closest('.calculator-card-header');
+        if (!header) return;
+        const card = header.closest('.calculator-card');
+        if (!card) return;
+        card.classList.toggle('calculator-card-expanded');
+    });
+
+    calculatorCardTogglesBound = true;
+}
+
+function resetTaxPlanner() {
+    const taxInHandInput = document.getElementById('taxInHandInput');
+
+    if (taxSalaryInput) taxSalaryInput.value = '';
+    if (taxInHandInput) taxInHandInput.value = '';
+    if (taxBasicSalaryInput) taxBasicSalaryInput.value = '';
+    if (taxRentPaidInput) taxRentPaidInput.value = '';
+    if (taxFYInput) taxFYInput.value = '2025-26';
+    if (taxCityInput) taxCityInput.value = '0.5';
+
+    _taxDeductionViewRegime = 'old';
+    const toggleContainer = document.getElementById('taxRegimeToggle');
+    if (toggleContainer) {
+        toggleContainer.querySelectorAll('.tax-regime-toggle-btn').forEach(b => b.classList.remove('active'));
+        const oldBtn = toggleContainer.querySelector('.tax-regime-toggle-btn[data-regime="old"]');
+        if (oldBtn) oldBtn.classList.add('active');
+    }
+
+    const comparison = document.getElementById('taxComparisonSection');
+    if (comparison) comparison.style.display = 'none';
+    const breakdown = document.getElementById('taxSalaryBreakdown');
+    if (breakdown) breakdown.style.display = 'none';
+
+    updateTaxCalculator();
 }
 
 function initCalculators() {
@@ -555,6 +612,7 @@ function initCalculators() {
     updateDiscountCalculator();
     updateBillSplitCalculator();
     updateEmiCalculator();
+    updateTaxCalculator();
 }
 
 function updatePercentageCalculator() {
@@ -625,6 +683,305 @@ function updateEmiCalculator() {
         emiTotalResult.textContent = formatCalculatorNumber(totalPayment);
     }
 }
+
+// Track which regime view is selected for the deductions panel
+let _taxDeductionViewRegime = 'old';
+let _taxAutoFilling = false;
+
+// --- TAX SLAB FUNCTIONS (top-level for reuse) ---
+function calcNewRegimeTax(income) {
+    if (income <= 400000) return 0;
+    let tax = 0;
+    if (income > 400000)  tax += Math.min(400000, income - 400000) * 0.05;
+    if (income > 800000)  tax += Math.min(400000, income - 800000) * 0.10;
+    if (income > 1200000) tax += Math.min(400000, income - 1200000) * 0.15;
+    if (income > 1600000) tax += Math.min(400000, income - 1600000) * 0.20;
+    if (income > 2000000) tax += Math.min(400000, income - 2000000) * 0.25;
+    if (income > 2400000) tax += (income - 2400000) * 0.30;
+    return tax;
+}
+
+function calcOldRegimeTax(income) {
+    if (income <= 250000) return 0;
+    let tax = 0;
+    if (income > 250000)  tax += Math.min(250000, income - 250000) * 0.05;
+    if (income > 500000)  tax += Math.min(500000, income - 500000) * 0.20;
+    if (income > 1000000) tax += (income - 1000000) * 0.30;
+    return tax;
+}
+
+function updateTaxCalculator(event) {
+    const taxInHandInput = document.getElementById('taxInHandInput');
+    if (!taxSalaryInput || !taxBasicSalaryInput || !taxRentPaidInput || !taxCityInput || !taxTargetsList) return;
+
+    const sourceId = event?.target?.id || '';
+
+    // ====================================================
+    // SMART AUTO-FILL LOGIC
+    // ====================================================
+    if (!_taxAutoFilling) {
+        _taxAutoFilling = true;
+
+        let ctc = parseCalculatorValue(taxSalaryInput);
+        let basic = parseCalculatorValue(taxBasicSalaryInput);
+        let inHand = taxInHandInput ? parseCalculatorValue(taxInHandInput) : 0;
+        let rent = parseCalculatorValue(taxRentPaidInput);
+
+        if (sourceId === 'taxInHandInput' && inHand > 0) {
+            // Reverse-calculate CTC from Monthly In-Hand using iterative convergence
+            let estCTC = inHand * 12 / 0.65; // initial guess
+            for (let i = 0; i < 8; i++) {
+                const estBasic = estCTC * 0.5;
+                const pf = Math.round(estBasic * 0.12);
+                const gross = estCTC - pf;
+                let taxableNew = estCTC - 75000;
+                let taxNew = calcNewRegimeTax(taxableNew);
+                if (taxableNew <= 1200000) taxNew = 0;
+                if (taxNew > 0) taxNew *= 1.04;
+                const calcInHand = gross - pf - 2400 - taxNew;
+                estCTC += ((inHand * 12) - calcInHand);
+            }
+            ctc = Math.round(estCTC);
+            basic = Math.round(ctc * 0.5);
+            taxSalaryInput.value = ctc;
+            taxBasicSalaryInput.value = basic;
+        } else if (sourceId === 'taxSalaryInput' && ctc > 0) {
+            // CTC entered → auto-fill Basic and In-Hand
+            if (!basic || sourceId === 'taxSalaryInput') {
+                basic = Math.round(ctc * 0.5);
+                taxBasicSalaryInput.value = basic;
+            }
+        } else if (sourceId === 'taxBasicSalaryInput' && basic > 0) {
+            // Basic entered → auto-fill CTC if blank
+            if (!ctc) {
+                ctc = Math.round(basic * 2);
+                taxSalaryInput.value = ctc;
+            }
+        }
+
+        // Final fallback: If CTC exists but basic doesn't
+        ctc = parseCalculatorValue(taxSalaryInput);
+        basic = parseCalculatorValue(taxBasicSalaryInput);
+        if (ctc > 0 && !basic) {
+            taxBasicSalaryInput.value = Math.round(ctc * 0.5);
+        }
+        if (!ctc && basic > 0) {
+            taxSalaryInput.value = Math.round(basic * 2);
+        }
+
+        _taxAutoFilling = false;
+    }
+
+    // Re-read values after auto-fill
+    const totalSalary = parseCalculatorValue(taxSalaryInput);
+    const basicSalary = parseCalculatorValue(taxBasicSalaryInput);
+    const rentPaid = parseCalculatorValue(taxRentPaidInput);
+
+    if (!totalSalary) {
+        taxTargetsList.innerHTML = '<div style="opacity: 0.6; padding: 1.5rem; text-align: center; border: 1px dashed rgba(255,255,255,0.2); border-radius: 8px;">Enter your Annual CTC or Monthly In-Hand salary to begin</div>';
+        const tcs = document.getElementById('taxComparisonSection');
+        if(tcs) tcs.style.display = 'none';
+        const bks = document.getElementById('taxSalaryBreakdown');
+        if(bks) bks.style.display = 'none';
+        return;
+    }
+
+    const isMetro = taxCityInput.value === "0.5";
+    const cityMultiplier = isMetro ? 0.5 : 0.4;
+    const selectedFY = taxFYInput.value;
+    const isFY2026 = selectedFY === "2026-27";
+    
+    // --- HRA Calculation (Old Regime only) ---
+    let hraExemption = 0;
+    if (basicSalary > 0 && rentPaid > 0) {
+        let hraReceived = Math.max(0, totalSalary - basicSalary);
+        if (hraReceived === 0) hraReceived = basicSalary * 0.5;
+        const rentMinus10PercentBasic = Math.max(0, rentPaid - (0.1 * basicSalary));
+        const percentageOfBasic = basicSalary * cityMultiplier;
+        hraExemption = Math.min(hraReceived, rentMinus10PercentBasic, percentageOfBasic);
+    }
+
+    // ====================================================
+    // BUILD DEDUCTION LISTS FOR EACH REGIME
+    // ====================================================
+
+    // --- OLD REGIME deductions ---
+    const oldDeductions = [
+        { name: "Standard Deduction", value: 50000, doc: "None (Automatic)", source: "Sec 16(ia)", desc: "Flat ₹50,000 deduction for all salaried employees. No proofs required." },
+        { name: "House Rent Allowance (HRA)", value: hraExemption, doc: "Rent Receipts & PAN", source: "Sec 10(13A)", desc: "Exemption based on Rent Paid, Basic Salary, and City type (Metro/Non-Metro)." },
+        { name: "Sec 80C Investments", value: 150000, doc: "Investment Proofs", source: "Sec 80C", desc: "EPF, PPF, ELSS, LIC Premium, Home Loan Principal, Tuition Fees (Max ₹1.5L)." },
+        { name: "Health Insurance (80D)", value: 25000, doc: "Policy Copies", source: "Sec 80D", desc: "Premium for self/spouse/children. Extra ₹25k–₹50k for senior citizen parents." },
+        { name: "Savings Interest (80TTA)", value: 10000, doc: "Bank Statements", source: "Sec 80TTA", desc: "Deduction on interest earned from savings bank accounts." }
+    ];
+
+    // FY-conditional allowances for Old Regime
+    if (isFY2026) {
+        oldDeductions.push(
+            { name: "Children Education Allowance", value: 72000, doc: "School Fee Receipts", source: "IT Act 2025", desc: "₹3,000/month per child (Max 2 children). Enhanced under new Act 2025." },
+            { name: "Hostel Expenditure Allowance", value: 216000, doc: "Hostel Fee Receipts", source: "IT Act 2025", desc: "₹9,000/month per child (Max 2 children). Enhanced under new Act 2025." },
+            { name: "Meal Vouchers / Food Allowance", value: 105600, doc: "Meal Card / Vouchers", source: "IT Act 2025", desc: "Up to ₹200/meal × 2 meals/day × 22 days/month = ₹105,600/year." }
+        );
+    } else {
+        // FY 2025-26: Old rates
+        oldDeductions.push(
+            { name: "Children Education Allowance", value: 2400, doc: "School Fee Receipts", source: "Sec 10(14)", desc: "₹100/month per child (Max 2 children). Old Act rate." },
+            { name: "Hostel Expenditure Allowance", value: 7200, doc: "Hostel Fee Receipts", source: "Sec 10(14)", desc: "₹300/month per child (Max 2 children). Old Act rate." }
+        );
+    }
+
+    // --- NEW REGIME deductions (very limited) ---
+    const newDeductions = [
+        { name: "Standard Deduction", value: 75000, doc: "None (Automatic)", source: "Sec 16(ia)", desc: "Enhanced ₹75,000 flat deduction under the New Regime. No proofs required." },
+        { name: "Employer NPS (80CCD(2))", value: Math.round(basicSalary * 0.14), doc: "Salary Slip / Form 16", source: "Sec 80CCD(2)", desc: "Employer contribution to NPS, up to 14% of Basic Salary. Only deduction allowed in New Regime." }
+    ];
+
+    // Decide which list to render based on toggle
+    const displayDeductions = _taxDeductionViewRegime === 'new' ? newDeductions : oldDeductions;
+
+    // --- Render deduction cards ---
+    taxTargetsList.innerHTML = "";
+    displayDeductions.forEach(item => {
+        const card = document.createElement('div');
+        card.className = "tax-result-card";
+        
+        const mainRow = document.createElement('div');
+        mainRow.className = "tax-result-main";
+        const nameSpan = document.createElement('span');
+        nameSpan.className = "tax-result-name";
+        nameSpan.textContent = item.name;
+        const valueSpan = document.createElement('span');
+        valueSpan.className = "tax-result-amount";
+        valueSpan.textContent = "₹" + formatCalculatorNumber(item.value);
+        mainRow.appendChild(nameSpan);
+        mainRow.appendChild(valueSpan);
+        
+        const badgesRow = document.createElement('div');
+        badgesRow.className = "tax-result-badges";
+        const docBadge = document.createElement('span');
+        docBadge.className = "tax-badge tax-badge-doc";
+        docBadge.innerHTML = `📄 ${item.doc}`;
+        const sourceBadge = document.createElement('span');
+        sourceBadge.className = "tax-badge tax-badge-source";
+        sourceBadge.innerHTML = `⚖️ ${item.source}`;
+        badgesRow.appendChild(docBadge);
+        badgesRow.appendChild(sourceBadge);
+        
+        const descRow = document.createElement('div');
+        descRow.className = "tax-result-desc";
+        descRow.textContent = item.desc;
+        
+        card.appendChild(mainRow);
+        card.appendChild(badgesRow);
+        card.appendChild(descRow);
+        taxTargetsList.appendChild(card);
+    });
+
+    // ====================================================
+    // TAX CALCULATION ENGINE
+    // ====================================================
+    const taxComparisonSection = document.getElementById('taxComparisonSection');
+    const newTaxableIncomeEl = document.getElementById('newTaxableIncome');
+    const newFinalTaxEl = document.getElementById('newFinalTax');
+    const oldTaxableIncomeEl = document.getElementById('oldTaxableIncome');
+    const oldFinalTaxEl = document.getElementById('oldFinalTax');
+    const newRegimeCard = document.getElementById('newRegimeCard');
+    const oldRegimeCard = document.getElementById('oldRegimeCard');
+    const taxRecommendationBanner = document.getElementById('taxRecommendationBanner');
+    const taxRecommendationText = document.getElementById('taxRecommendationText');
+
+    if (!taxComparisonSection) return;
+    taxComparisonSection.style.display = 'block';
+
+    // --- NEW REGIME calculation ---
+    const newStdDed = 75000;
+    let newTaxable = Math.max(0, totalSalary - newStdDed);
+    let newTax = calcNewRegimeTax(newTaxable);
+    if (newTaxable <= 1200000) newTax = 0;
+    if (newTax > 0) newTax = newTax * 1.04;
+
+    // --- OLD REGIME calculation ---
+    let oldTotalDeductions = oldDeductions.reduce((sum, item) => sum + item.value, 0);
+    let oldTaxable = Math.max(0, totalSalary - oldTotalDeductions);
+    let oldTax = calcOldRegimeTax(oldTaxable);
+    if (oldTaxable <= 500000) oldTax = 0;
+    if (oldTax > 0) oldTax = oldTax * 1.04;
+
+    // Update DOM
+    newTaxableIncomeEl.textContent = "₹" + formatCalculatorNumber(Math.round(newTaxable));
+    newFinalTaxEl.textContent = "₹" + formatCalculatorNumber(Math.round(newTax));
+    oldTaxableIncomeEl.textContent = "₹" + formatCalculatorNumber(Math.round(oldTaxable));
+    oldFinalTaxEl.textContent = "₹" + formatCalculatorNumber(Math.round(oldTax));
+
+    // Highlight winner
+    newRegimeCard.className = "tax-regime-card new-regime-card";
+    oldRegimeCard.className = "tax-regime-card old-regime-card";
+    taxRecommendationBanner.className = "tax-recommendation-banner";
+
+    let diff = Math.abs(newTax - oldTax);
+    if (oldTax < newTax) {
+        oldRegimeCard.classList.add('winning-regime');
+        newRegimeCard.classList.add('losing-regime');
+        taxRecommendationText.textContent = `🎉 Old Regime saves you ₹${formatCalculatorNumber(Math.round(diff))}!`;
+    } else if (newTax < oldTax) {
+        newRegimeCard.classList.add('winning-regime');
+        oldRegimeCard.classList.add('losing-regime');
+        taxRecommendationText.textContent = `🎉 New Regime saves you ₹${formatCalculatorNumber(Math.round(diff))}!`;
+    } else {
+        taxRecommendationBanner.classList.add('neutral');
+        if (newTax === 0) {
+            taxRecommendationText.innerHTML = `⚖️ Both regimes successfully result in <b style="letter-spacing:1px;">ZERO TAX</b>!`;
+        } else {
+            taxRecommendationText.innerHTML = `⚖️ Both regimes result in the exact same tax liability.`;
+        }
+    }
+
+    // ====================================================
+    // SALARY BREAKDOWN (CTC → In-Hand)
+    // ====================================================
+    const breakdownSection = document.getElementById('taxSalaryBreakdown');
+    if (breakdownSection) {
+        breakdownSection.style.display = 'block';
+
+        const employerPF = Math.round(basicSalary * 0.12);
+        const employeePF = Math.round(basicSalary * 0.12);
+        const grossSalary = totalSalary - employerPF;
+        const professionalTax = 2400;
+        const bestTax = Math.min(newTax, oldTax);
+        const bestRegimeName = newTax <= oldTax ? 'New Regime' : 'Old Regime';
+        const annualInHand = grossSalary - employeePF - professionalTax - bestTax;
+        const monthlyInHand = Math.round(annualInHand / 12);
+
+        document.getElementById('bkCTC').textContent = '₹' + formatCalculatorNumber(totalSalary);
+        document.getElementById('bkEmployerPF').textContent = '− ₹' + formatCalculatorNumber(employerPF);
+        document.getElementById('bkGross').textContent = '₹' + formatCalculatorNumber(grossSalary);
+        document.getElementById('bkEmployeePF').textContent = '− ₹' + formatCalculatorNumber(employeePF);
+        document.getElementById('bkPT').textContent = '− ₹' + formatCalculatorNumber(professionalTax);
+        document.getElementById('bkTDS').textContent = '− ₹' + formatCalculatorNumber(Math.round(bestTax));
+        document.getElementById('bkAnnualInHand').textContent = '₹' + formatCalculatorNumber(Math.round(annualInHand));
+        document.getElementById('bkMonthlyInHand').textContent = '₹' + formatCalculatorNumber(monthlyInHand);
+        document.getElementById('breakdownRegimeLabel').textContent = 'Using ' + bestRegimeName;
+
+        // Auto-update the In-Hand input field (only if user wasn't typing in it)
+        if (taxInHandInput && sourceId !== 'taxInHandInput') {
+            taxInHandInput.value = monthlyInHand > 0 ? monthlyInHand : '';
+        }
+    }
+}
+
+// Wire up the regime toggle buttons
+document.addEventListener('DOMContentLoaded', () => {
+    const toggleContainer = document.getElementById('taxRegimeToggle');
+    if (toggleContainer) {
+        toggleContainer.addEventListener('click', (e) => {
+            const btn = e.target.closest('.tax-regime-toggle-btn');
+            if (!btn) return;
+            toggleContainer.querySelectorAll('.tax-regime-toggle-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            _taxDeductionViewRegime = btn.dataset.regime;
+            updateTaxCalculator();
+        });
+    }
+});
 
 /**
  * Handle keyboard shortcuts
