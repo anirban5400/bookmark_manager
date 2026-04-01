@@ -1014,6 +1014,7 @@ body {
 }
 
 .settings-modal-body {
+    --settings-inset-x: 1.1rem;
     padding: 1rem 1.1rem 1.2rem;
     max-height: 74vh;
     display: flex;
@@ -1023,7 +1024,7 @@ body {
 
 .settings-intro {
     padding: 0.95rem 1rem;
-    border-radius: var(--radius-md);
+    border-radius: max(12px, calc(var(--radius-lg) - var(--settings-inset-x)));
     background: linear-gradient(145deg, rgba(108, 92, 231, 0.12), rgba(162, 155, 254, 0.08));
     box-shadow: var(--neu-flat);
 }
@@ -1036,9 +1037,10 @@ body {
 
 /* Settings Sections */
 .settings-section {
+    --settings-section-r: max(12px, calc(var(--radius-lg) - var(--settings-inset-x)));
     margin-bottom: 0;
     padding: 1rem;
-    border-radius: 24px;
+    border-radius: var(--settings-section-r);
     background: var(--bg-base);
     box-shadow: var(--neu-flat);
 }
@@ -1073,7 +1075,7 @@ body {
     gap: 1rem;
     padding: 0.85rem 0.95rem;
     background: linear-gradient(145deg, rgba(255, 255, 255, 0.16), rgba(0, 0, 0, 0.015));
-    border-radius: 18px;
+    border-radius: max(8px, calc(var(--settings-section-r) - 1rem));
     box-shadow: var(--neu-concave);
     margin-bottom: var(--gap-sm);
     min-height: 58px;
@@ -1645,9 +1647,11 @@ body {
 
 /* Add Bookmark Form - Neumorphic Card with Toggle Animation */
 .bookmark-form {
+    --form-shell-r: var(--radius-lg);
+    --form-shell-pad: var(--gap-lg);
     background: var(--bg-base);
-    border-radius: var(--radius-lg);
-    padding: var(--gap-lg);
+    border-radius: var(--form-shell-r);
+    padding: var(--form-shell-pad);
     margin-bottom: var(--gap-lg);
     box-shadow: var(--neu-convex);
     max-height: 350px;
@@ -1777,6 +1781,14 @@ body {
     color: var(--text-muted);
 }
 
+.bookmark-form .form-control {
+    border-radius: max(12px, calc(var(--form-shell-r) - var(--form-shell-pad)));
+}
+
+.bookmark-modal-body .bookmark-form .form-control {
+    border-radius: var(--radius-md);
+}
+
 /* Textarea Styling */
 .form-textarea {
     resize: none;
@@ -1879,76 +1891,6 @@ body {
     box-shadow: var(--neu-flat);
     transform: translateY(-2px);
 }
-
-.bookmark-card:active {
-    box-shadow: var(--neu-concave);
-    transform: translateY(0);
-}
-
-/* Favicon Container - Neumorphic Circle */
-.favicon-wrapper {
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    background: var(--bg-base);
-    box-shadow: var(--neu-concave);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.favicon {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    object-fit: cover;
-}
-
-/* Bookmark Info */
-.bookmark-info {
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-}
-
-.bookmark-info a {
-    display: block;
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    text-decoration: none;
-    margin-bottom: 0.25rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    transition: color var(--transition-fast);
-}
-
-.bookmark-info .bookmark-title {
-    display: block;
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 0.25rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.bookmark-info a:hover {
-    color: var(--accent-color);
-}
-
-.bookmark-url {
-    font-size: 0.85rem;
-    color: var(--text-muted);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-/* Bookmark Description */
 
 .bookmark-card:active {
     box-shadow: var(--neu-concave);
@@ -2904,6 +2846,7 @@ body.bookmark-table-resizing * {
     }
 
     .settings-modal-body {
+        --settings-inset-x: 0.9rem;
         padding: 0.9rem;
     }
 
@@ -3052,6 +2995,7 @@ body.bookmark-table-resizing * {
     /* Form adjustments */
     .bookmark-form {
         padding: var(--gap-md);
+        --form-shell-pad: var(--gap-md);
     }
 
     .bookmark-modal-content {
@@ -3530,12 +3474,14 @@ body.bookmark-table-resizing * {
 }
 
 .calculators-hero {
+    --calc-hero-r: var(--radius-lg);
+    --calc-hero-pad: 1.5rem;
     display: flex;
     align-items: stretch;
     justify-content: space-between;
     gap: 1rem;
-    padding: 1.5rem;
-    border-radius: var(--radius-lg);
+    padding: var(--calc-hero-pad);
+    border-radius: var(--calc-hero-r);
     background:
         radial-gradient(circle at top right, rgba(255, 255, 255, 0.55), transparent 35%),
         linear-gradient(135deg, rgba(108, 92, 231, 0.22), rgba(255, 159, 67, 0.28));
@@ -3585,7 +3531,7 @@ body.bookmark-table-resizing * {
 .calculator-stat-chip {
     min-width: 124px;
     padding: 0.9rem 1rem;
-    border-radius: 22px;
+    border-radius: max(10px, calc(var(--calc-hero-r) - var(--calc-hero-pad)));
     background: rgba(255, 255, 255, 0.52);
     box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.5), 1px 1px 0 rgba(163, 177, 198, 0.4);
     display: flex;
@@ -3612,10 +3558,12 @@ body.bookmark-table-resizing * {
 }
 
 .calculator-card {
+    --calc-card-r: 28px;
+    --calc-card-pad: 1.2rem;
     background: var(--bg-base);
-    border-radius: 28px;
+    border-radius: var(--calc-card-r);
     box-shadow: var(--neu-convex);
-    padding: 1.2rem;
+    padding: var(--calc-card-pad);
     display: flex;
     flex-direction: column;
     gap: 1.1rem;
@@ -3819,7 +3767,7 @@ body.bookmark-table-resizing * {
     flex-direction: column;
     gap: 0.2rem;
     padding: 1rem 1.05rem;
-    border-radius: 22px;
+    border-radius: max(10px, calc(var(--calc-card-r) - var(--calc-card-pad)));
     background: linear-gradient(135deg, rgba(108, 92, 231, 0.92), rgba(255, 159, 67, 0.88));
     color: #fff;
     box-shadow: 0 18px 28px rgba(108, 92, 231, 0.16);
@@ -3850,7 +3798,7 @@ body.bookmark-table-resizing * {
 }
 
 .calculator-metric {
-    border-radius: 22px;
+    border-radius: max(10px, calc(var(--calc-card-r) - var(--calc-card-pad)));
     background: var(--bg-base);
     box-shadow: var(--neu-concave);
     padding: 0.95rem 1rem;
