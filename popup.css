@@ -4145,6 +4145,75 @@ body.bookmark-table-resizing * {
     margin-top: 0.8rem;
 }
 
+.tax-deduction-row {
+    background: rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    padding: 0.65rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.tax-deduction-check {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    cursor: pointer;
+    user-select: none;
+}
+
+.tax-deduction-checkbox {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent-color);
+}
+
+.tax-deduction-label {
+    font-weight: 650;
+    font-size: 0.85rem;
+    color: #f0f5fc;
+}
+
+.tax-deduction-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.tax-deduction-select {
+    border: none;
+    outline: none;
+    border-radius: 14px;
+    background: rgba(0, 0, 0, 0.22);
+    color: rgba(255, 255, 255, 0.88);
+    padding: 0.25rem 0.6rem;
+    font-size: 0.72rem;
+    font-weight: 650;
+    cursor: pointer;
+    appearance: none;
+}
+
+.tax-deduction-row .tax-deduction-amount {
+    flex: 1;
+    min-width: 130px;
+    padding: 0.28rem 0.75rem;
+    font-size: 0.9rem;
+}
+
+.tax-deduction-cap {
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.55);
+    font-weight: 600;
+}
+
+.tax-deduction-note {
+    font-size: 0.72rem;
+    line-height: 1.35;
+    color: rgba(255, 255, 255, 0.65);
+}
+
 .tax-result-card {
     background: rgba(0, 0, 0, 0.15);
     border: 1px solid rgba(255, 255, 255, 0.05);

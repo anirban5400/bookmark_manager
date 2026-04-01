@@ -130,6 +130,10 @@ const taxRentPaidInput = document.getElementById('taxRentPaidInput');
 const taxFYInput = document.getElementById('taxFYInput');
 const taxCityInput = document.getElementById('taxCityInput');
 const taxTargetsList = document.getElementById('taxTargetsList');
+const taxResidentInput = document.getElementById('taxResidentInput');
+const taxAgeBandInput = document.getElementById('taxAgeBandInput');
+const taxDaInput = document.getElementById('taxDaInput');
+const taxHraReceivedInput = document.getElementById('taxHraReceivedInput');
 const taxResetBtn = document.getElementById('taxResetBtn');
 // State
 let allBookmarks = [];
@@ -551,7 +555,7 @@ function setupCalculatorListeners() {
         { inputs: [discountPriceInput, discountRateInput, discountTaxInput], handler: updateDiscountCalculator },
         { inputs: [splitBillInput, splitPeopleInput, splitTipInput], handler: updateBillSplitCalculator },
         { inputs: [emiPrincipalInput, emiRateInput, emiMonthsInput], handler: updateEmiCalculator },
-        { inputs: [taxFYInput, taxSalaryInput, taxBasicSalaryInput, taxRentPaidInput, taxCityInput, document.getElementById('taxInHandInput')], handler: updateTaxCalculator }
+        { inputs: [taxFYInput, taxSalaryInput, taxBasicSalaryInput, taxRentPaidInput, taxCityInput, taxResidentInput, taxAgeBandInput, taxDaInput, taxHraReceivedInput, document.getElementById('taxInHandInput')], handler: updateTaxCalculator }
     ];
 
     calculatorBindings.forEach(({ inputs, handler }) => {
@@ -588,10 +592,15 @@ function resetTaxPlanner() {
     if (taxInHandInput) taxInHandInput.value = '';
     if (taxBasicSalaryInput) taxBasicSalaryInput.value = '';
     if (taxRentPaidInput) taxRentPaidInput.value = '';
+    if (taxDaInput) taxDaInput.value = '';
+    if (taxHraReceivedInput) taxHraReceivedInput.value = '';
     if (taxFYInput) taxFYInput.value = '2025-26';
     if (taxCityInput) taxCityInput.value = '0.5';
+    if (taxResidentInput) taxResidentInput.value = 'resident';
+    if (taxAgeBandInput) taxAgeBandInput.value = 'lt60';
 
     _taxDeductionViewRegime = 'old';
+    resetTaxDeductionsState();
     const toggleContainer = document.getElementById('taxRegimeToggle');
     if (toggleContainer) {
         toggleContainer.querySelectorAll('.tax-regime-toggle-btn').forEach(b => b.classList.remove('active'));
@@ -687,6 +696,170 @@ function updateEmiCalculator() {
 // Track which regime view is selected for the deductions panel
 let _taxDeductionViewRegime = 'old';
 let _taxAutoFilling = false;
+let _taxDeductionsState = {
+    old: {
+        stdDeduction: { enabled: true },
+        hra: { enabled: false, mode: 'auto', manualAmount: 0 },
+        sec80c: { enabled: false, amount: 0 },
+        sec80d: { enabled: false, amount: 0, selfBand: 'normal', parentsBand: 'none' },
+        sec80tta: { enabled: false, amount: 0 },
+        homeLoan24b: { enabled: false, amount: 0 }
+    },
+    new: {
+        stdDeduction: { enabled: true },
+        employerNps80ccd2: { enabled: false, amount: 0 }
+    }
+};
+
+function resetTaxDeductionsState() {
+    _taxDeductionsState = {
+        old: {
+            stdDeduction: { enabled: true },
+            hra: { enabled: false, mode: 'auto', manualAmount: 0 },
+            sec80c: { enabled: false, amount: 0 },
+            sec80d: { enabled: false, amount: 0, selfBand: 'normal', parentsBand: 'none' },
+            sec80tta: { enabled: false, amount: 0 },
+            homeLoan24b: { enabled: false, amount: 0 }
+        },
+        new: {
+            stdDeduction: { enabled: true },
+            employerNps80ccd2: { enabled: false, amount: 0 }
+        }
+    };
+}
+
+function clampCurrency(value, min, max) {
+    const safe = Number.isFinite(value) ? value : 0;
+    return Math.min(max, Math.max(min, safe));
+}
+
+function get80dCaps(selfBand, parentsBand) {
+    const selfCap = selfBand === 'senior' ? 50000 : 25000;
+    let parentsCap = 0;
+    if (parentsBand === 'normal') parentsCap = 25000;
+    if (parentsBand === 'senior') parentsCap = 50000;
+    return { selfCap, parentsCap, totalCap: selfCap + parentsCap };
+}
+
+function renderTaxDeductionsList({ viewRegime, hraAutoAmount, employerNpsCap, oldExemption }) {
+    if (!taxTargetsList) return;
+
+    taxTargetsList.innerHTML = '';
+
+    const makeRow = ({ key, label, enabled, amount, amountDisabled, capText, extraControlsHtml, note }) => {
+        const row = document.createElement('div');
+        row.className = 'tax-deduction-row';
+        row.dataset.taxKey = key;
+        row.innerHTML = `
+            <label class="tax-deduction-check">
+                <input type="checkbox" class="tax-deduction-checkbox" ${enabled ? 'checked' : ''} ${key === 'stdDeduction' ? 'disabled' : ''}>
+                <span class="tax-deduction-label">${label}</span>
+            </label>
+            <div class="tax-deduction-controls">
+                ${extraControlsHtml || ''}
+                <input type="number" class="tax-deduction-amount calculator-input" value="${Number.isFinite(amount) ? amount : 0}" min="0" step="100" ${amountDisabled ? 'disabled' : ''}>
+                ${capText ? `<span class="tax-deduction-cap">${capText}</span>` : ''}
+            </div>
+            ${note ? `<div class="tax-deduction-note">${note}</div>` : ''}
+        `;
+        return row;
+    };
+
+    if (viewRegime === 'old') {
+        const caps80d = get80dCaps(_taxDeductionsState.old.sec80d.selfBand, _taxDeductionsState.old.sec80d.parentsBand);
+        taxTargetsList.appendChild(makeRow({
+            key: 'stdDeduction',
+            label: 'Standard Deduction (Old Regime)',
+            enabled: true,
+            amount: 50000,
+            amountDisabled: true,
+            capText: `Max ₹${formatCalculatorNumber(50000)}`,
+            note: oldExemption > 250000 ? `Basic exemption considered: ₹${formatCalculatorNumber(oldExemption)} (age band).` : ''
+        }));
+
+        taxTargetsList.appendChild(makeRow({
+            key: 'hra',
+            label: 'HRA Exemption (Sec 10(13A))',
+            enabled: _taxDeductionsState.old.hra.enabled,
+            amount: _taxDeductionsState.old.hra.mode === 'manual' ? _taxDeductionsState.old.hra.manualAmount : hraAutoAmount,
+            amountDisabled: !_taxDeductionsState.old.hra.enabled || _taxDeductionsState.old.hra.mode !== 'manual',
+            capText: _taxDeductionsState.old.hra.mode === 'auto' ? `Auto ₹${formatCalculatorNumber(hraAutoAmount)}` : '',
+            extraControlsHtml: `
+                <select class="tax-deduction-select tax-hra-mode" ${_taxDeductionsState.old.hra.enabled ? '' : 'disabled'}>
+                    <option value="auto" ${_taxDeductionsState.old.hra.mode === 'auto' ? 'selected' : ''}>Auto</option>
+                    <option value="manual" ${_taxDeductionsState.old.hra.mode === 'manual' ? 'selected' : ''}>Manual</option>
+                </select>
+            `
+        }));
+
+        taxTargetsList.appendChild(makeRow({
+            key: 'sec80c',
+            label: '80C (PPF/EPF/ELSS/LIC etc.)',
+            enabled: _taxDeductionsState.old.sec80c.enabled,
+            amount: _taxDeductionsState.old.sec80c.amount,
+            amountDisabled: !_taxDeductionsState.old.sec80c.enabled,
+            capText: `Max ₹${formatCalculatorNumber(150000)}`
+        }));
+
+        taxTargetsList.appendChild(makeRow({
+            key: 'sec80d',
+            label: '80D (Health Insurance)',
+            enabled: _taxDeductionsState.old.sec80d.enabled,
+            amount: _taxDeductionsState.old.sec80d.amount,
+            amountDisabled: !_taxDeductionsState.old.sec80d.enabled,
+            capText: `Max ₹${formatCalculatorNumber(caps80d.totalCap)}`,
+            extraControlsHtml: `
+                <select class="tax-deduction-select tax-80d-self" ${_taxDeductionsState.old.sec80d.enabled ? '' : 'disabled'} title="Self/Family cap">
+                    <option value="normal" ${_taxDeductionsState.old.sec80d.selfBand === 'normal' ? 'selected' : ''}>Self ₹25k</option>
+                    <option value="senior" ${_taxDeductionsState.old.sec80d.selfBand === 'senior' ? 'selected' : ''}>Self ₹50k</option>
+                </select>
+                <select class="tax-deduction-select tax-80d-parents" ${_taxDeductionsState.old.sec80d.enabled ? '' : 'disabled'} title="Parents cap">
+                    <option value="none" ${_taxDeductionsState.old.sec80d.parentsBand === 'none' ? 'selected' : ''}>Parents ₹0</option>
+                    <option value="normal" ${_taxDeductionsState.old.sec80d.parentsBand === 'normal' ? 'selected' : ''}>Parents ₹25k</option>
+                    <option value="senior" ${_taxDeductionsState.old.sec80d.parentsBand === 'senior' ? 'selected' : ''}>Parents ₹50k</option>
+                </select>
+            `
+        }));
+
+        taxTargetsList.appendChild(makeRow({
+            key: 'sec80tta',
+            label: '80TTA (Savings Interest)',
+            enabled: _taxDeductionsState.old.sec80tta.enabled,
+            amount: _taxDeductionsState.old.sec80tta.amount,
+            amountDisabled: !_taxDeductionsState.old.sec80tta.enabled,
+            capText: `Max ₹${formatCalculatorNumber(10000)}`
+        }));
+
+        taxTargetsList.appendChild(makeRow({
+            key: 'homeLoan24b',
+            label: 'Home Loan Interest (Sec 24(b))',
+            enabled: _taxDeductionsState.old.homeLoan24b.enabled,
+            amount: _taxDeductionsState.old.homeLoan24b.amount,
+            amountDisabled: !_taxDeductionsState.old.homeLoan24b.enabled,
+            capText: `Max ₹${formatCalculatorNumber(200000)}`
+        }));
+        return;
+    }
+
+    taxTargetsList.appendChild(makeRow({
+        key: 'stdDeduction',
+        label: 'Standard Deduction (New Regime)',
+        enabled: true,
+        amount: 75000,
+        amountDisabled: true,
+        capText: `Max ₹${formatCalculatorNumber(75000)}`
+    }));
+
+    taxTargetsList.appendChild(makeRow({
+        key: 'employerNps80ccd2',
+        label: 'Employer NPS (80CCD(2))',
+        enabled: _taxDeductionsState.new.employerNps80ccd2.enabled,
+        amount: _taxDeductionsState.new.employerNps80ccd2.amount,
+        amountDisabled: !_taxDeductionsState.new.employerNps80ccd2.enabled,
+        capText: `Max ₹${formatCalculatorNumber(Math.round(employerNpsCap))}`,
+        note: 'Cap is 14% of (Basic + DA). Aggregate employer cap (₹7.5L across PF/NPS/superannuation) not modeled in this basic mode.'
+    }));
+}
 
 // --- TAX SLAB FUNCTIONS (top-level for reuse) ---
 function calcNewRegimeTax(income) {
@@ -707,6 +880,30 @@ function calcOldRegimeTax(income) {
     if (income > 250000)  tax += Math.min(250000, income - 250000) * 0.05;
     if (income > 500000)  tax += Math.min(500000, income - 500000) * 0.20;
     if (income > 1000000) tax += (income - 1000000) * 0.30;
+    return tax;
+}
+
+function getOldRegimeExemptionForAgeBand(ageBand) {
+    if (ageBand === '80plus') return 500000;
+    if (ageBand === '60to79') return 300000;
+    return 250000;
+}
+
+function calcOldRegimeTaxWithExemption(income, exemption) {
+    if (income <= exemption) return 0;
+    let tax = 0;
+
+    const slab5Upper = 500000;
+    const slab5Width = Math.max(0, slab5Upper - exemption);
+    if (income > exemption && slab5Width > 0) {
+        tax += Math.min(slab5Width, income - exemption) * 0.05;
+    }
+    if (income > 500000) {
+        tax += Math.min(500000, income - 500000) * 0.20;
+    }
+    if (income > 1000000) {
+        tax += (income - 1000000) * 0.30;
+    }
     return tax;
 }
 
@@ -776,6 +973,10 @@ function updateTaxCalculator(event) {
     const totalSalary = parseCalculatorValue(taxSalaryInput);
     const basicSalary = parseCalculatorValue(taxBasicSalaryInput);
     const rentPaid = parseCalculatorValue(taxRentPaidInput);
+    const daSalary = Math.max(0, parseCalculatorValue(taxDaInput));
+    const hraReceivedFromInput = Math.max(0, parseCalculatorValue(taxHraReceivedInput));
+    const isResident = (taxResidentInput?.value || 'resident') === 'resident';
+    const ageBand = taxAgeBandInput?.value || 'lt60';
 
     if (!totalSalary) {
         taxTargetsList.innerHTML = '<div style="opacity: 0.6; padding: 1.5rem; text-align: center; border: 1px dashed rgba(255,255,255,0.2); border-radius: 8px;">Enter your Annual CTC or Monthly In-Hand salary to begin</div>';
@@ -788,92 +989,46 @@ function updateTaxCalculator(event) {
 
     const isMetro = taxCityInput.value === "0.5";
     const cityMultiplier = isMetro ? 0.5 : 0.4;
-    const selectedFY = taxFYInput.value;
-    const isFY2026 = selectedFY === "2026-27";
     
     // --- HRA Calculation (Old Regime only) ---
     let hraExemption = 0;
-    if (basicSalary > 0 && rentPaid > 0) {
-        let hraReceived = Math.max(0, totalSalary - basicSalary);
-        if (hraReceived === 0) hraReceived = basicSalary * 0.5;
-        const rentMinus10PercentBasic = Math.max(0, rentPaid - (0.1 * basicSalary));
-        const percentageOfBasic = basicSalary * cityMultiplier;
-        hraExemption = Math.min(hraReceived, rentMinus10PercentBasic, percentageOfBasic);
+    const basicPlusDa = Math.max(0, basicSalary + daSalary);
+    if (basicPlusDa > 0 && rentPaid > 0) {
+        let hraReceived = hraReceivedFromInput;
+        if (!hraReceived) {
+            hraReceived = Math.max(0, totalSalary - basicSalary);
+            if (hraReceived === 0) hraReceived = basicSalary * 0.5;
+        }
+        const rentMinus10PercentSalary = Math.max(0, rentPaid - (0.1 * basicPlusDa));
+        const percentageOfSalary = basicPlusDa * cityMultiplier;
+        hraExemption = Math.min(hraReceived, rentMinus10PercentSalary, percentageOfSalary);
     }
 
     // ====================================================
     // BUILD DEDUCTION LISTS FOR EACH REGIME
     // ====================================================
+    const caps80d = get80dCaps(_taxDeductionsState.old.sec80d.selfBand, _taxDeductionsState.old.sec80d.parentsBand);
+    const oldDeductionStd = 50000;
+    const oldDeductionHra = _taxDeductionsState.old.hra.enabled
+        ? clampCurrency(_taxDeductionsState.old.hra.mode === 'manual' ? _taxDeductionsState.old.hra.manualAmount : hraExemption, 0, Number.POSITIVE_INFINITY)
+        : 0;
+    const oldDeduction80c = _taxDeductionsState.old.sec80c.enabled ? clampCurrency(_taxDeductionsState.old.sec80c.amount, 0, 150000) : 0;
+    const oldDeduction80d = _taxDeductionsState.old.sec80d.enabled ? clampCurrency(_taxDeductionsState.old.sec80d.amount, 0, caps80d.totalCap) : 0;
+    const oldDeduction80tta = _taxDeductionsState.old.sec80tta.enabled ? clampCurrency(_taxDeductionsState.old.sec80tta.amount, 0, 10000) : 0;
+    const oldDeductionHomeLoan = _taxDeductionsState.old.homeLoan24b.enabled ? clampCurrency(_taxDeductionsState.old.homeLoan24b.amount, 0, 200000) : 0;
+    const oldTotalDeductions = oldDeductionStd + oldDeductionHra + oldDeduction80c + oldDeduction80d + oldDeduction80tta + oldDeductionHomeLoan;
 
-    // --- OLD REGIME deductions ---
-    const oldDeductions = [
-        { name: "Standard Deduction", value: 50000, doc: "None (Automatic)", source: "Sec 16(ia)", desc: "Flat ₹50,000 deduction for all salaried employees. No proofs required." },
-        { name: "House Rent Allowance (HRA)", value: hraExemption, doc: "Rent Receipts & PAN", source: "Sec 10(13A)", desc: "Exemption based on Rent Paid, Basic Salary, and City type (Metro/Non-Metro)." },
-        { name: "Sec 80C Investments", value: 150000, doc: "Investment Proofs", source: "Sec 80C", desc: "EPF, PPF, ELSS, LIC Premium, Home Loan Principal, Tuition Fees (Max ₹1.5L)." },
-        { name: "Health Insurance (80D)", value: 25000, doc: "Policy Copies", source: "Sec 80D", desc: "Premium for self/spouse/children. Extra ₹25k–₹50k for senior citizen parents." },
-        { name: "Savings Interest (80TTA)", value: 10000, doc: "Bank Statements", source: "Sec 80TTA", desc: "Deduction on interest earned from savings bank accounts." }
-    ];
+    const employerNpsCap = basicPlusDa * 0.14;
+    const newStdDed = 75000;
+    const newDeductionNps = _taxDeductionsState.new.employerNps80ccd2.enabled
+        ? clampCurrency(_taxDeductionsState.new.employerNps80ccd2.amount, 0, employerNpsCap)
+        : 0;
 
-    // FY-conditional allowances for Old Regime
-    if (isFY2026) {
-        oldDeductions.push(
-            { name: "Children Education Allowance", value: 72000, doc: "School Fee Receipts", source: "IT Act 2025", desc: "₹3,000/month per child (Max 2 children). Enhanced under new Act 2025." },
-            { name: "Hostel Expenditure Allowance", value: 216000, doc: "Hostel Fee Receipts", source: "IT Act 2025", desc: "₹9,000/month per child (Max 2 children). Enhanced under new Act 2025." },
-            { name: "Meal Vouchers / Food Allowance", value: 105600, doc: "Meal Card / Vouchers", source: "IT Act 2025", desc: "Up to ₹200/meal × 2 meals/day × 22 days/month = ₹105,600/year." }
-        );
-    } else {
-        // FY 2025-26: Old rates
-        oldDeductions.push(
-            { name: "Children Education Allowance", value: 2400, doc: "School Fee Receipts", source: "Sec 10(14)", desc: "₹100/month per child (Max 2 children). Old Act rate." },
-            { name: "Hostel Expenditure Allowance", value: 7200, doc: "Hostel Fee Receipts", source: "Sec 10(14)", desc: "₹300/month per child (Max 2 children). Old Act rate." }
-        );
-    }
-
-    // --- NEW REGIME deductions (very limited) ---
-    const newDeductions = [
-        { name: "Standard Deduction", value: 75000, doc: "None (Automatic)", source: "Sec 16(ia)", desc: "Enhanced ₹75,000 flat deduction under the New Regime. No proofs required." },
-        { name: "Employer NPS (80CCD(2))", value: Math.round(basicSalary * 0.14), doc: "Salary Slip / Form 16", source: "Sec 80CCD(2)", desc: "Employer contribution to NPS, up to 14% of Basic Salary. Only deduction allowed in New Regime." }
-    ];
-
-    // Decide which list to render based on toggle
-    const displayDeductions = _taxDeductionViewRegime === 'new' ? newDeductions : oldDeductions;
-
-    // --- Render deduction cards ---
-    taxTargetsList.innerHTML = "";
-    displayDeductions.forEach(item => {
-        const card = document.createElement('div');
-        card.className = "tax-result-card";
-        
-        const mainRow = document.createElement('div');
-        mainRow.className = "tax-result-main";
-        const nameSpan = document.createElement('span');
-        nameSpan.className = "tax-result-name";
-        nameSpan.textContent = item.name;
-        const valueSpan = document.createElement('span');
-        valueSpan.className = "tax-result-amount";
-        valueSpan.textContent = "₹" + formatCalculatorNumber(item.value);
-        mainRow.appendChild(nameSpan);
-        mainRow.appendChild(valueSpan);
-        
-        const badgesRow = document.createElement('div');
-        badgesRow.className = "tax-result-badges";
-        const docBadge = document.createElement('span');
-        docBadge.className = "tax-badge tax-badge-doc";
-        docBadge.innerHTML = `📄 ${item.doc}`;
-        const sourceBadge = document.createElement('span');
-        sourceBadge.className = "tax-badge tax-badge-source";
-        sourceBadge.innerHTML = `⚖️ ${item.source}`;
-        badgesRow.appendChild(docBadge);
-        badgesRow.appendChild(sourceBadge);
-        
-        const descRow = document.createElement('div');
-        descRow.className = "tax-result-desc";
-        descRow.textContent = item.desc;
-        
-        card.appendChild(mainRow);
-        card.appendChild(badgesRow);
-        card.appendChild(descRow);
-        taxTargetsList.appendChild(card);
+    renderTaxDeductionsList({
+        viewRegime: _taxDeductionViewRegime,
+        hraAutoAmount: Math.round(hraExemption),
+        employerNpsCap,
+        oldExemption: getOldRegimeExemptionForAgeBand(ageBand)
     });
 
     // ====================================================
@@ -893,17 +1048,16 @@ function updateTaxCalculator(event) {
     taxComparisonSection.style.display = 'block';
 
     // --- NEW REGIME calculation ---
-    const newStdDed = 75000;
-    let newTaxable = Math.max(0, totalSalary - newStdDed);
+    let newTaxable = Math.max(0, totalSalary - newStdDed - newDeductionNps);
     let newTax = calcNewRegimeTax(newTaxable);
-    if (newTaxable <= 1200000) newTax = 0;
+    if (isResident && newTaxable <= 1200000) newTax = 0;
     if (newTax > 0) newTax = newTax * 1.04;
 
     // --- OLD REGIME calculation ---
-    let oldTotalDeductions = oldDeductions.reduce((sum, item) => sum + item.value, 0);
     let oldTaxable = Math.max(0, totalSalary - oldTotalDeductions);
-    let oldTax = calcOldRegimeTax(oldTaxable);
-    if (oldTaxable <= 500000) oldTax = 0;
+    const oldExemption = getOldRegimeExemptionForAgeBand(ageBand);
+    let oldTax = calcOldRegimeTaxWithExemption(oldTaxable, oldExemption);
+    if (isResident && oldTaxable <= 500000) oldTax = 0;
     if (oldTax > 0) oldTax = oldTax * 1.04;
 
     // Update DOM

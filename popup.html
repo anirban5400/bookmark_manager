@@ -405,6 +405,23 @@
                             </div>
                             <div class="calculator-inline-fields">
                                 <label class="calculator-field">
+                                    <span>Residential Status</span>
+                                    <select id="taxResidentInput" class="calculator-input" style="appearance: none; background-color: var(--bg-base); cursor: pointer;">
+                                        <option value="resident" selected>Resident (87A eligible)</option>
+                                        <option value="nonresident">Non-Resident</option>
+                                    </select>
+                                </label>
+                                <label class="calculator-field">
+                                    <span>Age Band</span>
+                                    <select id="taxAgeBandInput" class="calculator-input" style="appearance: none; background-color: var(--bg-base); cursor: pointer;">
+                                        <option value="lt60" selected>Below 60</option>
+                                        <option value="60to79">60 to 79</option>
+                                        <option value="80plus">80+</option>
+                                    </select>
+                                </label>
+                            </div>
+                            <div class="calculator-inline-fields">
+                                <label class="calculator-field">
                                     <span>Annual CTC</span>
                                     <input type="number" id="taxSalaryInput" class="calculator-input" min="0" step="1000" placeholder="e.g. 1750000">
                                 </label>
@@ -421,6 +438,16 @@
                                 <label class="calculator-field">
                                     <span>Rent Paid (Year)</span>
                                     <input type="number" id="taxRentPaidInput" class="calculator-input" min="0" step="1000" placeholder="Annual rent">
+                                </label>
+                            </div>
+                            <div class="calculator-inline-fields">
+                                <label class="calculator-field">
+                                    <span>Dearness Allowance (DA) (Year)</span>
+                                    <input type="number" id="taxDaInput" class="calculator-input" min="0" step="1000" placeholder="0 if none">
+                                </label>
+                                <label class="calculator-field">
+                                    <span>HRA Received (Year)</span>
+                                    <input type="number" id="taxHraReceivedInput" class="calculator-input" min="0" step="1000" placeholder="As per salary slip">
                                 </label>
                             </div>
                             <div class="calculator-actions">
