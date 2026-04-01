@@ -39,6 +39,10 @@
                                 <span class="btn-icon">📝</span>
                                 <span class="btn-text">Quick Notes</span>
                             </button>
+                            <button class="dashboard-nav-btn" id="calculatorsToggleBtn" type="button" title="Go to calculators">
+                                <span class="btn-icon">🧮</span>
+                                <span class="btn-text">Calculators</span>
+                            </button>
                         </nav>
                     </section>
                 </div>
@@ -230,6 +234,146 @@
             <!-- Notes Grid -->
             <div id="notesContainer" class="notes-grid">
                 <!-- Note cards will be rendered by JS -->
+            </div>
+            </div>
+
+            <!-- ========== CALCULATORS PAGE (Hidden by default) ========== -->
+            <div id="calculatorsPage" class="hidden">
+            <div class="calculators-shell">
+
+
+                <div class="calculators-grid">
+                    <section class="calculator-card calculator-card-featured">
+                        <div class="calculator-card-header">
+                            <div>
+                                <h3>Percentage calculator</h3>
+                            </div>
+                            <span class="calculator-card-icon">%</span>
+                        </div>
+                        <div class="calculator-card-body">
+                            <div class="calculator-inline-fields">
+                                <label class="calculator-field">
+                                    <span>Percentage</span>
+                                    <input type="number" id="percentageRateInput" class="calculator-input" value="15" min="0" step="0.01" placeholder="15">
+                                </label>
+                                <label class="calculator-field">
+                                    <span>Total value</span>
+                                    <input type="number" id="percentageBaseInput" class="calculator-input" value="2400" min="0" step="0.01" placeholder="2400">
+                                </label>
+                            </div>
+                            <div class="calculator-result-panel">
+                                <span class="calculator-result-label">Result</span>
+                                <strong id="percentageResult">360.00</strong>
+                                <small id="percentageSummary">15% of 2,400.00 = 360.00</small>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="calculator-card">
+                        <div class="calculator-card-header">
+                            <div>
+                                <h3>Discount calculator</h3>
+                            </div>
+                            <span class="calculator-card-icon">🏷️</span>
+                        </div>
+                        <div class="calculator-card-body">
+                            <div class="calculator-inline-fields">
+                                <label class="calculator-field">
+                                    <span>Original price</span>
+                                    <input type="number" id="discountPriceInput" class="calculator-input" value="1999" min="0" step="0.01" placeholder="1999">
+                                </label>
+                                <label class="calculator-field">
+                                    <span>Discount %</span>
+                                    <input type="number" id="discountRateInput" class="calculator-input" value="20" min="0" step="0.01" placeholder="20">
+                                </label>
+                                <label class="calculator-field">
+                                    <span>Tax %</span>
+                                    <input type="number" id="discountTaxInput" class="calculator-input" value="8" min="0" step="0.01" placeholder="8">
+                                </label>
+                            </div>
+                            <div class="calculator-metrics">
+                                <div class="calculator-metric">
+                                    <span>Savings</span>
+                                    <strong id="discountSavingsResult">399.80</strong>
+                                </div>
+                                <div class="calculator-metric">
+                                    <span>Final total</span>
+                                    <strong id="discountFinalResult">1727.78</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="calculator-card">
+                        <div class="calculator-card-header">
+                            <div>
+                                <h3>Bill splitter</h3>
+                            </div>
+                            <span class="calculator-card-icon">🍽️</span>
+                        </div>
+                        <div class="calculator-card-body">
+                            <div class="calculator-inline-fields">
+                                <label class="calculator-field">
+                                    <span>Bill amount</span>
+                                    <input type="number" id="splitBillInput" class="calculator-input" value="4800" min="0" step="0.01" placeholder="4800">
+                                </label>
+                                <label class="calculator-field">
+                                    <span>People</span>
+                                    <input type="number" id="splitPeopleInput" class="calculator-input" value="4" min="1" step="1" placeholder="4">
+                                </label>
+                                <label class="calculator-field">
+                                    <span>Tip %</span>
+                                    <input type="number" id="splitTipInput" class="calculator-input" value="10" min="0" step="0.01" placeholder="10">
+                                </label>
+                            </div>
+                            <div class="calculator-metrics">
+                                <div class="calculator-metric">
+                                    <span>Tip total</span>
+                                    <strong id="splitTipResult">480.00</strong>
+                                </div>
+                                <div class="calculator-metric">
+                                    <span>Per person</span>
+                                    <strong id="splitPerPersonResult">1320.00</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="calculator-card">
+                        <div class="calculator-card-header">
+                            <div>
+                                <h3>EMI calculator</h3>
+                            </div>
+                            <span class="calculator-card-icon">📈</span>
+                        </div>
+                        <div class="calculator-card-body">
+                            <div class="calculator-inline-fields">
+                                <label class="calculator-field">
+                                    <span>Loan amount</span>
+                                    <input type="number" id="emiPrincipalInput" class="calculator-input" value="500000" min="0" step="0.01" placeholder="500000">
+                                </label>
+                                <label class="calculator-field">
+                                    <span>Interest %</span>
+                                    <input type="number" id="emiRateInput" class="calculator-input" value="8.5" min="0" step="0.01" placeholder="8.5">
+                                </label>
+                                <label class="calculator-field">
+                                    <span>Months</span>
+                                    <input type="number" id="emiMonthsInput" class="calculator-input" value="36" min="1" step="1" placeholder="36">
+                                </label>
+                            </div>
+                            <div class="calculator-metrics">
+                                <div class="calculator-metric">
+                                    <span>Monthly EMI</span>
+                                    <strong id="emiMonthlyResult">15,780.48</strong>
+                                </div>
+                                <div class="calculator-metric">
+                                    <span>Total payment</span>
+                                    <strong id="emiTotalResult">568,097.43</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
             </div>
             </div>
         </main>

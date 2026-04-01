@@ -95,19 +95,42 @@ const aiRewriteBtn = document.getElementById('aiRewriteBtn');
 
 // Notes page elements
 const notesToggleBtn = document.getElementById('notesToggleBtn');
+const calculatorsToggleBtn = document.getElementById('calculatorsToggleBtn');
 const bookmarksPage = document.getElementById('bookmarksPage');
 const notesPage = document.getElementById('notesPage');
+const calculatorsPage = document.getElementById('calculatorsPage');
 const notesContainer = document.getElementById('notesContainer');
 const notesCount = document.getElementById('notesCount');
 const addNoteBtn = document.getElementById('addNoteBtn');
 const notesSearchInput = document.getElementById('notesSearchInput');
+
+// Calculator page elements
+const percentageRateInput = document.getElementById('percentageRateInput');
+const percentageBaseInput = document.getElementById('percentageBaseInput');
+const percentageResult = document.getElementById('percentageResult');
+const percentageSummary = document.getElementById('percentageSummary');
+const discountPriceInput = document.getElementById('discountPriceInput');
+const discountRateInput = document.getElementById('discountRateInput');
+const discountTaxInput = document.getElementById('discountTaxInput');
+const discountSavingsResult = document.getElementById('discountSavingsResult');
+const discountFinalResult = document.getElementById('discountFinalResult');
+const splitBillInput = document.getElementById('splitBillInput');
+const splitPeopleInput = document.getElementById('splitPeopleInput');
+const splitTipInput = document.getElementById('splitTipInput');
+const splitTipResult = document.getElementById('splitTipResult');
+const splitPerPersonResult = document.getElementById('splitPerPersonResult');
+const emiPrincipalInput = document.getElementById('emiPrincipalInput');
+const emiRateInput = document.getElementById('emiRateInput');
+const emiMonthsInput = document.getElementById('emiMonthsInput');
+const emiMonthlyResult = document.getElementById('emiMonthlyResult');
+const emiTotalResult = document.getElementById('emiTotalResult');
 
 // State
 let allBookmarks = [];
 let isFormVisible = false;
 let fetchedMetadata = null;
 let weatherRefreshInterval = null;
-let isNotesPageVisible = false;
+let activePage = 'bookmarks';
 let allNotes = [];
 let noteSaveTimeouts = {};
 let draggedNoteId = null;
@@ -118,12 +141,17 @@ let editingBookmarkId = null;
 const DEFAULT_CARD_VIEW_LIMIT = 10;
 const CARD_FIELD_KEYS = new Set(['favicon', 'url', 'description', 'createdAt']);
 const BOOKMARK_TABLE_REORDER_KEY = '__reorder__';
+const VALID_PAGES = new Set(['bookmarks', 'notes', 'calculators']);
 let cardViewLimit = DEFAULT_CARD_VIEW_LIMIT;
 let isSidebarCollapsed = false;
 const hiddenCardFields = new Set();
 const SETTINGS_STORAGE_KEY = 'bmSettings';
 const UI_STATE_STORAGE_KEY = 'bmUiState';
 const BOOKMARK_ALLOWED_PROTOCOLS = new Set(['http:', 'https:']);
+const calculatorNumberFormatter = new Intl.NumberFormat(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+});
 const PREVIOUS_DEFAULT_AI_SYSTEM_PROMPT = 'You are an expert executive writing assistant. First, analyze the type of text given to you (e.g., an email, a chat message, or a task list). Then, rewrite it to be highly professional, articulate, and polished for business communication. Use sophisticated but clear vocabulary.\n\nRules:\n1. Only return the final rewritten text.\n2. Do not add any greetings, explanations, or quotes around the text.\n3. If the text has no meaning (like just dots or random letters), return it exactly as it is without changes.\n4. IMPORTANT: Always preserve any structural formatting from the original text (such as numbering like "1)" or bullet points).';
 const DEFAULT_AI_SYSTEM_PROMPT = 'You are a precise writing assistant. Rewrite the user text so it reads clearly and professionally while preserving its exact meaning.\n\nRules:\n1. Only return the final rewritten text.\n2. Do not add greetings, explanations, markdown fences, or quotes around the answer.\n3. Preserve the original structure, line breaks, numbering, bullets, and indentation.\n4. If the text contains technical content, keep every literal exactly unchanged unless the user explicitly changed it.\n5. Technical content includes API routes, URLs, JSON, code, config, comments, keys, identifiers, and values such as 0, 1, "", true, false, and null.\n6. If the text has no clear meaning, return it exactly as it is.';
 const LEGACY_AI_SYSTEM_PROMPT_PREFIXES = [
@@ -156,6 +184,36 @@ let settings = {
  * Handle note title input (auto-save with debounce)
  */
 let titleSaveTimeouts = {};
+
+function isBookmarksPageActive() {
+    return activePage === 'bookmarks';
+}
+
+function isNotesPageActive() {
+    return activePage === 'notes';
+}
+
+function isCalculatorsPageActive() {
+    return activePage === 'calculators';
+}
+
+function parseCalculatorValue(input, fallback = 0) {
+    const parsedValue = parseFloat(input?.value ?? '');
+    return Number.isFinite(parsedValue) ? parsedValue : fallback;
+}
+
+function formatCalculatorNumber(value) {
+    return calculatorNumberFormatter.format(Number.isFinite(value) ? value : 0);
+}
+
+function focusCalculatorsWorkspace() {
+    const firstInput = calculatorsPage?.querySelector('.calculator-input');
+    if (firstInput) {
+        firstInput.focus();
+        firstInput.select();
+    }
+}
+
 function handleNoteTitleInput(event) {
     const titleInput = event.target.closest('.note-title-input');
     if (!titleInput) return;
@@ -224,6 +282,9 @@ async function init() {
         
         // Setup event listeners
         setupEventListeners();
+
+        // Initialize calculator workspace
+        initCalculators();
 
         // Apply restored page mode after listeners are ready
         applyPageState();
@@ -429,6 +490,10 @@ function setupEventListeners() {
     if (notesToggleBtn) {
         notesToggleBtn.addEventListener('click', () => setActivePage('notes'));
     }
+    if (calculatorsToggleBtn) {
+        calculatorsToggleBtn.addEventListener('click', () => setActivePage('calculators'));
+    }
+    setupCalculatorListeners();
 
     // AI Rewrite Selection
     document.addEventListener('selectionchange', () => {
@@ -469,6 +534,98 @@ function setupEventListeners() {
     }
 }
 
+function setupCalculatorListeners() {
+    const calculatorBindings = [
+        { inputs: [percentageRateInput, percentageBaseInput], handler: updatePercentageCalculator },
+        { inputs: [discountPriceInput, discountRateInput, discountTaxInput], handler: updateDiscountCalculator },
+        { inputs: [splitBillInput, splitPeopleInput, splitTipInput], handler: updateBillSplitCalculator },
+        { inputs: [emiPrincipalInput, emiRateInput, emiMonthsInput], handler: updateEmiCalculator }
+    ];
+
+    calculatorBindings.forEach(({ inputs, handler }) => {
+        inputs.forEach((input) => {
+            if (!input) return;
+            input.addEventListener('input', handler);
+        });
+    });
+}
+
+function initCalculators() {
+    updatePercentageCalculator();
+    updateDiscountCalculator();
+    updateBillSplitCalculator();
+    updateEmiCalculator();
+}
+
+function updatePercentageCalculator() {
+    const rate = Math.max(0, parseCalculatorValue(percentageRateInput));
+    const base = Math.max(0, parseCalculatorValue(percentageBaseInput));
+    const result = (rate / 100) * base;
+
+    if (percentageResult) {
+        percentageResult.textContent = formatCalculatorNumber(result);
+    }
+    if (percentageSummary) {
+        percentageSummary.textContent = `${formatCalculatorNumber(rate)}% of ${formatCalculatorNumber(base)} = ${formatCalculatorNumber(result)}`;
+    }
+}
+
+function updateDiscountCalculator() {
+    const originalPrice = Math.max(0, parseCalculatorValue(discountPriceInput));
+    const discountRate = Math.max(0, parseCalculatorValue(discountRateInput));
+    const taxRate = Math.max(0, parseCalculatorValue(discountTaxInput));
+    const savings = originalPrice * (discountRate / 100);
+    const discountedSubtotal = Math.max(0, originalPrice - savings);
+    const finalTotal = discountedSubtotal * (1 + (taxRate / 100));
+
+    if (discountSavingsResult) {
+        discountSavingsResult.textContent = formatCalculatorNumber(savings);
+    }
+    if (discountFinalResult) {
+        discountFinalResult.textContent = formatCalculatorNumber(finalTotal);
+    }
+}
+
+function updateBillSplitCalculator() {
+    const billAmount = Math.max(0, parseCalculatorValue(splitBillInput));
+    const peopleCount = Math.max(1, Math.round(parseCalculatorValue(splitPeopleInput, 1)));
+    const tipRate = Math.max(0, parseCalculatorValue(splitTipInput));
+    const tipTotal = billAmount * (tipRate / 100);
+    const perPerson = (billAmount + tipTotal) / peopleCount;
+
+    if (splitTipResult) {
+        splitTipResult.textContent = formatCalculatorNumber(tipTotal);
+    }
+    if (splitPerPersonResult) {
+        splitPerPersonResult.textContent = formatCalculatorNumber(perPerson);
+    }
+}
+
+function updateEmiCalculator() {
+    const principal = Math.max(0, parseCalculatorValue(emiPrincipalInput));
+    const annualRate = Math.max(0, parseCalculatorValue(emiRateInput));
+    const months = Math.max(1, Math.round(parseCalculatorValue(emiMonthsInput, 1)));
+    const monthlyRate = annualRate / 12 / 100;
+
+    let monthlyPayment = 0;
+    if (principal > 0) {
+        if (monthlyRate === 0) {
+            monthlyPayment = principal / months;
+        } else {
+            const growthFactor = (1 + monthlyRate) ** months;
+            monthlyPayment = principal * monthlyRate * growthFactor / (growthFactor - 1);
+        }
+    }
+    const totalPayment = monthlyPayment * months;
+
+    if (emiMonthlyResult) {
+        emiMonthlyResult.textContent = formatCalculatorNumber(monthlyPayment);
+    }
+    if (emiTotalResult) {
+        emiTotalResult.textContent = formatCalculatorNumber(totalPayment);
+    }
+}
+
 /**
  * Handle keyboard shortcuts
  * Ctrl/Cmd + K = Focus search
@@ -481,9 +638,11 @@ function handleKeyboardShortcuts(e) {
     // Ctrl/Cmd + K = Focus search
     if (modifierKey && e.key.toLowerCase() === 'k') {
         e.preventDefault();
-        if (isNotesPageVisible && notesSearchInput) {
+        if (isNotesPageActive() && notesSearchInput) {
             notesSearchInput.focus();
             notesSearchInput.select();
+        } else if (isCalculatorsPageActive()) {
+            focusCalculatorsWorkspace();
         } else if (currentBookmarkView === 'table' && bookmarkTableApi) {
             bookmarkTableApi.focusSearch();
         } else if (searchInput) {
@@ -493,7 +652,7 @@ function handleKeyboardShortcuts(e) {
     }
     
     // Ctrl/Cmd + N = Toggle add new bookmark form
-    if (!isNotesPageVisible && modifierKey && e.key.toLowerCase() === 'n') {
+    if (isBookmarksPageActive() && modifierKey && e.key.toLowerCase() === 'n') {
         e.preventDefault();
         toggleAddForm();
         // If form is now visible, focus URL input
@@ -512,7 +671,7 @@ function handleKeyboardShortcuts(e) {
  * Toggle the add bookmark form visibility
  */
 function toggleAddForm() {
-    if (isNotesPageVisible) return;
+    if (!isBookmarksPageActive()) return;
 
     if (isFormVisible) {
         closeBookmarkForm();
@@ -560,7 +719,7 @@ function showBookmarkModal() {
 }
 
 function openBookmarkForm() {
-    if (isNotesPageVisible) {
+    if (!isBookmarksPageActive()) {
         setActivePage('bookmarks');
     }
 
@@ -692,7 +851,11 @@ async function loadUiState() {
         if (parsedState?.bookmarkView === 'cards' || parsedState?.bookmarkView === 'table') {
             currentBookmarkView = parsedState.bookmarkView;
         }
-        isNotesPageVisible = Boolean(parsedState?.isNotesPageVisible);
+        if (VALID_PAGES.has(parsedState?.activePage)) {
+            activePage = parsedState.activePage;
+        } else if (parsedState?.isNotesPageVisible) {
+            activePage = 'notes';
+        }
         isSidebarCollapsed = Boolean(parsedState?.isSidebarCollapsed);
         if (Number.isInteger(parsedState?.cardViewLimit) && parsedState.cardViewLimit > 0) {
             cardViewLimit = parsedState.cardViewLimit;
@@ -714,7 +877,8 @@ async function saveUiState() {
     const storageArea = getStorageArea();
     const state = {
         bookmarkView: currentBookmarkView,
-        isNotesPageVisible,
+        activePage,
+        isNotesPageVisible: isNotesPageActive(),
         isSidebarCollapsed,
         cardViewLimit,
         hiddenCardFields: Array.from(hiddenCardFields)
@@ -1064,33 +1228,50 @@ function updateBookmarkViewControls() {
 }
 
 function applyPageState() {
-    if (isNotesPageVisible) {
-        if (bookmarksPage) bookmarksPage.classList.add('hidden');
-        if (notesPage) notesPage.classList.remove('hidden');
+    const showBookmarks = isBookmarksPageActive();
+    const showNotes = isNotesPageActive();
+    const showCalculators = isCalculatorsPageActive();
 
-        const container = document.querySelector('.container');
-        if (container) container.classList.add('notes-active');
-
-        void loadNotes();
-        updateDashboardContext();
-        return;
+    if (bookmarksPage) {
+        bookmarksPage.classList.toggle('hidden', !showBookmarks);
+    }
+    if (notesPage) {
+        notesPage.classList.toggle('hidden', !showNotes);
+    }
+    if (calculatorsPage) {
+        calculatorsPage.classList.toggle('hidden', !showCalculators);
     }
 
-    if (bookmarksPage) bookmarksPage.classList.remove('hidden');
-    if (notesPage) notesPage.classList.add('hidden');
+    if (appContainer) {
+        appContainer.classList.toggle('notes-active', showNotes);
+        appContainer.classList.toggle('calculators-active', showCalculators);
+    }
 
-    const container = document.querySelector('.container');
-    if (container) container.classList.remove('notes-active');
+    if (!showNotes && aiRewriteBtn) {
+        aiRewriteBtn.classList.add('hidden');
+        currentAiTextarea = null;
+    }
 
-    updateBookmarkViewControls();
+    if (showNotes) {
+        void loadNotes();
+    } else if (showCalculators) {
+        initCalculators();
+    } else {
+        updateBookmarkViewControls();
+    }
+
+    updateDashboardContext();
 }
 
 function updateDashboardContext() {
     if (bookmarksNavBtn) {
-        bookmarksNavBtn.classList.toggle('active', !isNotesPageVisible);
+        bookmarksNavBtn.classList.toggle('active', isBookmarksPageActive());
     }
     if (notesToggleBtn) {
-        notesToggleBtn.classList.toggle('active', isNotesPageVisible);
+        notesToggleBtn.classList.toggle('active', isNotesPageActive());
+    }
+    if (calculatorsToggleBtn) {
+        calculatorsToggleBtn.classList.toggle('active', isCalculatorsPageActive());
     }
 }
 
@@ -1117,14 +1298,13 @@ function toggleSidebar() {
 }
 
 function setActivePage(page) {
-    const nextIsNotesPage = page === 'notes';
-    if (isNotesPageVisible === nextIsNotesPage) return;
+    if (!VALID_PAGES.has(page) || activePage === page) return;
 
-    if (nextIsNotesPage && isFormVisible) {
+    if (page !== 'bookmarks' && isFormVisible) {
         closeBookmarkForm();
     }
 
-    isNotesPageVisible = nextIsNotesPage;
+    activePage = page;
     applyPageState();
     void saveUiState();
 }
@@ -1134,7 +1314,7 @@ function setActivePage(page) {
  */
 function switchBookmarkView(view) {
     if (view !== 'cards' && view !== 'table') return;
-    if (isNotesPageVisible) return;
+    if (!isBookmarksPageActive()) return;
 
     currentBookmarkView = view;
     renderBookmarks(allBookmarks);
@@ -3702,7 +3882,7 @@ function buildAiRewritePrompt(text) {
 let currentAiTextarea = null;
 
 function handleTextSelection(e) {
-    if (!settings.ollamaEnabled || !aiRewriteBtn || !isNotesPageVisible) return;
+    if (!settings.ollamaEnabled || !aiRewriteBtn || !isNotesPageActive()) return;
     
     const textarea = e.target;
     const selectedText = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd);
