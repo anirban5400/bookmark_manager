@@ -43,6 +43,10 @@
                                 <span class="btn-icon">🧮</span>
                                 <span class="btn-text">Calculators</span>
                             </button>
+                            <button class="dashboard-nav-btn" id="aiWriterToggleBtn" type="button" title="Go to AI writer">
+                                <span class="btn-icon">✨</span>
+                                <span class="btn-text">AI Writer</span>
+                            </button>
                         </nav>
                     </section>
                 </div>
@@ -581,6 +585,225 @@
                 </div>
             </div>
             </div>
+
+            <!-- ========== AI WRITER PAGE (Hidden by default) ========== -->
+            <div id="aiWriterPage" class="hidden">
+            <div class="ai-writer-shell">
+                <div class="ai-writer-grid">
+                    <section class="calculator-card ai-writer-card calculator-card-featured" data-ai-card="chat">
+                        <div class="calculator-card-header ai-writer-card-header">
+                            <span class="calculator-card-icon">💬</span>
+                            <div>
+                                <h3>Reply/Write Chat</h3>
+                                <p>Turn a raw message or short instruction into a polished chat response.</p>
+                            </div>
+                            <span class="calculator-card-toggle">▼</span>
+                        </div>
+                        <div class="calculator-card-body ai-writer-card-body">
+                            <div class="calculator-inline-fields ai-writer-top-controls">
+                                <label class="calculator-field ai-writer-provider-field">
+                                    <span>Provider</span>
+                                    <select class="calculator-input ai-writer-provider" data-ai-role="provider">
+                                        <option value="ollama">Ollama</option>
+                                        <option value="openrouter">OpenRouter</option>
+                                    </select>
+                                </label>
+                                <label class="calculator-field ai-writer-model-field">
+                                    <span>Model</span>
+                                    <input type="text" class="calculator-input ai-writer-model" data-ai-role="model" placeholder="llama3">
+                                </label>
+                                <label class="calculator-field ai-writer-variant-field">
+                                    <span>Tone</span>
+                                    <div class="ai-writer-multi-select" data-ai-role="variantGroup">
+                                        <label class="ai-writer-multi-option">
+                                            <input type="checkbox" class="ai-writer-variant-check" data-ai-role="variant" value="professional">
+                                            <span>Professional</span>
+                                        </label>
+                                        <label class="ai-writer-multi-option">
+                                            <input type="checkbox" class="ai-writer-variant-check" data-ai-role="variant" value="friendly">
+                                            <span>Friendly</span>
+                                        </label>
+                                        <label class="ai-writer-multi-option">
+                                            <input type="checkbox" class="ai-writer-variant-check" data-ai-role="variant" value="concise">
+                                            <span>Concise</span>
+                                        </label>
+                                        <label class="ai-writer-multi-option">
+                                            <input type="checkbox" class="ai-writer-variant-check" data-ai-role="variant" value="confident">
+                                            <span>Confident</span>
+                                        </label>
+                                    </div>
+                                </label>
+                            </div>
+
+                            <label class="calculator-field ai-writer-field ai-writer-system-prompt-wrap">
+                                <span class="ai-writer-prompt-toggle" data-ai-role="systemPromptToggle" role="button" tabindex="0" aria-expanded="false">System prompt</span>
+                                <textarea class="calculator-input ai-writer-system-prompt ai-writer-textarea hidden" data-ai-role="systemPrompt" rows="7" placeholder="Tone-specific system prompt"></textarea>
+                            </label>
+
+                            <label class="calculator-field ai-writer-field">
+                                <span>Input text</span>
+                                <textarea class="calculator-input ai-writer-input-text ai-writer-textarea ai-writer-input-area" data-ai-role="input" rows="8" placeholder="Paste the chat you received or describe what you want to send."></textarea>
+                            </label>
+
+                            <div class="ai-writer-actions">
+                                <span class="ai-writer-status" data-ai-role="status"></span>
+                                <button type="button" class="btn-primary ai-writer-submit" data-ai-role="submit">
+                                    <span class="btn-icon">✨</span>
+                                    <span class="btn-text">Generate Chat</span>
+                                </button>
+                            </div>
+
+                            <div class="calculator-field ai-writer-field">
+                                <div class="ai-writer-output-label-row">
+                                    <span>Output</span>
+                                </div>
+                                <div class="ai-writer-output-wrap">
+                                    <button type="button" class="ai-writer-copy-btn" data-ai-role="copy" title="Copy output" aria-label="Copy output">📋</button>
+                                    <textarea class="calculator-input ai-writer-output ai-writer-textarea ai-writer-output-area" data-ai-role="output" rows="8" readonly placeholder="Generated chat reply will appear here."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="calculator-card ai-writer-card calculator-card-featured" data-ai-card="email">
+                        <div class="calculator-card-header ai-writer-card-header">
+                            <span class="calculator-card-icon">📧</span>
+                            <div>
+                                <h3>Reply/Write Email</h3>
+                                <p>Create a clean email draft from rough notes, a reply chain, or a short instruction.</p>
+                            </div>
+                            <span class="calculator-card-toggle">▼</span>
+                        </div>
+                        <div class="calculator-card-body ai-writer-card-body">
+                            <div class="calculator-inline-fields ai-writer-top-controls">
+                                <label class="calculator-field ai-writer-provider-field">
+                                    <span>Provider</span>
+                                    <select class="calculator-input ai-writer-provider" data-ai-role="provider">
+                                        <option value="ollama">Ollama</option>
+                                        <option value="openrouter">OpenRouter</option>
+                                    </select>
+                                </label>
+                                <label class="calculator-field ai-writer-model-field">
+                                    <span>Model</span>
+                                    <input type="text" class="calculator-input ai-writer-model" data-ai-role="model" placeholder="llama3">
+                                </label>
+                                <label class="calculator-field ai-writer-variant-field">
+                                    <span>Tone</span>
+                                    <div class="ai-writer-multi-select" data-ai-role="variantGroup">
+                                        <label class="ai-writer-multi-option">
+                                            <input type="checkbox" class="ai-writer-variant-check" data-ai-role="variant" value="professional">
+                                            <span>Professional</span>
+                                        </label>
+                                        <label class="ai-writer-multi-option">
+                                            <input type="checkbox" class="ai-writer-variant-check" data-ai-role="variant" value="friendly">
+                                            <span>Friendly</span>
+                                        </label>
+                                        <label class="ai-writer-multi-option">
+                                            <input type="checkbox" class="ai-writer-variant-check" data-ai-role="variant" value="concise">
+                                            <span>Concise</span>
+                                        </label>
+                                        <label class="ai-writer-multi-option">
+                                            <input type="checkbox" class="ai-writer-variant-check" data-ai-role="variant" value="persuasive">
+                                            <span>Persuasive</span>
+                                        </label>
+                                    </div>
+                                </label>
+                            </div>
+
+                            <label class="calculator-field ai-writer-field ai-writer-system-prompt-wrap">
+                                <span class="ai-writer-prompt-toggle" data-ai-role="systemPromptToggle" role="button" tabindex="0" aria-expanded="false">System prompt</span>
+                                <textarea class="calculator-input ai-writer-system-prompt ai-writer-textarea hidden" data-ai-role="systemPrompt" rows="7" placeholder="Tone-specific system prompt"></textarea>
+                            </label>
+
+                            <label class="calculator-field ai-writer-field">
+                                <span>Input text</span>
+                                <textarea class="calculator-input ai-writer-input-text ai-writer-textarea ai-writer-input-area" data-ai-role="input" rows="8" placeholder="Paste the email to reply to, or write what you need the email to say."></textarea>
+                            </label>
+
+                            <div class="ai-writer-actions">
+                                <span class="ai-writer-status" data-ai-role="status"></span>
+                                <button type="button" class="btn-primary ai-writer-submit" data-ai-role="submit">
+                                    <span class="btn-icon">✉️</span>
+                                    <span class="btn-text">Generate Email</span>
+                                </button>
+                            </div>
+
+                            <div class="calculator-field ai-writer-field">
+                                <div class="ai-writer-output-label-row">
+                                    <span>Output</span>
+                                </div>
+                                <div class="ai-writer-output-wrap">
+                                    <button type="button" class="ai-writer-copy-btn" data-ai-role="copy" title="Copy output" aria-label="Copy output">📋</button>
+                                    <textarea class="calculator-input ai-writer-output ai-writer-textarea ai-writer-output-area" data-ai-role="output" rows="8" readonly placeholder="Generated email draft will appear here."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="calculator-card ai-writer-card calculator-card-featured" data-ai-card="summary">
+                        <div class="calculator-card-header ai-writer-card-header">
+                            <span class="calculator-card-icon">🧾</span>
+                            <div>
+                                <h3>Summary Doc</h3>
+                                <p>Condense long notes, docs, or pasted content into a useful summary format.</p>
+                            </div>
+                            <span class="calculator-card-toggle">▼</span>
+                        </div>
+                        <div class="calculator-card-body ai-writer-card-body">
+                            <div class="calculator-inline-fields ai-writer-top-controls">
+                                <label class="calculator-field ai-writer-provider-field">
+                                    <span>Provider</span>
+                                    <select class="calculator-input ai-writer-provider" data-ai-role="provider">
+                                        <option value="ollama">Ollama</option>
+                                        <option value="openrouter">OpenRouter</option>
+                                    </select>
+                                </label>
+                                <label class="calculator-field ai-writer-model-field">
+                                    <span>Model</span>
+                                    <input type="text" class="calculator-input ai-writer-model" data-ai-role="model" placeholder="llama3">
+                                </label>
+                                <label class="calculator-field ai-writer-variant-field">
+                                    <span>Summary style</span>
+                                    <select class="calculator-input ai-writer-variant" data-ai-role="variant">
+                                        <option value="paragraph">Paragraph</option>
+                                        <option value="bullet">Bullet Points</option>
+                                        <option value="both">Both</option>
+                                    </select>
+                                </label>
+                            </div>
+
+                            <label class="calculator-field ai-writer-field ai-writer-system-prompt-wrap">
+                                <span class="ai-writer-prompt-toggle" data-ai-role="systemPromptToggle" role="button" tabindex="0" aria-expanded="false">System prompt</span>
+                                <textarea class="calculator-input ai-writer-system-prompt ai-writer-textarea hidden" data-ai-role="systemPrompt" rows="7" placeholder="Summary prompt"></textarea>
+                            </label>
+
+                            <label class="calculator-field ai-writer-field">
+                                <span>Document text</span>
+                                <textarea class="calculator-input ai-writer-input-text ai-writer-textarea ai-writer-input-area" data-ai-role="input" rows="12" placeholder="Paste the document, meeting notes, or long text you want summarized."></textarea>
+                            </label>
+
+                            <div class="ai-writer-actions">
+                                <span class="ai-writer-status" data-ai-role="status"></span>
+                                <button type="button" class="btn-primary ai-writer-submit" data-ai-role="submit">
+                                    <span class="btn-icon">🪄</span>
+                                    <span class="btn-text">Generate Summary</span>
+                                </button>
+                            </div>
+
+                            <div class="calculator-field ai-writer-field">
+                                <div class="ai-writer-output-label-row">
+                                    <span>Output</span>
+                                </div>
+                                <div class="ai-writer-output-wrap">
+                                    <button type="button" class="ai-writer-copy-btn" data-ai-role="copy" title="Copy output" aria-label="Copy output">📋</button>
+                                    <textarea class="calculator-input ai-writer-output ai-writer-textarea ai-writer-output-area" data-ai-role="output" rows="12" readonly placeholder="Generated summary will appear here."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+            </div>
         </main>
     </div>
 
@@ -801,8 +1024,10 @@
                         </div>
                         <div class="settings-help-card">
                             <strong>Connection Error?</strong>
-                            <p>If Ollama blocks the connection with `403 Forbidden`, run this in your Mac terminal and restart the Ollama app:</p>
+                            <p>If Ollama blocks the connection with `403 Forbidden`, run these commands in your Mac terminal in this order:</p>
+                            <code>pkill -x ollama</code>
                             <code>launchctl setenv OLLAMA_ORIGINS "*"</code>
+                            <code>open -a Ollama</code>
                         </div>
                     </div>
 

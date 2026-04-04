@@ -96,9 +96,11 @@ const aiRewriteBtn = document.getElementById('aiRewriteBtn');
 // Notes page elements
 const notesToggleBtn = document.getElementById('notesToggleBtn');
 const calculatorsToggleBtn = document.getElementById('calculatorsToggleBtn');
+const aiWriterToggleBtn = document.getElementById('aiWriterToggleBtn');
 const bookmarksPage = document.getElementById('bookmarksPage');
 const notesPage = document.getElementById('notesPage');
 const calculatorsPage = document.getElementById('calculatorsPage');
+const aiWriterPage = document.getElementById('aiWriterPage');
 const notesContainer = document.getElementById('notesContainer');
 const notesCount = document.getElementById('notesCount');
 const addNoteBtn = document.getElementById('addNoteBtn');
@@ -154,10 +156,11 @@ let editingBookmarkId = null;
 const DEFAULT_CARD_VIEW_LIMIT = 10;
 const CARD_FIELD_KEYS = new Set(['favicon', 'url', 'description', 'createdAt']);
 const BOOKMARK_TABLE_REORDER_KEY = '__reorder__';
-const VALID_PAGES = new Set(['bookmarks', 'notes', 'calculators']);
+const VALID_PAGES = new Set(['bookmarks', 'notes', 'calculators', 'ai-writer']);
 let cardViewLimit = DEFAULT_CARD_VIEW_LIMIT;
 let isSidebarCollapsed = false;
 let calculatorCardTogglesBound = false;
+let aiWriterListenersBound = false;
 const hiddenCardFields = new Set();
 const SETTINGS_STORAGE_KEY = 'bmSettings';
 const UI_STATE_STORAGE_KEY = 'bmUiState';
@@ -172,6 +175,117 @@ const LEGACY_AI_SYSTEM_PROMPT_PREFIXES = [
     'You are an expert editor.',
     'You are a helpful writing assistant.'
 ];
+const AI_WRITER_CARD_META = {
+    chat: { variantKey: 'tone', defaultVariant: ['professional'], allowMultipleVariants: true },
+    email: { variantKey: 'tone', defaultVariant: ['professional'], allowMultipleVariants: true },
+    summary: { variantKey: 'format', defaultVariant: 'both', allowMultipleVariants: false }
+};
+const AI_WRITER_SYSTEM_PROMPTS = {
+    chat: {
+        professional: 'You are a chat writing assistant. Write a professional chat reply or new message from the user input.\n\nRules:\n1. Return only the final chat message.\n2. Keep the message clear, direct, and natural.\n3. Preserve important names, numbers, dates, links, and technical details exactly.\n4. Do not add a subject line, commentary, or markdown.',
+        friendly: 'You are a chat writing assistant. Write a warm, friendly, and approachable chat reply or new message from the user input.\n\nRules:\n1. Return only the final chat message.\n2. Keep the tone positive, human, and easy to read.\n3. Preserve important names, numbers, dates, links, and technical details exactly.\n4. Do not add commentary or markdown.',
+        concise: 'You are a chat writing assistant. Rewrite the user input into a concise chat message.\n\nRules:\n1. Return only the final chat message.\n2. Keep it brief, crisp, and easy to send immediately.\n3. Preserve important names, numbers, dates, links, and technical details exactly.\n4. Do not add commentary or markdown.',
+        confident: 'You are a chat writing assistant. Write a confident and polished chat reply or new message from the user input.\n\nRules:\n1. Return only the final chat message.\n2. Sound decisive without being rude.\n3. Preserve important names, numbers, dates, links, and technical details exactly.\n4. Do not add commentary or markdown.'
+    },
+    email: {
+        professional: 'You are an email writing assistant. Draft a professional email from the user input.\n\nRules:\n1. Return only the final email.\n2. Include an appropriate subject line only if the user input clearly asks for one.\n3. Keep the email polished, structured, and business-ready.\n4. Preserve important names, numbers, dates, links, and technical details exactly.\n5. Do not add commentary or markdown.',
+        friendly: 'You are an email writing assistant. Draft a friendly and thoughtful email from the user input.\n\nRules:\n1. Return only the final email.\n2. Keep the wording warm, clear, and professional enough to send.\n3. Preserve important names, numbers, dates, links, and technical details exactly.\n4. Do not add commentary or markdown.',
+        concise: 'You are an email writing assistant. Draft a concise email from the user input.\n\nRules:\n1. Return only the final email.\n2. Keep the email short, clear, and action-oriented.\n3. Preserve important names, numbers, dates, links, and technical details exactly.\n4. Do not add commentary or markdown.',
+        persuasive: 'You are an email writing assistant. Draft a persuasive email from the user input.\n\nRules:\n1. Return only the final email.\n2. Make the message convincing, clear, and respectful.\n3. Preserve important names, numbers, dates, links, and technical details exactly.\n4. Do not add commentary or markdown.'
+    },
+    summary: {
+        paragraph: 'You are a document summarization assistant. Summarize the user text into a concise paragraph.\n\nRules:\n1. Return only the final summary.\n2. Focus on the most important decisions, facts, and outcomes.\n3. Preserve important names, numbers, dates, links, and technical terms exactly.\n4. Do not add commentary or markdown fences.',
+        bullet: 'You are a document summarization assistant. Summarize the user text into clear bullet points.\n\nRules:\n1. Return only the final summary.\n2. Use bullet points only.\n3. Focus on the most important decisions, facts, and outcomes.\n4. Preserve important names, numbers, dates, links, and technical terms exactly.\n5. Do not add commentary or markdown fences beyond the bullet list.',
+        both: 'You are a document summarization assistant. Summarize the user text in two sections.\n\nRules:\n1. Return only the final summary.\n2. First provide a short paragraph summary.\n3. Then provide bullet points with the main takeaways.\n4. Preserve important names, numbers, dates, links, and technical terms exactly.\n5. Do not add commentary or markdown fences.'
+    }
+};
+
+function getDefaultModelForProvider(provider, sourceSettings = settings) {
+    return provider === 'openrouter'
+        ? (sourceSettings.openRouterModel || 'google/gemini-2.5-flash')
+        : (sourceSettings.ollamaModel || 'llama3');
+}
+
+function normalizeAiWriterVariant(cardKey, variantValue) {
+    const meta = AI_WRITER_CARD_META[cardKey];
+    if (!meta) return variantValue;
+
+    if (meta.allowMultipleVariants) {
+        const variants = Array.isArray(variantValue) ? variantValue : [variantValue];
+        const sanitized = variants
+            .filter((variant) => typeof variant === 'string' && variant)
+            .filter((variant, index, list) => list.indexOf(variant) === index);
+        return sanitized.length ? sanitized : [...meta.defaultVariant];
+    }
+
+    return typeof variantValue === 'string' && variantValue ? variantValue : meta.defaultVariant;
+}
+
+function getDefaultAiWriterSystemPrompt(cardKey, variant) {
+    const cardPrompts = AI_WRITER_SYSTEM_PROMPTS[cardKey] || {};
+    const meta = AI_WRITER_CARD_META[cardKey];
+    const normalizedVariant = normalizeAiWriterVariant(cardKey, variant);
+
+    if (meta?.allowMultipleVariants) {
+        const prompts = normalizedVariant
+            .map((variantKey) => cardPrompts[variantKey])
+            .filter(Boolean);
+        return prompts.length ? prompts.join('\n\n---\n\n') : DEFAULT_AI_SYSTEM_PROMPT;
+    }
+
+    return cardPrompts[normalizedVariant] || cardPrompts[meta?.defaultVariant] || DEFAULT_AI_SYSTEM_PROMPT;
+}
+
+function createDefaultAiWriterCardsConfig(sourceSettings) {
+    return {
+        chat: {
+            provider: 'ollama',
+            model: getDefaultModelForProvider('ollama', sourceSettings),
+            tone: [...AI_WRITER_CARD_META.chat.defaultVariant],
+            systemPrompt: getDefaultAiWriterSystemPrompt('chat', AI_WRITER_CARD_META.chat.defaultVariant)
+        },
+        email: {
+            provider: 'ollama',
+            model: getDefaultModelForProvider('ollama', sourceSettings),
+            tone: [...AI_WRITER_CARD_META.email.defaultVariant],
+            systemPrompt: getDefaultAiWriterSystemPrompt('email', AI_WRITER_CARD_META.email.defaultVariant)
+        },
+        summary: {
+            provider: 'ollama',
+            model: getDefaultModelForProvider('ollama', sourceSettings),
+            format: AI_WRITER_CARD_META.summary.defaultVariant,
+            systemPrompt: getDefaultAiWriterSystemPrompt('summary', AI_WRITER_CARD_META.summary.defaultVariant)
+        }
+    };
+}
+
+function normalizeAiWriterCardsConfig(savedCards, sourceSettings = settings) {
+    const defaults = createDefaultAiWriterCardsConfig(sourceSettings);
+
+    return Object.keys(defaults).reduce((normalized, cardKey) => {
+        const meta = AI_WRITER_CARD_META[cardKey];
+        const savedCard = savedCards?.[cardKey] || {};
+        const provider = savedCard.provider === 'openrouter' ? 'openrouter' : 'ollama';
+        const variantKey = meta.variantKey;
+        const variant = normalizeAiWriterVariant(cardKey, savedCard[variantKey] ?? defaults[cardKey][variantKey]);
+        const systemPrompt = typeof savedCard.systemPrompt === 'string' && savedCard.systemPrompt.trim()
+            ? savedCard.systemPrompt
+            : getDefaultAiWriterSystemPrompt(cardKey, variant);
+
+        normalized[cardKey] = {
+            ...defaults[cardKey],
+            ...savedCard,
+            provider,
+            model: typeof savedCard.model === 'string' && savedCard.model.trim()
+                ? savedCard.model.trim()
+                : getDefaultModelForProvider(provider, sourceSettings),
+            [variantKey]: variant,
+            systemPrompt
+        };
+
+        return normalized;
+    }, {});
+}
 
 // Settings state (with defaults)
 let settings = {
@@ -191,8 +305,13 @@ let settings = {
     ollamaModel: 'llama3',
     openRouterKey: '',
     openRouterModel: 'google/gemini-2.5-flash',
-    ollamaSystemPrompt: DEFAULT_AI_SYSTEM_PROMPT
+    ollamaSystemPrompt: DEFAULT_AI_SYSTEM_PROMPT,
+    aiWriterCards: createDefaultAiWriterCardsConfig({
+        ollamaModel: 'llama3',
+        openRouterModel: 'google/gemini-2.5-flash'
+    })
 };
+const aiWriterSaveTimeouts = {};
 
 /**
  * Handle note title input (auto-save with debounce)
@@ -211,6 +330,10 @@ function isCalculatorsPageActive() {
     return activePage === 'calculators';
 }
 
+function isAiWriterPageActive() {
+    return activePage === 'ai-writer';
+}
+
 function parseCalculatorValue(input, fallback = 0) {
     const parsedValue = parseFloat(input?.value ?? '');
     return Number.isFinite(parsedValue) ? parsedValue : fallback;
@@ -222,6 +345,14 @@ function formatCalculatorNumber(value) {
 
 function focusCalculatorsWorkspace() {
     const firstInput = calculatorsPage?.querySelector('.calculator-input');
+    if (firstInput) {
+        firstInput.focus();
+        firstInput.select();
+    }
+}
+
+function focusAiWriterWorkspace() {
+    const firstInput = aiWriterPage?.querySelector('.ai-writer-input-text');
     if (firstInput) {
         firstInput.focus();
         firstInput.select();
@@ -507,8 +638,12 @@ function setupEventListeners() {
     if (calculatorsToggleBtn) {
         calculatorsToggleBtn.addEventListener('click', () => setActivePage('calculators'));
     }
+    if (aiWriterToggleBtn) {
+        aiWriterToggleBtn.addEventListener('click', () => setActivePage('ai-writer'));
+    }
     setupCalculatorListeners();
     setupCalculatorCardToggles();
+    setupAiWriterListeners();
     if (taxResetBtn) {
         taxResetBtn.addEventListener('click', resetTaxPlanner);
     }
@@ -599,6 +734,211 @@ function setupCalculatorCardToggles() {
     });
 
     calculatorCardTogglesBound = true;
+}
+
+function getAiWriterCard(cardKey) {
+    return aiWriterPage?.querySelector(`[data-ai-card="${cardKey}"]`) || null;
+}
+
+function getAiWriterCardElements(cardKey) {
+    const card = getAiWriterCard(cardKey);
+    if (!card) return null;
+
+    return {
+        card,
+        provider: card.querySelector('[data-ai-role="provider"]'),
+        model: card.querySelector('[data-ai-role="model"]'),
+        variant: card.querySelector('[data-ai-role="variant"]'),
+        variantInputs: Array.from(card.querySelectorAll('[data-ai-role="variant"]')),
+        systemPromptToggle: card.querySelector('[data-ai-role="systemPromptToggle"]'),
+        systemPrompt: card.querySelector('[data-ai-role="systemPrompt"]'),
+        input: card.querySelector('[data-ai-role="input"]'),
+        output: card.querySelector('[data-ai-role="output"]'),
+        submit: card.querySelector('[data-ai-role="submit"]'),
+        copy: card.querySelector('[data-ai-role="copy"]'),
+        status: card.querySelector('[data-ai-role="status"]')
+    };
+}
+
+function scheduleAiWriterSettingsSave(cardKey) {
+    if (aiWriterSaveTimeouts[cardKey]) {
+        clearTimeout(aiWriterSaveTimeouts[cardKey]);
+    }
+
+    aiWriterSaveTimeouts[cardKey] = setTimeout(() => {
+        delete aiWriterSaveTimeouts[cardKey];
+        void saveSettings();
+    }, 250);
+}
+
+function updateAiWriterCardSettings(cardKey, updates, saveMode = 'debounced') {
+    const currentCard = settings.aiWriterCards?.[cardKey];
+    if (!currentCard) return;
+
+    settings.aiWriterCards[cardKey] = {
+        ...currentCard,
+        ...updates
+    };
+
+    if (saveMode === 'immediate') {
+        void saveSettings();
+    } else {
+        scheduleAiWriterSettingsSave(cardKey);
+    }
+}
+
+function hydrateAiWriterCard(cardKey) {
+    const cardSettings = settings.aiWriterCards?.[cardKey];
+    const elements = getAiWriterCardElements(cardKey);
+    const meta = AI_WRITER_CARD_META[cardKey];
+    if (!cardSettings || !elements || !meta) return;
+
+    if (elements.provider) {
+        elements.provider.value = cardSettings.provider;
+    }
+    if (elements.model) {
+        elements.model.value = cardSettings.model;
+        elements.model.placeholder = getDefaultModelForProvider(cardSettings.provider);
+    }
+    if (elements.variant) {
+        if (meta.allowMultipleVariants) {
+            const selectedVariants = normalizeAiWriterVariant(cardKey, cardSettings[meta.variantKey]);
+            elements.variantInputs.forEach((input) => {
+                input.checked = selectedVariants.includes(input.value);
+            });
+        } else {
+            elements.variant.value = cardSettings[meta.variantKey];
+        }
+    }
+    if (elements.systemPrompt) {
+        elements.systemPrompt.value = cardSettings.systemPrompt;
+    }
+    if (elements.systemPromptToggle && elements.systemPrompt) {
+        elements.systemPromptToggle.setAttribute(
+            'aria-expanded',
+            elements.systemPrompt.classList.contains('hidden') ? 'false' : 'true'
+        );
+    }
+}
+
+function hydrateAiWriterCards() {
+    Object.keys(AI_WRITER_CARD_META).forEach((cardKey) => hydrateAiWriterCard(cardKey));
+}
+
+function handleAiWriterConfigChange(event) {
+    const field = event.target.closest('[data-ai-role]');
+    if (!field) return;
+
+    const card = field.closest('[data-ai-card]');
+    if (!card) return;
+
+    const cardKey = card.dataset.aiCard;
+    const role = field.dataset.aiRole;
+    const meta = AI_WRITER_CARD_META[cardKey];
+    if (!cardKey || !meta) return;
+
+    if (role === 'provider') {
+        const provider = field.value === 'openrouter' ? 'openrouter' : 'ollama';
+        const nextModel = getDefaultModelForProvider(provider);
+        updateAiWriterCardSettings(cardKey, { provider, model: nextModel }, 'immediate');
+        hydrateAiWriterCard(cardKey);
+        return;
+    }
+
+    if (role === 'variant') {
+        const variantKey = meta.variantKey;
+        let nextVariant;
+
+        if (meta.allowMultipleVariants) {
+            nextVariant = normalizeAiWriterVariant(
+                cardKey,
+                elementsFromCard(card)?.variantInputs.filter((input) => input.checked).map((input) => input.value)
+            );
+        } else {
+            nextVariant = field.value || meta.defaultVariant;
+        }
+
+        updateAiWriterCardSettings(cardKey, {
+            [variantKey]: nextVariant,
+            systemPrompt: getDefaultAiWriterSystemPrompt(cardKey, nextVariant)
+        }, 'immediate');
+        hydrateAiWriterCard(cardKey);
+        return;
+    }
+
+    if (role === 'model') {
+        updateAiWriterCardSettings(cardKey, {
+            model: field.value.trim() || getDefaultModelForProvider(settings.aiWriterCards[cardKey].provider)
+        });
+        return;
+    }
+
+    if (role === 'systemPrompt') {
+        updateAiWriterCardSettings(cardKey, { systemPrompt: field.value });
+    }
+}
+
+function elementsFromCard(card) {
+    const cardKey = card?.dataset.aiCard;
+    return cardKey ? getAiWriterCardElements(cardKey) : null;
+}
+
+function toggleAiWriterSystemPrompt(cardKey) {
+    const elements = getAiWriterCardElements(cardKey);
+    if (!elements?.systemPrompt || !elements?.systemPromptToggle) return;
+
+    const isHidden = elements.systemPrompt.classList.toggle('hidden');
+    elements.systemPromptToggle.setAttribute('aria-expanded', isHidden ? 'false' : 'true');
+
+    if (!isHidden) {
+        elements.systemPrompt.focus();
+    }
+}
+
+function setupAiWriterListeners() {
+    if (aiWriterListenersBound || !aiWriterPage) return;
+
+    aiWriterPage.addEventListener('change', handleAiWriterConfigChange);
+    aiWriterPage.addEventListener('input', handleAiWriterConfigChange);
+    aiWriterPage.addEventListener('keydown', (event) => {
+        const toggle = event.target.closest('[data-ai-role="systemPromptToggle"]');
+        if (!toggle) return;
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+
+        event.preventDefault();
+        const cardKey = toggle.closest('[data-ai-card]')?.dataset.aiCard;
+        if (cardKey) {
+            toggleAiWriterSystemPrompt(cardKey);
+        }
+    });
+    aiWriterPage.addEventListener('click', (event) => {
+        const header = event.target.closest('.calculator-card-header');
+        if (header && aiWriterPage.contains(header) && !event.target.closest('[data-ai-role]')) {
+            const card = header.closest('.calculator-card');
+            if (card) {
+                card.classList.toggle('calculator-card-expanded');
+            }
+            return;
+        }
+
+        const actionButton = event.target.closest('[data-ai-role]');
+        if (!actionButton) return;
+
+        const card = actionButton.closest('[data-ai-card]');
+        const cardKey = card?.dataset.aiCard;
+        if (!cardKey) return;
+
+        if (actionButton.dataset.aiRole === 'systemPromptToggle') {
+            event.preventDefault();
+            toggleAiWriterSystemPrompt(cardKey);
+        } else if (actionButton.dataset.aiRole === 'submit') {
+            void handleAiWriterSubmit(cardKey);
+        } else if (actionButton.dataset.aiRole === 'copy') {
+            void handleAiWriterCopy(cardKey);
+        }
+    });
+
+    aiWriterListenersBound = true;
 }
 
 function resetTaxPlanner() {
@@ -1884,6 +2224,7 @@ function applyPageState() {
     const showBookmarks = isBookmarksPageActive();
     const showNotes = isNotesPageActive();
     const showCalculators = isCalculatorsPageActive();
+    const showAiWriter = isAiWriterPageActive();
 
     if (bookmarksPage) {
         bookmarksPage.classList.toggle('hidden', !showBookmarks);
@@ -1894,10 +2235,14 @@ function applyPageState() {
     if (calculatorsPage) {
         calculatorsPage.classList.toggle('hidden', !showCalculators);
     }
+    if (aiWriterPage) {
+        aiWriterPage.classList.toggle('hidden', !showAiWriter);
+    }
 
     if (appContainer) {
         appContainer.classList.toggle('notes-active', showNotes);
         appContainer.classList.toggle('calculators-active', showCalculators);
+        appContainer.classList.toggle('ai-writer-active', showAiWriter);
     }
 
     if (!showNotes && aiRewriteBtn) {
@@ -1909,6 +2254,8 @@ function applyPageState() {
         void loadNotes();
     } else if (showCalculators) {
         initCalculators();
+    } else if (showAiWriter) {
+        hydrateAiWriterCards();
     } else {
         updateBookmarkViewControls();
     }
@@ -1925,6 +2272,9 @@ function updateDashboardContext() {
     }
     if (calculatorsToggleBtn) {
         calculatorsToggleBtn.classList.toggle('active', isCalculatorsPageActive());
+    }
+    if (aiWriterToggleBtn) {
+        aiWriterToggleBtn.classList.toggle('active', isAiWriterPageActive());
     }
 }
 
@@ -1959,6 +2309,9 @@ function setActivePage(page) {
 
     activePage = page;
     applyPageState();
+    if (page === 'ai-writer') {
+        requestAnimationFrame(() => focusAiWriterWorkspace());
+    }
     void saveUiState();
 }
 
@@ -3384,6 +3737,7 @@ async function loadSettings() {
         try {
             const parsedSettings = typeof saved === 'string' ? JSON.parse(saved) : saved;
             settings = { ...settings, ...parsedSettings };
+            settings.aiWriterCards = normalizeAiWriterCardsConfig(parsedSettings?.aiWriterCards, settings);
 
             if (shouldMigrateAiSystemPrompt(settings.ollamaSystemPrompt)) {
                 settings.ollamaSystemPrompt = DEFAULT_AI_SYSTEM_PROMPT;
@@ -3394,6 +3748,8 @@ async function loadSettings() {
         } catch (e) {
             console.error('Failed to load settings:', e);
         }
+    } else {
+        settings.aiWriterCards = normalizeAiWriterCardsConfig(null, settings);
     }
 
     if (migratedFromLocalStorage && migrationSaved) {
@@ -3423,6 +3779,7 @@ async function loadSettings() {
     if (openRouterKeyInput) openRouterKeyInput.value = settings.openRouterKey;
     if (openRouterModelInput) openRouterModelInput.value = settings.openRouterModel;
     if (ollamaSystemPromptInput) ollamaSystemPromptInput.value = settings.ollamaSystemPrompt;
+    hydrateAiWriterCards();
     
     // Toggle correct settings group visibility
     updateAiProviderVisibility();
@@ -4529,6 +4886,248 @@ function buildAiRewritePrompt(text) {
     };
 }
 
+function ensureAiEnabled() {
+    if (!settings.ollamaEnabled) {
+        throw new Error('AI Assistant is disabled. Enable it in Settings.');
+    }
+}
+
+function showOllamaOriginFixAlert() {
+    alert([
+        'Ollama blocked the Chrome extension request with 403 Forbidden.',
+        '',
+        'Run these commands in Terminal, in this order:',
+        '1. pkill -x ollama',
+        '2. launchctl setenv OLLAMA_ORIGINS "*"',
+        '3. open -a Ollama',
+        '',
+        'After Ollama starts again, set the extension Ollama URL to:',
+        'http://127.0.0.1:11434'
+    ].join('\n'));
+}
+
+async function requestAiCompletion({
+    provider = settings.aiProvider,
+    model,
+    systemPrompt,
+    prompt,
+    temperature = 0.2
+}) {
+    const resolvedProvider = provider === 'openrouter' ? 'openrouter' : 'ollama';
+    const resolvedModel = model?.trim() || getDefaultModelForProvider(resolvedProvider);
+
+    if (resolvedProvider === 'openrouter') {
+        if (!settings.openRouterKey) {
+            throw new Error('OpenRouter API Key is missing. Please add it in Settings.');
+        }
+
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${settings.openRouterKey}`,
+                'HTTP-Referer': 'chrome-extension://bookmark-notes',
+                'X-Title': 'Bookmark Notes Extension'
+            },
+            body: JSON.stringify({
+                model: resolvedModel,
+                temperature,
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: prompt }
+                ]
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`OpenRouter API error: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        const message = data?.choices?.[0]?.message?.content || '';
+        if (!message) {
+            throw new Error('OpenRouter returned an empty response.');
+        }
+
+        return message;
+    }
+
+    const response = await fetch(`${settings.ollamaUrl}/api/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            model: resolvedModel,
+            prompt,
+            system: systemPrompt,
+            stream: false,
+            options: { temperature }
+        })
+    });
+
+    if (!response.ok) {
+        if (response.status === 403) {
+            showOllamaOriginFixAlert();
+            throw new Error('Ollama blocked (403). Run the shown Terminal commands and restart Ollama.');
+        }
+        throw new Error(`Ollama API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.response || '';
+}
+
+function formatAiWriterVariantLabel(value) {
+    return String(value)
+        .split(/[-_ ]+/)
+        .filter(Boolean)
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ');
+}
+
+function buildAiWriterPrompt(cardKey, inputText, variantValue) {
+    const headerByCard = {
+        chat: 'Write the final chat message based on the text below.',
+        email: 'Write the final email based on the text below.',
+        summary: 'Summarize the document below based on the selected summary style.'
+    };
+
+    const meta = AI_WRITER_CARD_META[cardKey];
+    if (meta?.allowMultipleVariants) {
+        const variants = normalizeAiWriterVariant(cardKey, variantValue);
+        const headings = variants.map((variant) => `[${formatAiWriterVariantLabel(variant)}]`).join(', ');
+
+        return [
+            headerByCard[cardKey] || 'Write the final output based on the text below.',
+            `Generate one separate version for each selected tone: ${variants.map(formatAiWriterVariantLabel).join(', ')}.`,
+            `Use these exact section headings in this order: ${headings}.`,
+            'Under each heading, provide only that tone-specific final answer.',
+            '',
+            inputText
+        ].join('\n');
+    }
+
+    return [
+        headerByCard[cardKey] || 'Write the final output based on the text below.',
+        'Return only the final answer.',
+        '',
+        inputText
+    ].join('\n');
+}
+
+function setAiWriterStatus(cardKey, message = '', state = '') {
+    const elements = getAiWriterCardElements(cardKey);
+    if (!elements?.status) return;
+
+    elements.status.textContent = message;
+    elements.status.dataset.state = state;
+}
+
+function setAiWriterLoading(cardKey, isLoading) {
+    const elements = getAiWriterCardElements(cardKey);
+    if (!elements) return;
+
+    if (elements.submit) {
+        elements.submit.disabled = isLoading;
+        elements.submit.classList.toggle('is-loading', isLoading);
+    }
+    if (elements.copy) {
+        elements.copy.disabled = isLoading;
+    }
+    elements.card.classList.toggle('ai-writer-card-loading', isLoading);
+}
+
+async function handleAiWriterSubmit(cardKey) {
+    const meta = AI_WRITER_CARD_META[cardKey];
+    const elements = getAiWriterCardElements(cardKey);
+    if (!meta || !elements) return;
+
+    const provider = elements.provider?.value === 'openrouter' ? 'openrouter' : 'ollama';
+    const model = elements.model?.value?.trim() || getDefaultModelForProvider(provider);
+    const variantValue = meta.allowMultipleVariants
+        ? normalizeAiWriterVariant(cardKey, elements.variantInputs.filter((input) => input.checked).map((input) => input.value))
+        : (elements.variant?.value || meta.defaultVariant);
+    const systemPrompt = elements.systemPrompt?.value?.trim() || getDefaultAiWriterSystemPrompt(cardKey, variantValue);
+    const inputText = elements.input?.value?.trim() || '';
+
+    if (!inputText) {
+        setAiWriterStatus(cardKey, 'Enter text before generating.', 'error');
+        elements.input?.focus();
+        return;
+    }
+
+    updateAiWriterCardSettings(cardKey, {
+        provider,
+        model,
+        systemPrompt,
+        [meta.variantKey]: variantValue
+    }, 'immediate');
+
+    setAiWriterLoading(cardKey, true);
+    setAiWriterStatus(cardKey, 'Generating...', 'loading');
+
+    try {
+        ensureAiEnabled();
+        const output = await requestAiCompletion({
+            provider,
+            model,
+            systemPrompt,
+            prompt: buildAiWriterPrompt(cardKey, inputText, variantValue)
+        });
+        const finalOutput = output.trim();
+
+        if (!finalOutput) {
+            throw new Error('The AI model returned an empty response.');
+        }
+
+        if (elements.output) {
+            elements.output.value = finalOutput;
+        }
+
+        setAiWriterStatus(cardKey, 'Ready to copy.', 'success');
+    } catch (error) {
+        console.error(`AI Writer ${cardKey} error:`, error);
+        setAiWriterStatus(cardKey, error.message || 'Generation failed.', 'error');
+    } finally {
+        setAiWriterLoading(cardKey, false);
+    }
+}
+
+async function copyTextToClipboard(text) {
+    if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+        return;
+    }
+
+    const tempArea = document.createElement('textarea');
+    tempArea.value = text;
+    tempArea.style.position = 'fixed';
+    tempArea.style.opacity = '0';
+    document.body.appendChild(tempArea);
+    tempArea.focus();
+    tempArea.select();
+    document.execCommand('copy');
+    document.body.removeChild(tempArea);
+}
+
+async function handleAiWriterCopy(cardKey) {
+    const elements = getAiWriterCardElements(cardKey);
+    const outputText = elements?.output?.value?.trim() || '';
+
+    if (!outputText) {
+        setAiWriterStatus(cardKey, 'Nothing to copy yet.', 'error');
+        return;
+    }
+
+    try {
+        await copyTextToClipboard(outputText);
+        setAiWriterStatus(cardKey, 'Copied to clipboard.', 'success');
+        showToast('AI Writer output copied.', 'success');
+    } catch (error) {
+        console.error('Failed to copy AI Writer output:', error);
+        setAiWriterStatus(cardKey, 'Copy failed.', 'error');
+    }
+}
+
 // ==========================================
 // AI REWRITE FUNCTIONS
 // ==========================================
@@ -4574,61 +5173,12 @@ async function handleAiRewrite(e) {
     aiRewriteBtn.disabled = true;
     
     try {
-        let rewrittenText = '';
-        
-        if (settings.aiProvider === 'openrouter') {
-            if (!settings.openRouterKey) throw new Error('OpenRouter API Key is missing. Please add it in Settings.');
-            
-            const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${settings.openRouterKey}`,
-                    'HTTP-Referer': 'chrome-extension://bookmark-notes',
-                    'X-Title': 'Bookmark Notes Extension'
-                },
-                body: JSON.stringify({
-                    model: settings.openRouterModel,
-                    temperature: 0.2,
-                    messages: [
-                        { role: 'system', content: settings.ollamaSystemPrompt },
-                        { role: 'user', content: rewriteRequest.prompt }
-                    ]
-                })
-            });
-
-            if (!response.ok) throw new Error(`OpenRouter API error: ${response.status} ${response.statusText}`);
-
-            const data = await response.json();
-            if (data.choices && data.choices.length > 0) {
-                rewrittenText = data.choices[0].message.content || '';
-            } else {
-                throw new Error('OpenRouter returned an empty response.');
-            }
-        } else {
-            // Ollama (default)
-            const response = await fetch(`${settings.ollamaUrl}/api/generate`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    model: settings.ollamaModel,
-                    prompt: rewriteRequest.prompt,
-                    system: settings.ollamaSystemPrompt,
-                    stream: false,
-                    options: {
-                        temperature: 0.2
-                    }
-                })
-            });
-
-            if (!response.ok) {
-                if (response.status === 403) throw new Error('Ollama blocked (403). Set OLLAMA_ORIGINS="*" and restart.');
-                throw new Error(`Ollama API error: ${response.status}`);
-            }
-
-            const data = await response.json();
-            rewrittenText = data.response || '';
-        }
+        let rewrittenText = await requestAiCompletion({
+            provider: settings.aiProvider,
+            model: getDefaultModelForProvider(settings.aiProvider),
+            systemPrompt: settings.ollamaSystemPrompt,
+            prompt: rewriteRequest.prompt
+        });
 
         rewrittenText = restoreProtectedContent(rewrittenText, rewriteRequest.placeholders);
         
