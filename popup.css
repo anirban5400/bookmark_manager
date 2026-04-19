@@ -539,6 +539,42 @@ body {
     line-height: 1.5;
 }
 
+.bookmarks-page-toolbar {
+    align-items: stretch;
+}
+
+.bookmarks-page-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(140px, 1fr));
+    gap: 0.75rem;
+    min-width: min(100%, 320px);
+}
+
+.bookmarks-page-stat {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.15rem;
+    padding: 0.95rem 1rem;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.18), rgba(0, 0, 0, 0.02));
+    border-radius: 18px;
+    box-shadow: var(--neu-concave);
+}
+
+.bookmarks-page-stat strong {
+    font-size: 1.35rem;
+    line-height: 1.1;
+    color: var(--text-primary);
+}
+
+.bookmarks-page-stat span {
+    font-size: 0.76rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
 .bookmark-workspace-toolbar {
     /* margin-bottom: var(--gap-lg); */
     background: var(--bg-base);
@@ -1020,6 +1056,56 @@ body {
     display: flex;
     flex-direction: column;
     gap: 1rem;
+}
+
+.settings-tabs {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    width: fit-content;
+    max-width: 100%;
+    padding: 0.3rem;
+    background: var(--bg-base);
+    border-radius: var(--radius-full);
+    box-shadow: var(--neu-concave);
+    flex-wrap: wrap;
+}
+
+.settings-tab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 38px;
+    padding: 0 1rem;
+    border: none;
+    border-radius: var(--radius-full);
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.settings-tab:hover {
+    color: var(--accent-dark);
+}
+
+.settings-tab.active {
+    color: var(--accent-color);
+    background: var(--bg-base);
+    box-shadow: var(--neu-convex);
+}
+
+.settings-panel {
+    display: none;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.settings-panel.active {
+    display: flex;
 }
 
 .settings-intro {
@@ -2850,6 +2936,15 @@ body.bookmark-table-resizing * {
         padding: 0.9rem;
     }
 
+    .bookmarks-page-stats,
+    .settings-tabs {
+        width: 100%;
+    }
+
+    .settings-tab {
+        flex: 1 1 0;
+    }
+
     .settings-row {
         flex-direction: column;
         align-items: stretch;
@@ -2926,6 +3021,11 @@ body.bookmark-table-resizing * {
 
     .bookmark-workspace-toolbar-right {
         justify-content: flex-start;
+    }
+
+    .bookmarks-page-stats {
+        grid-template-columns: 1fr;
+        min-width: 0;
     }
 
     .bookmark-workspace-toolbar .header-search,
@@ -3180,6 +3280,7 @@ body.bookmark-table-resizing * {
     flex-wrap: wrap;
     gap: var(--gap-md);
     align-items: flex-start;
+    justify-content: flex-start;
 }
 
 /* Note Card - Individually resizable */
@@ -3195,8 +3296,9 @@ body.bookmark-table-resizing * {
     animation: noteSlideIn 0.3s ease forwards;
     /* Resizable by user */
     resize: both;
-    width: 420px;
-    min-width: 300px;
+    flex: 1 1 360px;
+    width: min(100%, clamp(340px, 32vw, 520px));
+    min-width: 280px;
     max-width: 100%;
     min-height: 200px;
 }
@@ -3552,8 +3654,7 @@ body.bookmark-table-resizing * {
 
 .calculators-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 420px));
-    justify-content: start;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     gap: 1.25rem;
 }
 
@@ -3689,6 +3790,11 @@ body.bookmark-table-resizing * {
 .calculator-inline-fields {
     display: flex;
     gap: 0.85rem;
+    flex-wrap: wrap;
+}
+
+.calculator-inline-fields > .calculator-field {
+    flex: 1 1 180px;
 }
 
 .calculator-actions {
@@ -3859,7 +3965,8 @@ body.bookmark-table-resizing * {
         linear-gradient(160deg, rgba(108, 92, 231, 0.08), rgba(255, 159, 67, 0.08)),
         var(--bg-base);
     resize: both;
-    width: 860px;
+    flex: 1 1 720px;
+    width: min(100%, clamp(560px, 46vw, 1080px));
     min-width: 320px;
     max-width: 100%;
     min-height: 0;
@@ -4215,7 +4322,10 @@ body.bookmark-table-resizing * {
         resize: vertical;
     }
 
-    .calculator-inline-fields,
+    .calculator-inline-fields {
+        flex-direction: column;
+    }
+
     .calculator-metrics {
         grid-template-columns: 1fr;
     }

@@ -1,0 +1,177 @@
+/* ============================================
+   NEU UI — Board Cards
+   Drag and drop, resizable cards, accent variants
+   ============================================ */
+
+.neu-board {
+    --neu-board-min: 280px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--neu-board-min)), 1fr));
+    gap: var(--neu-space-lg);
+    align-items: start;
+}
+
+.neu-board-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 220px;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+    resize: both;
+    background: var(--neu-bg-base);
+    border-radius: var(--neu-radius-lg);
+    box-shadow: var(--neu-convex);
+    transition: box-shadow var(--neu-transition), transform var(--neu-transition);
+}
+
+.neu-board-card::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 4px;
+    background: linear-gradient(90deg, var(--neu-accent), var(--neu-accent-light));
+    pointer-events: none;
+}
+
+.neu-board-card[data-neu-accent="success"]::before {
+    background: linear-gradient(90deg, var(--neu-success), var(--neu-success-light));
+}
+
+.neu-board-card[data-neu-accent="warning"]::before {
+    background: linear-gradient(90deg, var(--neu-warning), var(--neu-warning-dark));
+}
+
+.neu-board-card[data-neu-accent="danger"]::before {
+    background: linear-gradient(90deg, var(--neu-danger), var(--neu-danger-light));
+}
+
+.neu-board-card[data-neu-accent="info"]::before {
+    background: linear-gradient(90deg, var(--neu-info), var(--neu-info-dark));
+}
+
+.neu-board-card:hover {
+    box-shadow: var(--neu-flat);
+}
+
+.neu-board-card.dragging {
+    opacity: 0.55;
+    transform: scale(0.985);
+    box-shadow: var(--neu-concave);
+}
+
+.neu-board-card.drag-over-before::after,
+.neu-board-card.drag-over-after::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+    background: var(--neu-success);
+    box-shadow: 0 0 10px rgba(0, 184, 148, 0.35);
+    z-index: 4;
+    pointer-events: none;
+}
+
+.neu-board-card.drag-over-before::after {
+    left: 0;
+    border-radius: var(--neu-radius-lg) 0 0 var(--neu-radius-lg);
+}
+
+.neu-board-card.drag-over-after::after {
+    right: 0;
+    border-radius: 0 var(--neu-radius-lg) var(--neu-radius-lg) 0;
+}
+
+.neu-board-header {
+    display: flex;
+    align-items: center;
+    gap: var(--neu-space-sm);
+    padding: calc(var(--neu-space-md) + 4px) var(--neu-space-md) var(--neu-space-sm);
+    border-bottom: 1px solid var(--neu-bg-dark);
+}
+
+.neu-board-drag-handle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--neu-text-muted);
+    cursor: grab;
+    font-size: 1rem;
+    transition: color var(--neu-transition-fast), box-shadow var(--neu-transition-fast);
+    flex-shrink: 0;
+}
+
+.neu-board-drag-handle:hover {
+    color: var(--neu-accent);
+    box-shadow: var(--neu-flat);
+}
+
+.neu-board-drag-handle:active {
+    cursor: grabbing;
+    box-shadow: var(--neu-concave-sm);
+}
+
+.neu-board-title-wrap {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.neu-board-title {
+    font-size: var(--neu-font-md);
+    font-weight: 700;
+    color: var(--neu-text-primary);
+    line-height: 1.2;
+}
+
+.neu-board-meta {
+    margin-top: 0.15rem;
+    font-size: var(--neu-font-xs);
+    color: var(--neu-text-muted);
+}
+
+.neu-board-body {
+    flex: 1 1 auto;
+    padding: var(--neu-space-md);
+    color: var(--neu-text-secondary);
+    font-size: var(--neu-font-sm);
+    line-height: 1.6;
+}
+
+.neu-board-textarea {
+    width: 100%;
+    min-height: 140px;
+    height: 100%;
+    background: transparent;
+    border: none;
+    color: var(--neu-text-primary);
+    resize: none;
+    font: inherit;
+    line-height: 1.6;
+    outline: none;
+}
+
+.neu-board-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--neu-space-sm);
+    padding: 0 var(--neu-space-md) var(--neu-space-md);
+}
+
+@media (max-width: 720px) {
+    .neu-board {
+        grid-template-columns: 1fr;
+    }
+
+    .neu-board-card {
+        min-width: 0;
+        resize: vertical;
+    }
+}

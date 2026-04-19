@@ -1,0 +1,275 @@
+/* ============================================
+   NEU UI — Workspace Shell
+   Responsive app shell with collapsible sidebar
+   ============================================ */
+
+.neu-workspace {
+    --neu-workspace-sidebar-width: 248px;
+    --neu-workspace-sidebar-collapsed: 92px;
+    display: grid;
+    grid-template-columns: var(--neu-workspace-sidebar-width) minmax(0, 1fr);
+    gap: var(--neu-space-lg);
+    align-items: start;
+}
+
+.neu-workspace.is-collapsed {
+    grid-template-columns: var(--neu-workspace-sidebar-collapsed) minmax(0, 1fr);
+}
+
+.neu-workspace-sidebar {
+    position: sticky;
+    top: var(--neu-space-xl);
+    display: flex;
+    flex-direction: column;
+    gap: var(--neu-space-lg);
+    min-height: calc(100vh - (var(--neu-space-xl) * 2));
+    padding: var(--neu-space-lg) var(--neu-space-md) var(--neu-space-md);
+    background: var(--neu-bg-base);
+    border-radius: var(--neu-radius-xl);
+    box-shadow: var(--neu-convex);
+}
+
+.neu-workspace-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--neu-space-lg);
+}
+
+.neu-workspace-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--neu-space-md);
+    padding: var(--neu-space-md) var(--neu-space-lg);
+    background: var(--neu-bg-base);
+    border-radius: var(--neu-radius-xl);
+    box-shadow: var(--neu-convex);
+}
+
+.neu-workspace-brand {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--neu-space-sm);
+    min-width: 0;
+}
+
+.neu-workspace-brand-main {
+    display: flex;
+    align-items: center;
+    gap: var(--neu-space-sm);
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.neu-workspace-brand-mark {
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--neu-accent);
+    background: var(--neu-bg-base);
+    box-shadow: var(--neu-flat);
+}
+
+.neu-workspace-brand-copy {
+    min-width: 0;
+}
+
+.neu-workspace-brand-title {
+    display: block;
+    font-size: var(--neu-font-lg);
+    font-weight: 700;
+    color: var(--neu-text-primary);
+    line-height: 1.1;
+}
+
+.neu-workspace-brand-subtitle {
+    display: block;
+    margin-top: 0.15rem;
+    font-size: var(--neu-font-xs);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--neu-text-muted);
+}
+
+.neu-workspace-sidebar-toggle {
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 14px;
+    background: var(--neu-bg-base);
+    color: var(--neu-text-secondary);
+    box-shadow: var(--neu-flat);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--neu-transition-fast);
+    flex-shrink: 0;
+}
+
+.neu-workspace-sidebar-toggle:hover {
+    color: var(--neu-accent-dark);
+    box-shadow: var(--neu-convex);
+}
+
+.neu-workspace-sidebar-toggle:active {
+    box-shadow: var(--neu-concave-sm);
+}
+
+.neu-workspace-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--neu-space-sm);
+}
+
+.neu-workspace-section-label {
+    padding: 0 var(--neu-space-sm);
+    font-size: var(--neu-font-xs);
+    font-weight: 700;
+    color: var(--neu-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.neu-workspace-nav {
+    display: flex;
+    flex-direction: column;
+    gap: var(--neu-space-sm);
+}
+
+.neu-workspace-nav-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--neu-space-sm);
+    min-height: 48px;
+    padding: 0.85rem 1rem;
+    border: none;
+    border-radius: var(--neu-radius-lg);
+    background: var(--neu-bg-base);
+    color: var(--neu-text-secondary);
+    box-shadow: var(--neu-flat);
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+    transition: all var(--neu-transition-fast);
+}
+
+.neu-workspace-nav-btn:hover,
+.neu-workspace-nav-btn.active {
+    color: var(--neu-accent);
+    box-shadow: var(--neu-convex);
+}
+
+.neu-workspace-nav-btn:active {
+    box-shadow: var(--neu-concave-sm);
+}
+
+.neu-workspace-nav-icon {
+    width: 1.4rem;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.neu-workspace-nav-text {
+    min-width: 0;
+    font-size: var(--neu-font-sm);
+    font-weight: 600;
+}
+
+.neu-workspace-sidebar-footer {
+    margin-top: auto;
+}
+
+.neu-workspace-status {
+    display: flex;
+    align-items: center;
+    gap: var(--neu-space-sm);
+    flex-wrap: wrap;
+}
+
+.neu-workspace-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.45rem 0.8rem;
+    border-radius: var(--neu-radius-full);
+    background: var(--neu-bg-base);
+    box-shadow: var(--neu-flat);
+    color: var(--neu-text-secondary);
+    font-size: var(--neu-font-xs);
+    font-weight: 600;
+}
+
+.neu-workspace-surface {
+    background: var(--neu-bg-base);
+    border-radius: var(--neu-radius-xl);
+    box-shadow: var(--neu-convex);
+    padding: var(--neu-space-lg);
+}
+
+.neu-workspace.is-collapsed .neu-workspace-sidebar {
+    padding-inline: 0.75rem;
+}
+
+.neu-workspace.is-collapsed .neu-workspace-brand {
+    justify-content: center;
+}
+
+.neu-workspace.is-collapsed .neu-workspace-brand-main {
+    justify-content: center;
+}
+
+.neu-workspace.is-collapsed .neu-workspace-brand-copy,
+.neu-workspace.is-collapsed .neu-workspace-section-label,
+.neu-workspace.is-collapsed .neu-workspace-nav-text {
+    display: none;
+}
+
+.neu-workspace.is-collapsed .neu-workspace-nav-btn {
+    justify-content: center;
+    padding-inline: 0.75rem;
+}
+
+@media (max-width: 980px) {
+    .neu-workspace,
+    .neu-workspace.is-collapsed {
+        grid-template-columns: 1fr;
+    }
+
+    .neu-workspace-sidebar {
+        position: static;
+        min-height: auto;
+    }
+
+    .neu-workspace.is-collapsed .neu-workspace-brand-copy,
+    .neu-workspace.is-collapsed .neu-workspace-section-label,
+    .neu-workspace.is-collapsed .neu-workspace-nav-text {
+        display: initial;
+    }
+
+    .neu-workspace.is-collapsed .neu-workspace-nav-btn {
+        justify-content: flex-start;
+        padding-inline: 1rem;
+    }
+}
+
+@media (max-width: 640px) {
+    .neu-workspace-topbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .neu-workspace-chip {
+        width: 100%;
+        justify-content: center;
+    }
+}

@@ -100,3 +100,21 @@
 
 .neu-toast-info { border-left: 4px solid var(--neu-info-dark); }
 .neu-toast-info .neu-toast-icon { color: var(--neu-info-dark); }
+
+@media (max-width: 640px) {
+    .neu-toast-container {
+        left: var(--neu-space-md);
+        right: var(--neu-space-md);
+        bottom: var(--neu-space-md);
+    }
+
+    .neu-toast-container-top {
+        top: var(--neu-space-md);
+    }
+
+    .neu-toast {
+        width: 100%;
+        min-width: 0;
+        max-width: none;
+    }
+}

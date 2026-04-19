@@ -7,19 +7,120 @@
     'use strict';
 
     const NeuUI = {};
+    const noop = () => {};
 
     // ─── Theme Toggle ───
     NeuUI.initTheme = function () {
         const saved = localStorage.getItem('neu-theme');
-        if (saved) document.documentElement.setAttribute('data-theme', saved);
+        const currentTheme = saved || document.documentElement.getAttribute('data-theme') || 'light';
+        document.documentElement.setAttribute('data-theme', currentTheme);
+        const updateToggleIcons = (theme) => {
+            document.querySelectorAll('[data-neu-theme-toggle]').forEach(toggle => {
+                toggle.textContent = theme === 'dark' ? '☀️' : '🌙';
+            });
+        };
+        updateToggleIcons(currentTheme);
 
         document.querySelectorAll('[data-neu-theme-toggle]').forEach(btn => {
+            if (btn.dataset.neuThemeBound === 'true') return;
+            btn.dataset.neuThemeBound = 'true';
             btn.addEventListener('click', () => {
                 const current = document.documentElement.getAttribute('data-theme');
                 const next = current === 'dark' ? 'light' : 'dark';
                 document.documentElement.setAttribute('data-theme', next);
                 localStorage.setItem('neu-theme', next);
-                btn.textContent = next === 'dark' ? '☀️' : '🌙';
+                updateToggleIcons(next);
+            });
+        });
+    };
+
+    // ─── Workspace Shell ───
+    NeuUI.initWorkspace = function () {
+        document.querySelectorAll('[data-neu-workspace]').forEach(workspace => {
+            const persistKey = workspace.getAttribute('data-neu-workspace-persist');
+            const storageKey = persistKey ? `neu-workspace:${persistKey}` : '';
+            const toggles = workspace.querySelectorAll('[data-neu-sidebar-toggle]');
+            const iconTargets = workspace.querySelectorAll('[data-neu-sidebar-toggle-icon]');
+
+            const saveState = (collapsed) => {
+                if (!storageKey) return;
+                try {
+                    localStorage.setItem(storageKey, collapsed ? 'collapsed' : 'expanded');
+                } catch (error) {
+                    noop(error);
+                }
+            };
+
+            const applyState = (collapsed) => {
+                workspace.classList.toggle('is-collapsed', collapsed);
+                toggles.forEach(btn => {
+                    btn.setAttribute('aria-pressed', String(collapsed));
+                    btn.setAttribute('aria-label', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
+                });
+                iconTargets.forEach(icon => {
+                    icon.textContent = collapsed ? '→' : '←';
+                });
+            };
+
+            let collapsed = workspace.classList.contains('is-collapsed');
+            if (storageKey) {
+                try {
+                    const stored = localStorage.getItem(storageKey);
+                    if (stored) collapsed = stored === 'collapsed';
+                } catch (error) {
+                    noop(error);
+                }
+            }
+            applyState(collapsed);
+
+            toggles.forEach(btn => {
+                if (btn.dataset.neuWorkspaceBound === 'true') return;
+                btn.dataset.neuWorkspaceBound = 'true';
+                btn.addEventListener('click', () => {
+                    const next = !workspace.classList.contains('is-collapsed');
+                    applyState(next);
+                    saveState(next);
+                    workspace.dispatchEvent(new CustomEvent('neu:workspace-toggle', {
+                        detail: { collapsed: next }
+                    }));
+                });
+            });
+        });
+    };
+
+    // ─── View Toggle ───
+    NeuUI.initViewToggles = function () {
+        document.querySelectorAll('[data-neu-view-toggle]').forEach(group => {
+            const buttons = Array.from(group.querySelectorAll('[data-neu-view]'));
+            if (!buttons.length) return;
+
+            const scopeSelector = group.getAttribute('data-neu-view-scope');
+            const scope = scopeSelector
+                ? document.querySelector(scopeSelector)
+                : group.closest('[data-neu-view-root]') || group.parentElement || document;
+            const panels = Array.from(scope.querySelectorAll('[data-neu-view-panel]'));
+
+            const activate = (value) => {
+                buttons.forEach(btn => {
+                    const isActive = btn.getAttribute('data-neu-view') === value;
+                    btn.classList.toggle('active', isActive);
+                    btn.setAttribute('aria-pressed', String(isActive));
+                });
+                panels.forEach(panel => {
+                    panel.classList.toggle('active', panel.getAttribute('data-neu-view-panel') === value);
+                });
+                group.dispatchEvent(new CustomEvent('neu:viewchange', {
+                    detail: { value }
+                }));
+            };
+
+            const activeButton = buttons.find(btn => btn.classList.contains('active')) || buttons[0];
+            activate(activeButton.getAttribute('data-neu-view'));
+
+            buttons.forEach(btn => {
+                if (btn.dataset.neuViewBound === 'true') return;
+                btn.dataset.neuViewBound = 'true';
+                btn.addEventListener('click', () => activate(btn.getAttribute('data-neu-view')));
             });
         });
     };
@@ -182,29 +283,234 @@
     };
 
     // ─── Toast / Notification ───
-    NeuUI.toast = function (message, type = 'info', duration = 3000) {
-        let container = document.querySelector('.neu-toast-container');
+    NeuUI.toast = function (messageOrOptions, type = 'info', duration = 3000) {
+        const options = typeof messageOrOptions === 'object' && messageOrOptions !== null
+            ? messageOrOptions
+            : { message: messageOrOptions, type, duration };
+        const tone = options.type === 'error' ? 'danger' : (options.type || 'info');
+        const position = options.position === 'top' ? 'top' : 'bottom';
+        const title = typeof options.title === 'string' ? options.title.trim() : '';
+        const message = typeof options.message === 'string' ? options.message : '';
+        const timeoutMs = Number.isFinite(options.duration) ? options.duration : duration;
+        const closable = options.closable !== false;
+        const containerSelector = `.neu-toast-container[data-position="${position}"]`;
+
+        let container = document.querySelector(containerSelector);
         if (!container) {
             container = document.createElement('div');
-            container.className = 'neu-toast-container';
+            container.className = `neu-toast-container${position === 'top' ? ' neu-toast-container-top' : ''}`;
+            container.setAttribute('data-position', position);
             document.body.appendChild(container);
         }
 
         const icons = { success: '✅', danger: '❌', warning: '⚠️', info: 'ℹ️' };
         const toast = document.createElement('div');
-        toast.className = `neu-toast neu-toast-${type}`;
-        toast.innerHTML = `
-            <span class="neu-toast-icon">${icons[type] || icons.info}</span>
-            <span class="neu-toast-content">${message}</span>
-            <button class="neu-toast-close" onclick="this.parentElement.remove()">✕</button>
-        `;
+        toast.className = `neu-toast neu-toast-${tone}`;
         toast.style.animation = `neu-toast-in 0.3s ease`;
-        container.appendChild(toast);
 
-        setTimeout(() => {
+        const icon = document.createElement('span');
+        icon.className = 'neu-toast-icon';
+        icon.textContent = icons[tone] || icons.info;
+
+        const content = document.createElement('div');
+        content.className = 'neu-toast-content';
+
+        const primaryLine = document.createElement('div');
+        primaryLine.className = 'neu-toast-title';
+        primaryLine.textContent = title || message;
+        content.appendChild(primaryLine);
+
+        if (title && message) {
+            const secondaryLine = document.createElement('div');
+            secondaryLine.className = 'neu-toast-message';
+            secondaryLine.textContent = message;
+            content.appendChild(secondaryLine);
+        }
+
+        const removeToast = () => {
             toast.style.animation = 'neu-toast-out 0.3s ease forwards';
             setTimeout(() => toast.remove(), 300);
-        }, duration);
+        };
+
+        toast.appendChild(icon);
+        toast.appendChild(content);
+
+        if (closable) {
+            const closeBtn = document.createElement('button');
+            closeBtn.className = 'neu-toast-close';
+            closeBtn.type = 'button';
+            closeBtn.textContent = '✕';
+            closeBtn.addEventListener('click', removeToast);
+            toast.appendChild(closeBtn);
+        }
+
+        container.appendChild(toast);
+        setTimeout(removeToast, timeoutMs);
+        return toast;
+    };
+
+    NeuUI.success = function (message, options = {}) {
+        return NeuUI.toast({ ...options, message, type: 'success' });
+    };
+
+    NeuUI.warning = function (message, options = {}) {
+        return NeuUI.toast({ ...options, message, type: 'warning' });
+    };
+
+    NeuUI.info = function (message, options = {}) {
+        return NeuUI.toast({ ...options, message, type: 'info' });
+    };
+
+    NeuUI.error = function (message, options = {}) {
+        return NeuUI.toast({ ...options, message, type: 'danger' });
+    };
+
+    NeuUI.alert = function (message, options = {}) {
+        return NeuUI.toast({ ...options, message, type: options.type || 'warning' });
+    };
+
+    // ─── Board Cards ───
+    NeuUI.initBoards = function () {
+        document.querySelectorAll('[data-neu-board]').forEach(board => {
+            const persistKey = board.getAttribute('data-neu-board-persist');
+            const storageKey = persistKey ? `neu-board:${persistKey}` : '';
+            let draggedCardId = null;
+
+            const getCards = () => Array.from(board.querySelectorAll('.neu-board-card[data-neu-card-id]'));
+
+            const readState = () => {
+                if (!storageKey) return { order: [], sizes: {} };
+                try {
+                    const parsed = JSON.parse(localStorage.getItem(storageKey) || '{}');
+                    return {
+                        order: Array.isArray(parsed.order) ? parsed.order : [],
+                        sizes: parsed.sizes && typeof parsed.sizes === 'object' ? parsed.sizes : {}
+                    };
+                } catch (error) {
+                    noop(error);
+                    return { order: [], sizes: {} };
+                }
+            };
+
+            const writeState = (state) => {
+                if (!storageKey) return;
+                try {
+                    localStorage.setItem(storageKey, JSON.stringify(state));
+                } catch (error) {
+                    noop(error);
+                }
+            };
+
+            const applySavedState = () => {
+                const state = readState();
+                if (state.order.length) {
+                    state.order.forEach(cardId => {
+                        const target = getCards().find(card => card.getAttribute('data-neu-card-id') === cardId);
+                        if (target) board.appendChild(target);
+                    });
+                }
+                getCards().forEach(card => {
+                    const cardId = card.getAttribute('data-neu-card-id');
+                    const size = state.sizes[cardId];
+                    if (size?.width) card.style.width = `${size.width}px`;
+                    if (size?.height) card.style.height = `${size.height}px`;
+                });
+            };
+
+            const persistOrder = () => {
+                const state = readState();
+                state.order = getCards().map(card => card.getAttribute('data-neu-card-id'));
+                writeState(state);
+            };
+
+            const persistSize = (card) => {
+                const cardId = card.getAttribute('data-neu-card-id');
+                if (!cardId) return;
+                const state = readState();
+                state.sizes[cardId] = {
+                    width: Math.round(card.offsetWidth),
+                    height: Math.round(card.offsetHeight)
+                };
+                state.order = getCards().map(item => item.getAttribute('data-neu-card-id'));
+                writeState(state);
+            };
+
+            const clearDragState = () => {
+                getCards().forEach(card => {
+                    card.classList.remove('dragging', 'drag-over-before', 'drag-over-after');
+                    card.removeAttribute('draggable');
+                });
+            };
+
+            applySavedState();
+
+            getCards().forEach(card => {
+                const cardId = card.getAttribute('data-neu-card-id');
+                const dragHandle = card.querySelector('.neu-board-drag-handle') || card;
+
+                if (dragHandle.dataset.neuBoardHandleBound !== 'true') {
+                    dragHandle.dataset.neuBoardHandleBound = 'true';
+                    dragHandle.addEventListener('mousedown', () => card.setAttribute('draggable', 'true'));
+                    dragHandle.addEventListener('mouseup', () => card.removeAttribute('draggable'));
+                    dragHandle.addEventListener('mouseleave', () => card.removeAttribute('draggable'));
+                }
+
+                if (card.dataset.neuBoardBound === 'true') return;
+                card.dataset.neuBoardBound = 'true';
+
+                if ('ResizeObserver' in window && storageKey && card.dataset.neuResizeBound !== 'true') {
+                    card.dataset.neuResizeBound = 'true';
+                    const resizeObserver = new ResizeObserver(() => persistSize(card));
+                    resizeObserver.observe(card);
+                }
+
+                card.addEventListener('dragstart', (event) => {
+                    draggedCardId = cardId;
+                    event.dataTransfer.effectAllowed = 'move';
+                    event.dataTransfer.setData('text/plain', cardId);
+                    setTimeout(() => card.classList.add('dragging'), 0);
+                });
+
+                card.addEventListener('dragend', () => {
+                    draggedCardId = null;
+                    clearDragState();
+                });
+
+                card.addEventListener('dragover', (event) => {
+                    event.preventDefault();
+                    if (!draggedCardId || draggedCardId === cardId) return;
+
+                    const rect = card.getBoundingClientRect();
+                    const placeAfter = (event.clientX - rect.left) > (rect.width / 2);
+                    card.classList.toggle('drag-over-before', !placeAfter);
+                    card.classList.toggle('drag-over-after', placeAfter);
+                });
+
+                card.addEventListener('dragleave', () => {
+                    card.classList.remove('drag-over-before', 'drag-over-after');
+                });
+
+                card.addEventListener('drop', (event) => {
+                    event.preventDefault();
+                    if (!draggedCardId || draggedCardId === cardId) return;
+
+                    const draggedCard = getCards().find(item => item.getAttribute('data-neu-card-id') === draggedCardId);
+                    if (!draggedCard) return;
+
+                    const rect = card.getBoundingClientRect();
+                    const placeAfter = (event.clientX - rect.left) > (rect.width / 2);
+                    board.insertBefore(draggedCard, placeAfter ? card.nextSibling : card);
+                    persistOrder();
+                    clearDragState();
+
+                    board.dispatchEvent(new CustomEvent('neu:boardreorder', {
+                        detail: {
+                            order: getCards().map(item => item.getAttribute('data-neu-card-id'))
+                        }
+                    }));
+                });
+            });
+        });
     };
 
     // ─── Tree View ───
@@ -1586,6 +1892,8 @@
     // ─── Init All ───
     NeuUI.init = function () {
         NeuUI.initTheme();
+        NeuUI.initWorkspace();
+        NeuUI.initViewToggles();
         NeuUI.initTabs();
         NeuUI.initCollapse();
         NeuUI.initDropdowns();
@@ -1597,6 +1905,7 @@
         NeuUI.initCarousels();
         NeuUI.initScrollShadow();
         NeuUI.initDataTables();
+        NeuUI.initBoards();
     };
 
     // Auto-init on DOMContentLoaded

@@ -22,6 +22,9 @@ const bookmarksContainer = document.getElementById('bookmarksContainer');
 const bookmarksTableContainer = document.getElementById('bookmarksTableContainer');
 const bookmarkTableMount = document.getElementById('bookmarkTableMount');
 const bookmarkCount = document.getElementById('bookmarkCount');
+const bookmarksHeroCount = document.getElementById('bookmarksHeroCount');
+const bookmarksHeroMode = document.getElementById('bookmarksHeroMode');
+const bookmarkHeroViewLabel = document.getElementById('bookmarkHeroViewLabel');
 const themeToggle = document.getElementById('themeToggle');
 const loadingState = document.getElementById('loadingState');
 const addToggleBtn = document.getElementById('addToggleBtn');
@@ -55,6 +58,8 @@ const showDateTimeCheckbox = document.getElementById('showDateTime');
 const showNetworkCheckbox = document.getElementById('showNetwork');
 const showMemoryCheckbox = document.getElementById('showMemory');
 const timezoneSelect = document.getElementById('timezoneSelect');
+const settingsTabs = Array.from(document.querySelectorAll('[data-settings-tab]'));
+const settingsPanels = Array.from(document.querySelectorAll('[data-settings-panel]'));
 
 // Weather elements
 const weatherCard = document.getElementById('weatherCard');
@@ -573,6 +578,11 @@ function setupEventListeners() {
             if (e.target === settingsModal) closeSettingsModal();
         });
     }
+    settingsTabs.forEach((tabButton) => {
+        tabButton.addEventListener('click', () => {
+            switchSettingsTab(tabButton.dataset.settingsTab);
+        });
+    });
     if (bookmarkModalClose) {
         bookmarkModalClose.addEventListener('click', () => closeBookmarkForm());
     }
@@ -2181,6 +2191,18 @@ async function loadBookmarks() {
 /**
  * Update bookmark view controls and visible containers.
  */
+function updateBookmarksHeroMeta() {
+    const modeLabel = currentBookmarkView === 'table' ? 'Table' : 'Cards';
+    const viewLabel = currentBookmarkView === 'table' ? 'Table view' : 'Card view';
+
+    if (bookmarksHeroMode) {
+        bookmarksHeroMode.textContent = modeLabel;
+    }
+    if (bookmarkHeroViewLabel) {
+        bookmarkHeroViewLabel.textContent = viewLabel;
+    }
+}
+
 function updateBookmarkViewControls() {
     const isTableView = currentBookmarkView === 'table';
 
@@ -2217,6 +2239,7 @@ function updateBookmarkViewControls() {
         bookmarkTableMount.classList.toggle('hidden', !isTableView);
     }
 
+    updateBookmarksHeroMeta();
     updateDashboardContext();
 }
 
@@ -3486,6 +3509,10 @@ function updateCount(count, total = null) {
     } else {
         bookmarkCount.textContent = count;
     }
+
+    if (bookmarksHeroCount) {
+        bookmarksHeroCount.textContent = total ?? count;
+    }
 }
 
 /**
@@ -3882,11 +3909,26 @@ function updateAiProviderVisibility() {
     }
 }
 
+function switchSettingsTab(tab) {
+    if (!tab) return;
+
+    settingsTabs.forEach((button) => {
+        const isActive = button.dataset.settingsTab === tab;
+        button.classList.toggle('active', isActive);
+        button.setAttribute('aria-selected', String(isActive));
+    });
+
+    settingsPanels.forEach((panel) => {
+        panel.classList.toggle('active', panel.dataset.settingsPanel === tab);
+    });
+}
+
 /**
  * Open settings modal
  */
 function openSettingsModal() {
     if (settingsModal) {
+        switchSettingsTab('general');
         settingsModal.classList.remove('hidden');
     }
 }

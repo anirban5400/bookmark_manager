@@ -16,8 +16,13 @@
 @import './components/general/divider.css';
 @import './components/general/typography.css';
 @import './components/general/box.css';
+@import './components/general/view-toggle.css';
+@import './components/general/board.css';
 @import './components/general/tooltip.css';
 @import './components/general/popover.css';
+
+/* Layout */
+@import './components/layout/workspace.css';
 
 /* Navigation */
 @import './components/navigation/tab.css';

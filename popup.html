@@ -86,6 +86,26 @@
 
             <!-- ========== BOOKMARKS PAGE ========== -->
             <div id="bookmarksPage">
+            <section class="page-toolbar bookmarks-page-toolbar" aria-labelledby="bookmarksPageTitle">
+                <div class="page-toolbar-copy">
+                    <span class="page-kicker">Workspace</span>
+                    <div class="page-title-row">
+                        <h1 class="page-title" id="bookmarksPageTitle">Bookmarks</h1>
+                        <span class="page-chip" id="bookmarkHeroViewLabel">Card view</span>
+                    </div>
+                    <p class="page-description">Save links, search quickly, switch layouts, and reorder your collection without leaving the dashboard.</p>
+                </div>
+                <div class="bookmarks-page-stats" aria-label="Bookmark summary">
+                    <div class="bookmarks-page-stat">
+                        <strong id="bookmarksHeroCount">0</strong>
+                        <span>Saved links</span>
+                    </div>
+                    <div class="bookmarks-page-stat">
+                        <strong id="bookmarksHeroMode">Cards</strong>
+                        <span>Active layout</span>
+                    </div>
+                </div>
+            </section>
             <div class="bookmark-modal-anchor">
                 <!-- Weather Card - Compact like bookmark-card -->
                 <div id="weatherCard" class="weather-card hidden">
@@ -883,170 +903,185 @@
                 <button class="modal-close" id="settingsClose">✕</button>
             </div>
             <div class="modal-body settings-modal-body">
-                <div class="settings-intro">
-                    <p>Control the popup widgets, weather card, and AI tools for your bookmarks and quick notes workspace.</p>
+                <div class="settings-tabs" role="tablist" aria-label="Settings sections">
+                    <button type="button" class="settings-tab active" data-settings-tab="general" role="tab" aria-selected="true">General</button>
+                    <button type="button" class="settings-tab" data-settings-tab="weather" role="tab" aria-selected="false">Weather</button>
+                    <button type="button" class="settings-tab" data-settings-tab="ai" role="tab" aria-selected="false">AI</button>
                 </div>
-                <!-- Show/Hide Indicators -->
-                <div class="settings-section">
-                    <div class="settings-section-head">
-                        <h3>Status Indicators</h3>
-                        <p>Choose which status chips appear in the top toolbar.</p>
-                    </div>
-                    <div class="settings-row">
-                        <label for="showDateTime">🕐 Show Date/Time</label>
-                        <input type="checkbox" id="showDateTime" class="toggle-checkbox" checked>
-                    </div>
-                    <div class="settings-row">
-                        <label for="showNetwork">📶 Show Network</label>
-                        <input type="checkbox" id="showNetwork" class="toggle-checkbox" checked>
-                    </div>
-                    <div class="settings-row">
-                        <label for="showMemory">💾 Show Memory</label>
-                        <input type="checkbox" id="showMemory" class="toggle-checkbox" checked>
-                    </div>
-                </div>
-                <!-- Timezone Setting -->
-                <div class="settings-section">
-                    <div class="settings-section-head">
-                        <h3>Timezone</h3>
-                        <p>Set how time is shown in the popup header.</p>
-                    </div>
-                    <div class="settings-row">
-                        <label for="timezoneSelect">Select Timezone</label>
-                        <select id="timezoneSelect" class="settings-select">
-                            <option value="local">Local (Device)</option>
-                            <option value="UTC">UTC</option>
-                            <option value="America/New_York">New York (EST)</option>
-                            <option value="America/Los_Angeles">Los Angeles (PST)</option>
-                            <option value="Europe/London">London (GMT)</option>
-                            <option value="Europe/Paris">Paris (CET)</option>
-                            <option value="Asia/Tokyo">Tokyo (JST)</option>
-                            <option value="Asia/Kolkata">India (IST)</option>
-                            <option value="Asia/Dubai">Dubai (GST)</option>
-                            <option value="Australia/Sydney">Sydney (AEDT)</option>
-                        </select>
-                    </div>
-                </div>
-                <!-- Weather Settings -->
-                <div class="settings-section">
-                    <div class="settings-section-head">
-                        <h3>🌤️ Weather</h3>
-                        <p>Configure the weather widget shown above your bookmark list.</p>
-                    </div>
-                    <div class="settings-row">
-                        <label for="weatherEnabled">Enable Weather Widget</label>
-                        <input type="checkbox" id="weatherEnabled" class="toggle-checkbox">
-                    </div>
-                    <div class="settings-row" id="apiKeyRow">
-                        <label for="weatherApiKey">OpenWeatherMap API Key</label>
-                        <div class="api-key-input">
-                            <input type="password" id="weatherApiKey" class="settings-input" placeholder="Enter API key...">
-                            <button type="button" class="api-key-toggle" id="apiKeyToggle">👁️</button>
-                        </div>
-                    </div>
-                    <div class="settings-row">
-                        <label for="weatherCity">City</label>
-                        <select id="weatherCity" class="settings-select">
-                            <option value="">Auto-detect (IP)</option>
-                            <optgroup label="India">
-                                <option value="Bardhaman,IN">Bardhaman (Burdwan)</option>
-                                <option value="Kolkata,IN">Kolkata</option>
-                                <option value="Mumbai,IN">Mumbai</option>
-                                <option value="Delhi,IN">Delhi</option>
-                                <option value="Bangalore,IN">Bangalore</option>
-                                <option value="Chennai,IN">Chennai</option>
-                                <option value="Hyderabad,IN">Hyderabad</option>
-                            </optgroup>
-                            <optgroup label="Asia">
-                                <option value="Tokyo,JP">Tokyo, Japan</option>
-                                <option value="Singapore,SG">Singapore</option>
-                                <option value="Hong Kong,HK">Hong Kong</option>
-                                <option value="Dubai,AE">Dubai, UAE</option>
-                                <option value="Bangkok,TH">Bangkok, Thailand</option>
-                            </optgroup>
-                            <optgroup label="Europe">
-                                <option value="London,GB">London, UK</option>
-                                <option value="Paris,FR">Paris, France</option>
-                                <option value="Berlin,DE">Berlin, Germany</option>
-                                <option value="Amsterdam,NL">Amsterdam</option>
-                                <option value="Rome,IT">Rome, Italy</option>
-                            </optgroup>
-                            <optgroup label="Americas">
-                                <option value="New York,US">New York, USA</option>
-                                <option value="Los Angeles,US">Los Angeles, USA</option>
-                                <option value="San Francisco,US">San Francisco, USA</option>
-                                <option value="Atlanta,US">Atlanta, Georgia</option>
-                                <option value="Toronto,CA">Toronto, Canada</option>
-                                <option value="Sao Paulo,BR">São Paulo, Brazil</option>
-                            </optgroup>
-                            <optgroup label="Australia & Oceania">
-                                <option value="Sydney,AU">Sydney, Australia</option>
-                                <option value="Melbourne,AU">Melbourne, Australia</option>
-                                <option value="Auckland,NZ">Auckland, NZ</option>
-                            </optgroup>
-                        </select>
-                    </div>
-                    <div class="settings-row">
-                        <label for="tempUnit">Temperature Unit</label>
-                        <select id="tempUnit" class="settings-select">
-                            <option value="celsius">Celsius (°C)</option>
-                            <option value="fahrenheit">Fahrenheit (°F)</option>
-                        </select>
-                    </div>
-                </div>
-                <!-- AI Assistant Settings -->
-                <div class="settings-section">
-                    <div class="settings-section-head">
-                        <h3>🤖 AI Assistant</h3>
-                        <p>Manage rewriting support for notes and technical snippets.</p>
-                    </div>
-                    <div class="settings-row">
-                        <label for="ollamaEnabled">Enable AI Assistant</label>
-                        <input type="checkbox" id="ollamaEnabled" class="toggle-checkbox">
-                    </div>
-                    <div class="settings-row settings-row-stack">
-                        <label for="aiProvider">AI Provider</label>
-                        <select id="aiProvider" class="settings-input">
-                            <option value="ollama">Ollama (Local/Free)</option>
-                            <option value="openrouter">OpenRouter (Cloud API)</option>
-                        </select>
-                    </div>
 
-                    <!-- Ollama Specific Settings -->
-                    <div id="ollamaSettingsGroup">
-                        <div class="settings-row">
-                            <label for="ollamaUrl">Ollama URL</label>
-                            <input type="text" id="ollamaUrl" class="settings-input" placeholder="http://localhost:11434">
+                <div class="settings-panel active" data-settings-panel="general">
+                    <div class="settings-intro">
+                        <p>Control the popup widgets, topbar indicators, and overall workspace defaults.</p>
+                    </div>
+                    <!-- Show/Hide Indicators -->
+                    <div class="settings-section">
+                        <div class="settings-section-head">
+                            <h3>Status Indicators</h3>
+                            <p>Choose which status chips appear in the top toolbar.</p>
                         </div>
                         <div class="settings-row">
-                            <label for="ollamaModel">Model Name</label>
-                            <input type="text" id="ollamaModel" class="settings-input" placeholder="llama3">
+                            <label for="showDateTime">🕐 Show Date/Time</label>
+                            <input type="checkbox" id="showDateTime" class="toggle-checkbox" checked>
                         </div>
-                        <div class="settings-help-card">
-                            <strong>Connection Error?</strong>
-                            <p>If Ollama blocks the connection with `403 Forbidden`, run these commands in your Mac terminal in this order:</p>
-                            <code>pkill -x ollama</code>
-                            <code>launchctl setenv OLLAMA_ORIGINS "*"</code>
-                            <code>open -a Ollama</code>
+                        <div class="settings-row">
+                            <label for="showNetwork">📶 Show Network</label>
+                            <input type="checkbox" id="showNetwork" class="toggle-checkbox" checked>
+                        </div>
+                        <div class="settings-row">
+                            <label for="showMemory">💾 Show Memory</label>
+                            <input type="checkbox" id="showMemory" class="toggle-checkbox" checked>
                         </div>
                     </div>
 
-                    <!-- OpenRouter Specific Settings -->
-                    <div id="openrouterSettingsGroup" style="display: none;">
-                        <div class="settings-row">
-                            <label for="openRouterKey">OpenRouter API Key <span class="settings-inline-note">(Stored locally on this device)</span></label>
-                            <input type="password" id="openRouterKey" class="settings-input" placeholder="sk-or-v1-..."></input>
+                    <!-- Timezone Setting -->
+                    <div class="settings-section">
+                        <div class="settings-section-head">
+                            <h3>Timezone</h3>
+                            <p>Set how time is shown in the popup header.</p>
                         </div>
                         <div class="settings-row">
-                            <label for="openRouterModel">Model Name</label>
-                            <input type="text" id="openRouterModel" class="settings-input" placeholder="google/gemini-2.5-flash"></input>
+                            <label for="timezoneSelect">Select Timezone</label>
+                            <select id="timezoneSelect" class="settings-select">
+                                <option value="local">Local (Device)</option>
+                                <option value="UTC">UTC</option>
+                                <option value="America/New_York">New York (EST)</option>
+                                <option value="America/Los_Angeles">Los Angeles (PST)</option>
+                                <option value="Europe/London">London (GMT)</option>
+                                <option value="Europe/Paris">Paris (CET)</option>
+                                <option value="Asia/Tokyo">Tokyo (JST)</option>
+                                <option value="Asia/Kolkata">India (IST)</option>
+                                <option value="Asia/Dubai">Dubai (GST)</option>
+                                <option value="Australia/Sydney">Sydney (AEDT)</option>
+                            </select>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Shared Settings -->
-                    <div class="settings-row settings-row-stack">
-                        <label for="ollamaSystemPrompt">System Prompt</label>
-                        <textarea id="ollamaSystemPrompt" class="settings-input" rows="4" style="resize: vertical; min-height: 80px;" placeholder="You are a precise writing assistant..."></textarea>
+                <div class="settings-panel" data-settings-panel="weather">
+                    <!-- Weather Settings -->
+                    <div class="settings-section">
+                        <div class="settings-section-head">
+                            <h3>🌤️ Weather</h3>
+                            <p>Configure the weather widget shown above your bookmark list.</p>
+                        </div>
+                        <div class="settings-row">
+                            <label for="weatherEnabled">Enable Weather Widget</label>
+                            <input type="checkbox" id="weatherEnabled" class="toggle-checkbox">
+                        </div>
+                        <div class="settings-row" id="apiKeyRow">
+                            <label for="weatherApiKey">OpenWeatherMap API Key</label>
+                            <div class="api-key-input">
+                                <input type="password" id="weatherApiKey" class="settings-input" placeholder="Enter API key...">
+                                <button type="button" class="api-key-toggle" id="apiKeyToggle">👁️</button>
+                            </div>
+                        </div>
+                        <div class="settings-row">
+                            <label for="weatherCity">City</label>
+                            <select id="weatherCity" class="settings-select">
+                                <option value="">Auto-detect (IP)</option>
+                                <optgroup label="India">
+                                    <option value="Bardhaman,IN">Bardhaman (Burdwan)</option>
+                                    <option value="Kolkata,IN">Kolkata</option>
+                                    <option value="Mumbai,IN">Mumbai</option>
+                                    <option value="Delhi,IN">Delhi</option>
+                                    <option value="Bangalore,IN">Bangalore</option>
+                                    <option value="Chennai,IN">Chennai</option>
+                                    <option value="Hyderabad,IN">Hyderabad</option>
+                                </optgroup>
+                                <optgroup label="Asia">
+                                    <option value="Tokyo,JP">Tokyo, Japan</option>
+                                    <option value="Singapore,SG">Singapore</option>
+                                    <option value="Hong Kong,HK">Hong Kong</option>
+                                    <option value="Dubai,AE">Dubai, UAE</option>
+                                    <option value="Bangkok,TH">Bangkok, Thailand</option>
+                                </optgroup>
+                                <optgroup label="Europe">
+                                    <option value="London,GB">London, UK</option>
+                                    <option value="Paris,FR">Paris, France</option>
+                                    <option value="Berlin,DE">Berlin, Germany</option>
+                                    <option value="Amsterdam,NL">Amsterdam</option>
+                                    <option value="Rome,IT">Rome, Italy</option>
+                                </optgroup>
+                                <optgroup label="Americas">
+                                    <option value="New York,US">New York, USA</option>
+                                    <option value="Los Angeles,US">Los Angeles, USA</option>
+                                    <option value="San Francisco,US">San Francisco, USA</option>
+                                    <option value="Atlanta,US">Atlanta, Georgia</option>
+                                    <option value="Toronto,CA">Toronto, Canada</option>
+                                    <option value="Sao Paulo,BR">São Paulo, Brazil</option>
+                                </optgroup>
+                                <optgroup label="Australia & Oceania">
+                                    <option value="Sydney,AU">Sydney, Australia</option>
+                                    <option value="Melbourne,AU">Melbourne, Australia</option>
+                                    <option value="Auckland,NZ">Auckland, NZ</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        <div class="settings-row">
+                            <label for="tempUnit">Temperature Unit</label>
+                            <select id="tempUnit" class="settings-select">
+                                <option value="celsius">Celsius (°C)</option>
+                                <option value="fahrenheit">Fahrenheit (°F)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-panel" data-settings-panel="ai">
+                    <!-- AI Assistant Settings -->
+                    <div class="settings-section">
+                        <div class="settings-section-head">
+                            <h3>🤖 AI Assistant</h3>
+                            <p>Manage rewriting support for notes and technical snippets.</p>
+                        </div>
+                        <div class="settings-row">
+                            <label for="ollamaEnabled">Enable AI Assistant</label>
+                            <input type="checkbox" id="ollamaEnabled" class="toggle-checkbox">
+                        </div>
+                        <div class="settings-row settings-row-stack">
+                            <label for="aiProvider">AI Provider</label>
+                            <select id="aiProvider" class="settings-input">
+                                <option value="ollama">Ollama (Local/Free)</option>
+                                <option value="openrouter">OpenRouter (Cloud API)</option>
+                            </select>
+                        </div>
+
+                        <!-- Ollama Specific Settings -->
+                        <div id="ollamaSettingsGroup">
+                            <div class="settings-row">
+                                <label for="ollamaUrl">Ollama URL</label>
+                                <input type="text" id="ollamaUrl" class="settings-input" placeholder="http://localhost:11434">
+                            </div>
+                            <div class="settings-row">
+                                <label for="ollamaModel">Model Name</label>
+                                <input type="text" id="ollamaModel" class="settings-input" placeholder="llama3">
+                            </div>
+                            <div class="settings-help-card">
+                                <strong>Connection Error?</strong>
+                                <p>If Ollama blocks the connection with `403 Forbidden`, run these commands in your Mac terminal in this order:</p>
+                                <code>pkill -x ollama</code>
+                                <code>launchctl setenv OLLAMA_ORIGINS "*"</code>
+                                <code>open -a Ollama</code>
+                            </div>
+                        </div>
+
+                        <!-- OpenRouter Specific Settings -->
+                        <div id="openrouterSettingsGroup" style="display: none;">
+                            <div class="settings-row">
+                                <label for="openRouterKey">OpenRouter API Key <span class="settings-inline-note">(Stored locally on this device)</span></label>
+                                <input type="password" id="openRouterKey" class="settings-input" placeholder="sk-or-v1-..."></input>
+                            </div>
+                            <div class="settings-row">
+                                <label for="openRouterModel">Model Name</label>
+                                <input type="text" id="openRouterModel" class="settings-input" placeholder="google/gemini-2.5-flash"></input>
+                            </div>
+                        </div>
+
+                        <!-- Shared Settings -->
+                        <div class="settings-row settings-row-stack">
+                            <label for="ollamaSystemPrompt">System Prompt</label>
+                            <textarea id="ollamaSystemPrompt" class="settings-input" rows="4" style="resize: vertical; min-height: 80px;" placeholder="You are a precise writing assistant..."></textarea>
+                        </div>
                     </div>
                 </div>
             </div>
