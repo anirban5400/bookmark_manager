@@ -3296,7 +3296,7 @@ body.bookmark-table-resizing * {
     animation: noteSlideIn 0.3s ease forwards;
     /* Resizable by user */
     resize: both;
-    flex: 1 1 360px;
+    flex: 0 1 auto;
     width: min(100%, clamp(340px, 32vw, 520px));
     min-width: 280px;
     max-width: 100%;
