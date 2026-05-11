@@ -50,6 +50,11 @@ const networkIcon = document.getElementById('networkIcon');
 const memoryStatus = document.getElementById('memoryStatus');
 const memoryText = document.getElementById('memoryText');
 
+// Zoom control elements
+const zoomInBtn = document.getElementById('zoomInBtn');
+const zoomOutBtn = document.getElementById('zoomOutBtn');
+const zoomLevelDisplay = document.getElementById('zoomLevelDisplay');
+
 // Settings modal elements
 const settingsToggle = document.getElementById('settingsToggle');
 const settingsModal = document.getElementById('settingsModal');
@@ -164,6 +169,7 @@ const BOOKMARK_TABLE_REORDER_KEY = '__reorder__';
 const VALID_PAGES = new Set(['bookmarks', 'notes', 'calculators', 'ai-writer']);
 let cardViewLimit = DEFAULT_CARD_VIEW_LIMIT;
 let isSidebarCollapsed = false;
+let currentZoomLevel = 100;
 let calculatorCardTogglesBound = false;
 let aiWriterListenersBound = false;
 const hiddenCardFields = new Set();
@@ -439,6 +445,9 @@ async function init() {
         // Apply restored page mode after listeners are ready
         applyPageState();
         applySidebarState();
+
+        // Apply saved zoom level
+        applyZoom();
         
         // Initialize status indicators
         initStatusIndicators();
@@ -551,6 +560,17 @@ function setupEventListeners() {
     
     // Theme toggle
     themeToggle.addEventListener('click', toggleTheme);
+
+    // Zoom controls
+    if (zoomInBtn) {
+        zoomInBtn.addEventListener('click', () => adjustZoom(10));
+    }
+    if (zoomOutBtn) {
+        zoomOutBtn.addEventListener('click', () => adjustZoom(-10));
+    }
+    if (zoomLevelDisplay) {
+        zoomLevelDisplay.addEventListener('click', () => setZoom(100));
+    }
     
     // Add form toggle button
     if (addToggleBtn) {
@@ -1663,6 +1683,24 @@ function handleKeyboardShortcuts(e) {
             setTimeout(() => urlInput.focus(), 100);
         }
     }
+
+    // Ctrl/Cmd + = / + = Zoom in
+    if (modifierKey && (e.key === '=' || e.key === '+')) {
+        e.preventDefault();
+        adjustZoom(10);
+    }
+
+    // Ctrl/Cmd + - = Zoom out
+    if (modifierKey && e.key === '-') {
+        e.preventDefault();
+        adjustZoom(-10);
+    }
+
+    // Ctrl/Cmd + 0 = Reset zoom
+    if (modifierKey && e.key === '0') {
+        e.preventDefault();
+        setZoom(100);
+    }
     
     // Escape = Close add/edit modal if open
     if (e.key === 'Escape' && isFormVisible) {
@@ -1860,6 +1898,9 @@ async function loadUiState() {
             activePage = 'notes';
         }
         isSidebarCollapsed = Boolean(parsedState?.isSidebarCollapsed);
+        if (Number.isInteger(parsedState?.zoomLevel) && parsedState.zoomLevel >= 50 && parsedState.zoomLevel <= 200) {
+            currentZoomLevel = parsedState.zoomLevel;
+        }
         if (Number.isInteger(parsedState?.cardViewLimit) && parsedState.cardViewLimit > 0) {
             cardViewLimit = parsedState.cardViewLimit;
         }
@@ -1884,7 +1925,8 @@ async function saveUiState() {
         isNotesPageVisible: isNotesPageActive(),
         isSidebarCollapsed,
         cardViewLimit,
-        hiddenCardFields: Array.from(hiddenCardFields)
+        hiddenCardFields: Array.from(hiddenCardFields),
+        zoomLevel: currentZoomLevel
     };
 
     try {
@@ -5247,6 +5289,45 @@ async function handleAiRewrite(e) {
         aiRewriteBtn.disabled = false;
         aiRewriteBtn.classList.add('hidden'); // Hide button after use
         currentAiTextarea.focus();
+    }
+}
+
+// ============================================
+// ZOOM CONTROLS
+// ============================================
+
+const ZOOM_MIN = 50;
+const ZOOM_MAX = 200;
+const ZOOM_STEP = 10;
+
+function adjustZoom(delta) {
+    setZoom(currentZoomLevel + delta);
+}
+
+function setZoom(level) {
+    currentZoomLevel = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, level));
+    applyZoom();
+    void saveUiState();
+}
+
+function applyZoom() {
+    const scale = currentZoomLevel / 100;
+    document.documentElement.style.fontSize = (16 * scale) + 'px';
+    updateZoomDisplay();
+}
+
+function updateZoomDisplay() {
+    if (zoomLevelDisplay) {
+        zoomLevelDisplay.textContent = currentZoomLevel + '%';
+    }
+    // Disable buttons at limits
+    if (zoomOutBtn) {
+        zoomOutBtn.disabled = currentZoomLevel <= ZOOM_MIN;
+        zoomOutBtn.style.opacity = currentZoomLevel <= ZOOM_MIN ? '0.35' : '1';
+    }
+    if (zoomInBtn) {
+        zoomInBtn.disabled = currentZoomLevel >= ZOOM_MAX;
+        zoomInBtn.style.opacity = currentZoomLevel >= ZOOM_MAX ? '0.35' : '1';
     }
 }
 
