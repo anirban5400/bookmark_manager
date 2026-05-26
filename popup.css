@@ -978,20 +978,6 @@ body {
     color: var(--text-secondary);
     font-weight: 500;
 }
-
-.status-indicator .status-icon {
-    font-size: 0.9rem;
-}
-
-.status-indicator .status-text {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-/* Network status colors */
-.status-indicator.online .status-icon {
-    color: #00b894;
 }
 
 .status-indicator.offline .status-icon {

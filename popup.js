@@ -45,6 +45,9 @@ const sidebarToggleIcon = document.getElementById('sidebarToggleIcon');
 const dateTimeDisplay = document.getElementById('dateTimeDisplay');
 const timeText = document.getElementById('timeText');
 const timeIcon = document.getElementById('timeIcon');
+const secondaryDateTimeDisplay = document.getElementById('secondaryDateTimeDisplay');
+const secondaryTimeText = document.getElementById('secondaryTimeText');
+const secondaryTimeIcon = document.getElementById('secondaryTimeIcon');
 const networkStatus = document.getElementById('networkStatus');
 const networkIcon = document.getElementById('networkIcon');
 const memoryStatus = document.getElementById('memoryStatus');
@@ -60,9 +63,12 @@ const settingsToggle = document.getElementById('settingsToggle');
 const settingsModal = document.getElementById('settingsModal');
 const settingsClose = document.getElementById('settingsClose');
 const showDateTimeCheckbox = document.getElementById('showDateTime');
+const showSecondaryDateTimeCheckbox = document.getElementById('showSecondaryDateTime');
 const showNetworkCheckbox = document.getElementById('showNetwork');
 const showMemoryCheckbox = document.getElementById('showMemory');
 const timezoneSelect = document.getElementById('timezoneSelect');
+const secondaryTimezoneSelect = document.getElementById('secondaryTimezoneSelect');
+const secondaryTimezoneRow = document.getElementById('secondaryTimezoneRow');
 const settingsTabs = Array.from(document.querySelectorAll('[data-settings-tab]'));
 const settingsPanels = Array.from(document.querySelectorAll('[data-settings-panel]'));
 
@@ -301,9 +307,11 @@ function normalizeAiWriterCardsConfig(savedCards, sourceSettings = settings) {
 // Settings state (with defaults)
 let settings = {
     showDateTime: true,
+    showSecondaryDateTime: false,
     showNetwork: true,
     showMemory: false,
     timezone: 'local',
+    secondaryTimezone: 'UTC',
     // Weather settings
     weatherEnabled: false,
     weatherApiKey: '',
@@ -616,6 +624,9 @@ function setupEventListeners() {
     if (showDateTimeCheckbox) {
         showDateTimeCheckbox.addEventListener('change', handleSettingsChange);
     }
+    if (showSecondaryDateTimeCheckbox) {
+        showSecondaryDateTimeCheckbox.addEventListener('change', handleSettingsChange);
+    }
     if (showNetworkCheckbox) {
         showNetworkCheckbox.addEventListener('change', handleSettingsChange);
     }
@@ -624,6 +635,9 @@ function setupEventListeners() {
     }
     if (timezoneSelect) {
         timezoneSelect.addEventListener('change', handleSettingsChange);
+    }
+    if (secondaryTimezoneSelect) {
+        secondaryTimezoneSelect.addEventListener('change', handleSettingsChange);
     }
     
     // Weather settings events
@@ -3700,6 +3714,48 @@ function updateTime() {
         const tzLabel = settings.timezone === 'local' ? 'Local' : settings.timezone.split('/').pop().replace('_', ' ');
         dateTimeDisplay.title = `Time (${tzLabel})`;
     }
+
+    // --- Secondary time display ---
+    if (secondaryTimeText && settings.showSecondaryDateTime) {
+        const now2 = new Date();
+        let h2, m2;
+
+        if (settings.secondaryTimezone === 'local') {
+            h2 = now2.getHours();
+            m2 = now2.getMinutes();
+        } else {
+            try {
+                const fmt2 = new Intl.DateTimeFormat('en-US', {
+                    timeZone: settings.secondaryTimezone,
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: false
+                });
+                const parts2 = fmt2.formatToParts(now2);
+                h2 = parseInt(parts2.find(p => p.type === 'hour')?.value || '0');
+                m2 = parseInt(parts2.find(p => p.type === 'minute')?.value || '0');
+            } catch (_) {
+                h2 = now2.getHours();
+                m2 = now2.getMinutes();
+            }
+        }
+
+        const ampm2 = h2 >= 12 ? 'PM' : 'AM';
+        const dh2 = h2 % 12 || 12;
+        const tzShort = settings.secondaryTimezone === 'local'
+            ? 'Local'
+            : settings.secondaryTimezone.split('/').pop().replace('_', ' ');
+        secondaryTimeText.textContent = `${dh2}:${m2.toString().padStart(2, '0')} ${ampm2} · ${tzShort}`;
+
+        if (secondaryTimeIcon) {
+            const clockIcons2 = ['🕛', '🕐', '🕑', '🕒', '🕓', '🕔', '🕕', '🕖', '🕗', '🕘', '🕙', '🕚'];
+            secondaryTimeIcon.textContent = clockIcons2[h2 % 12];
+        }
+
+        if (secondaryDateTimeDisplay) {
+            secondaryDateTimeDisplay.title = `Secondary time (${tzShort})`;
+        }
+    }
 }
 
 /**
@@ -3830,9 +3886,11 @@ async function loadSettings() {
     
     // Update form controls to match
     if (showDateTimeCheckbox) showDateTimeCheckbox.checked = settings.showDateTime;
+    if (showSecondaryDateTimeCheckbox) showSecondaryDateTimeCheckbox.checked = settings.showSecondaryDateTime;
     if (showNetworkCheckbox) showNetworkCheckbox.checked = settings.showNetwork;
     if (showMemoryCheckbox) showMemoryCheckbox.checked = settings.showMemory;
     if (timezoneSelect) timezoneSelect.value = settings.timezone;
+    if (secondaryTimezoneSelect) secondaryTimezoneSelect.value = settings.secondaryTimezone;
     
     // Update weather controls
     if (weatherEnabledCheckbox) weatherEnabledCheckbox.checked = settings.weatherEnabled;
@@ -3886,6 +3944,15 @@ function applySettings() {
     if (dateTimeDisplay) {
         dateTimeDisplay.style.display = settings.showDateTime ? 'flex' : 'none';
     }
+
+    // Show/hide secondary date time
+    if (secondaryDateTimeDisplay) {
+        secondaryDateTimeDisplay.style.display = settings.showSecondaryDateTime ? 'flex' : 'none';
+    }
+    // Show/hide the secondary timezone selector row in settings
+    if (secondaryTimezoneRow) {
+        secondaryTimezoneRow.style.display = settings.showSecondaryDateTime ? '' : 'none';
+    }
     
     // Show/hide network
     if (networkStatus) {
@@ -3909,9 +3976,11 @@ function applySettings() {
  */
 function handleSettingsChange() {
     settings.showDateTime = showDateTimeCheckbox?.checked ?? true;
+    settings.showSecondaryDateTime = showSecondaryDateTimeCheckbox?.checked ?? false;
     settings.showNetwork = showNetworkCheckbox?.checked ?? true;
     settings.showMemory = showMemoryCheckbox?.checked ?? false;
     settings.timezone = timezoneSelect?.value ?? 'local';
+    settings.secondaryTimezone = secondaryTimezoneSelect?.value ?? 'UTC';
     
     settings.ollamaEnabled = ollamaEnabledCheckbox?.checked ?? false;
     settings.ollamaUrl = ollamaUrlInput?.value?.trim() || 'http://localhost:11434';

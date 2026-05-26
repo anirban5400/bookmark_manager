@@ -68,6 +68,11 @@
                         <span class="status-icon" id="timeIcon">🕐</span>
                         <span class="status-text" id="timeText">--:--</span>
                     </div>
+                    <!-- Secondary Date/Time Display -->
+                    <div class="status-indicator" id="secondaryDateTimeDisplay" title="Secondary time" style="display: none;">
+                        <span class="status-icon" id="secondaryTimeIcon">🕐</span>
+                        <span class="status-text" id="secondaryTimeText">--:--</span>
+                    </div>
                     <!-- Network Status -->
                     <div class="status-indicator" id="networkStatus" title="Network connection">
                         <span class="status-icon" id="networkIcon">📶</span>
@@ -930,8 +935,12 @@
                             <p>Choose which status chips appear in the top toolbar.</p>
                         </div>
                         <div class="settings-row">
-                            <label for="showDateTime">🕐 Show Date/Time</label>
+                            <label for="showDateTime">🕐 Show Primary Date/Time</label>
                             <input type="checkbox" id="showDateTime" class="toggle-checkbox" checked>
+                        </div>
+                        <div class="settings-row">
+                            <label for="showSecondaryDateTime">🕒 Show Secondary Date/Time</label>
+                            <input type="checkbox" id="showSecondaryDateTime" class="toggle-checkbox">
                         </div>
                         <div class="settings-row">
                             <label for="showNetwork">📶 Show Network</label>
@@ -950,8 +959,23 @@
                             <p>Set how time is shown in the popup header.</p>
                         </div>
                         <div class="settings-row">
-                            <label for="timezoneSelect">Select Timezone</label>
+                            <label for="timezoneSelect">Primary Timezone</label>
                             <select id="timezoneSelect" class="settings-select">
+                                <option value="local">Local (Device)</option>
+                                <option value="UTC">UTC</option>
+                                <option value="America/New_York">New York (EST)</option>
+                                <option value="America/Los_Angeles">Los Angeles (PST)</option>
+                                <option value="Europe/London">London (GMT)</option>
+                                <option value="Europe/Paris">Paris (CET)</option>
+                                <option value="Asia/Tokyo">Tokyo (JST)</option>
+                                <option value="Asia/Kolkata">India (IST)</option>
+                                <option value="Asia/Dubai">Dubai (GST)</option>
+                                <option value="Australia/Sydney">Sydney (AEDT)</option>
+                            </select>
+                        </div>
+                        <div class="settings-row" id="secondaryTimezoneRow" style="display: none;">
+                            <label for="secondaryTimezoneSelect">Secondary Timezone</label>
+                            <select id="secondaryTimezoneSelect" class="settings-select">
                                 <option value="local">Local (Device)</option>
                                 <option value="UTC">UTC</option>
                                 <option value="America/New_York">New York (EST)</option>
