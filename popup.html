@@ -47,6 +47,14 @@
                                 <span class="btn-icon">✨</span>
                                 <span class="btn-text">AI Writer</span>
                             </button>
+                            <button class="dashboard-nav-btn" id="weatherNavBtn" type="button" title="Go to weather">
+                                <span class="btn-icon">🌤️</span>
+                                <span class="btn-text">Weather</span>
+                            </button>
+                            <button class="dashboard-nav-btn" id="watchNavBtn" type="button" title="Go to watch">
+                                <span class="btn-icon">⏱️</span>
+                                <span class="btn-text">Watch</span>
+                            </button>
                         </nav>
                     </section>
                 </div>
@@ -101,7 +109,7 @@
 
             <!-- ========== BOOKMARKS PAGE ========== -->
             <div id="bookmarksPage">
-            <section class="page-toolbar bookmarks-page-toolbar" aria-labelledby="bookmarksPageTitle">
+            <!-- <section class="page-toolbar bookmarks-page-toolbar" aria-labelledby="bookmarksPageTitle">
                 <div class="page-toolbar-copy">
                     <span class="page-kicker">Workspace</span>
                     <div class="page-title-row">
@@ -120,62 +128,7 @@
                         <span>Active layout</span>
                     </div>
                 </div>
-            </section>
-            <div class="bookmark-modal-anchor">
-                <!-- Weather Card - Compact like bookmark-card -->
-                <div id="weatherCard" class="weather-card hidden">
-                    <!-- Refresh Button (corner) -->
-                    <button class="weather-refresh-btn" id="weatherRefreshBtn" title="Refresh weather"><span style="scale:2;">↻</span></button>
-                    <div class="weather-loading hidden" id="weatherLoading">
-                        <div class="spinner"></div>
-                        <span>Loading...</span>
-                    </div>
-                    <div class="weather-content hidden" id="weatherContent">
-                        <!-- Current Weather Row -->
-                        <div class="weather-current">
-                            <!-- Icon on left like favicon -->
-                            <div class="weather-icon-wrapper" id="weatherIconWrapper">
-                                <span class="weather-icon" id="weatherIcon">☀️</span>
-                            </div>
-                            <!-- Info on right like bookmark-info -->
-                            <div class="weather-info">
-                                <div class="weather-header">
-                                    <span class="weather-location" id="weatherLocation">--</span>
-                                    <span class="weather-updated" id="weatherUpdated">--</span>
-                                </div>
-                                <div class="weather-main">
-                                    <div class="weather-temp-section">
-                                        <span class="weather-temp" id="weatherTemp">--°</span>
-                                        <span class="weather-condition" id="weatherCondition">--</span>
-                                    </div>
-                                </div>
-                                <div class="weather-stats">
-                                    <div class="weather-stat">
-                                        <span class="stat-icon">💧</span>
-                                        <span class="stat-value" id="weatherHumidity">--%</span>
-                                    </div>
-                                    <div class="weather-stat">
-                                        <span class="stat-icon">💨</span>
-                                        <span class="stat-value" id="weatherWind">--</span>
-                                    </div>
-                                    <div class="weather-stat">
-                                        <span class="stat-icon">🌡️</span>
-                                        <span class="stat-value" id="weatherFeelsLike">--°</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- 5-Day Forecast -->
-                        <div class="weather-forecast" id="weatherForecast">
-                            <!-- Forecast days will be rendered by JS -->
-                        </div>
-                    </div>
-                    <div class="weather-error hidden" id="weatherError">
-                        <span class="error-icon">⚠️</span>
-                        <span class="error-text" id="weatherErrorText">Unable to load weather</span>
-                    </div>
-                </div>
-            </div>
+            </section> -->
 
             <div id="bookmarksTableContainer" class="bookmark-table-container">
                 <div class="bookmark-workspace-toolbar bookmark-table-toolbar">
@@ -245,8 +198,215 @@
             </div>
         </div>
 
-            <!-- ========== NOTES PAGE (Hidden by default) ========== -->
-            <div id="notesPage" class="hidden">
+        <!-- ========== WEATHER PAGE (Hidden by default) ========== -->
+        <div id="weatherPage" class="hidden">
+            <!-- Fallback when disabled -->
+            <div id="weatherDisabledFallback" class="weather-disabled-fallback hidden">
+                <span class="fallback-icon">🌤️</span>
+                <h3>Weather Dashboard is Disabled</h3>
+                <p>To view real-time weather forecasts, precipitation maps, and air quality indexes, enable Weather in Settings and add your API key.</p>
+                <button id="enableWeatherFallbackBtn" class="btn-add-note" type="button" style="margin-top: 0.5rem;">Open Settings</button>
+            </div>
+            <!-- Weather Card - Redesigned Bento Dashboard -->
+            <div id="weatherCard" class="weather-card">
+                <!-- Refresh Button (corner) -->
+                <button class="weather-refresh-btn" id="weatherRefreshBtn" title="Refresh weather"><span style="scale:2;">↻</span></button>
+                <!-- Animated Weather Scene Background -->
+                <div class="weather-scene" id="weatherScene"></div>
+                <div class="weather-loading hidden" id="weatherLoading">
+                    <div class="spinner"></div>
+                    <span>Loading...</span>
+                </div>
+                <div class="weather-content hidden" id="weatherContent">
+                    <!-- Top Row: Hero and Forecast Details -->
+                    <div class="weather-dashboard-top">
+                        <!-- Left Column: Current Weather Hero and Stats -->
+                        <div class="weather-left-column">
+                            <div class="weather-header">
+                                <div class="location-row">
+                                    <span class="location-icon">📍</span>
+                                    <span class="weather-location" id="weatherLocation">--</span>
+                                </div>
+                                <span class="weather-updated" id="weatherUpdated">--</span>
+                            </div>
+                            
+                            <div class="weather-temp-section">
+                                <span class="weather-temp" id="weatherTemp">--°</span>
+                                <span class="weather-condition" id="weatherCondition">--</span>
+                            </div>
+                            
+                            <div class="weather-stats">
+                                <div class="weather-stat">
+                                    <span class="stat-icon">💧</span>
+                                    <span class="stat-label">Humidity</span>
+                                    <span class="stat-value" id="weatherHumidity">--%</span>
+                                </div>
+                                <div class="weather-stat">
+                                    <span class="stat-icon">💨</span>
+                                    <span class="stat-label">Wind</span>
+                                    <span class="stat-value" id="weatherWind">--</span>
+                                </div>
+                                <div class="weather-stat">
+                                    <span class="stat-icon">🌡️</span>
+                                    <span class="stat-label">Feels Like</span>
+                                    <span class="stat-value" id="weatherFeelsLike">--°</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Column: Forecast Sections -->
+                        <div class="weather-right-column">
+                            <!-- Hourly Forecast Section -->
+                            <div class="forecast-section">
+                                <div class="section-header">
+                                    <span class="section-title">NEXT 24 HOURS</span>
+                                    <span class="section-kicker">TODAY</span>
+                                </div>
+                                <div class="weather-hourly" id="weatherHourly">
+                                    <!-- Hourly items will be rendered by JS -->
+                                </div>
+                            </div>
+
+                            <!-- Extended Outlook Section -->
+                            <div class="forecast-section">
+                                <div class="section-header">
+                                    <span class="section-title">EXTENDED OUTLOOK</span>
+                                </div>
+                                <div class="weather-forecast" id="weatherForecast">
+                                    <!-- Forecast days will be rendered by JS -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bottom Row: Bento Map & AQI Cards -->
+                    <div class="weather-dashboard-bottom">
+                        <!-- Bento Card 1: Precipitation Map -->
+                        <div class="weather-bento-card weather-map-card">
+                            <div class="bento-badge">Precipitation Map</div>
+                            <img alt="Precipitation map of region" class="bento-map-image" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCrV4jfZZiOqYFst7iPYbhl1h_LebUyjTGT2XkEOxkIPnEdwPYxLQ1QOVnLYKM26zk9E5hroWEuJAtQz4VFXndAKvf_Pb0e4UdWbQ8i1YBUwD7iSSqHWMh4CeDFsYIRPqUTLvi81a0tzfnoD-8KzP5BQ4VgeL9w7-6czxY2hYobotBob_3hynjFfWO9qqLupRlIUEUmU1N64TtscnCiK3EJ6dkyolZBgjezdQe5KeltWHn1D4J657jHjgx2Gn0Sx9DiwEOoA_EnTYA"/>
+                        </div>
+
+                        <!-- Bento Card 2: Air Quality -->
+                        <div class="weather-bento-card weather-aqi-card">
+                            <h3 class="bento-title">AIR QUALITY</h3>
+                            <div class="aqi-value-row">
+                                <span class="aqi-dot"></span>
+                                <span class="aqi-text">Good (12 AQI)</span>
+                            </div>
+                            <p class="aqi-description">The air quality is ideal for most individuals; enjoy your normal outdoor activities.</p>
+                            <div class="aqi-bar-container">
+                                <div class="aqi-bar-fill" style="width: 12%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="weather-error hidden" id="weatherError">
+                    <span class="error-icon">⚠️</span>
+                    <span class="error-text" id="weatherErrorText">Unable to load weather</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== WATCH PAGE (Hidden by default) ========== -->
+        <div id="watchPage" class="hidden">
+            <div class="watch-shell">
+                <div class="watch-grid">
+                    <!-- Left Column: Clock & Pomodoro -->
+                    <div class="watch-left-column">
+                        <!-- Clock Card -->
+                        <div class="weather-bento-card watch-card clock-card-bento">
+                            <div class="bento-badge">SYSTEM TIME</div>
+                            <div class="clock-display">
+                                <span id="watchClockTime">12:34:56</span>
+                                <span id="watchClockMs" class="clock-ms">.00</span>
+                            </div>
+                            <div id="watchClockDate" class="clock-date">Thursday, May 28, 2026</div>
+                            <div class="clock-controls">
+                                <label class="clock-checkbox-label">
+                                    <input type="checkbox" id="toggleWatchMs">
+                                    <span>Show Milliseconds</span>
+                                </label>
+                                <select id="watchTimezoneSelect" class="timezone-mini-select">
+                                    <option value="local">Local Timezone</option>
+                                    <option value="UTC">UTC</option>
+                                    <option value="America/New_York">New York (EST)</option>
+                                    <option value="Europe/London">London (GMT/BST)</option>
+                                    <option value="Asia/Tokyo">Tokyo (JST)</option>
+                                    <option value="Asia/Kolkata">India (IST)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Pomodoro Focus Timer -->
+                        <div class="weather-bento-card watch-card pomodoro-card-bento">
+                            <div class="bento-badge">POMODORO FOCUS TIMER</div>
+                            <div class="pomodoro-header">
+                                <button class="pomo-tab active" data-pomo="work">Focus (25m)</button>
+                                <button class="pomo-tab" data-pomo="short">Short Break (5m)</button>
+                                <button class="pomo-tab" data-pomo="long">Long Break (15m)</button>
+                            </div>
+                            <div class="pomodoro-timer-display" id="pomoTime">25:00</div>
+                            <div class="pomo-progress-container">
+                                <div class="pomo-progress-bar" id="pomoProgressBar" style="width: 100%"></div>
+                            </div>
+                            <div class="pomodoro-controls">
+                                <button id="pomoStartBtn" class="btn-add-note pomo-btn">Start</button>
+                                <button id="pomoPauseBtn" class="btn-add-note pomo-btn hidden">Pause</button>
+                                <button id="pomoResetBtn" class="bookmark-table-reset pomo-btn-reset">Reset</button>
+                            </div>
+                            <div id="pomoStatus" class="pomo-status">Ready to focus?</div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Stopwatch & Timer -->
+                    <div class="watch-right-column">
+                        <!-- Stopwatch Card -->
+                        <div class="weather-bento-card watch-card stopwatch-card-bento">
+                            <div class="bento-badge">NEUMORPHIC STOPWATCH</div>
+                            <div class="stopwatch-display" id="stopwatchTime">00:00.00</div>
+                            <div class="stopwatch-controls">
+                                <button id="stopwatchStartBtn" class="btn-add-note pomo-btn">Start</button>
+                                <button id="stopwatchPauseBtn" class="btn-add-note pomo-btn hidden">Pause</button>
+                                <button id="stopwatchLapBtn" class="btn-add-note pomo-btn" disabled>Lap</button>
+                                <button id="stopwatchResetBtn" class="bookmark-table-reset pomo-btn-reset">Reset</button>
+                            </div>
+                            <div class="stopwatch-laps-wrapper">
+                                <ul id="stopwatchLapsList" class="stopwatch-laps-list">
+                                    <li class="lap-empty">No laps recorded yet</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Countdown Timer Card -->
+                        <div class="weather-bento-card watch-card timer-card-bento">
+                            <div class="bento-badge">COUNTDOWN TIMER</div>
+                            <div class="timer-inputs-wrapper" id="timerInputs">
+                                <input type="number" id="timerHour" min="0" max="23" placeholder="00" class="timer-input-val">
+                                <span class="timer-colon">:</span>
+                                <input type="number" id="timerMin" min="0" max="59" placeholder="00" class="timer-input-val">
+                                <span class="timer-colon">:</span>
+                                <input type="number" id="timerSec" min="0" max="59" placeholder="00" class="timer-input-val">
+                            </div>
+                            <div class="timer-display-wrapper hidden" id="timerDisplaySec">
+                                <div class="timer-display-text" id="timerTextVal">00:00:00</div>
+                                <div class="timer-progress-container">
+                                    <div class="timer-progress-bar" id="timerProgressBar" style="width: 100%"></div>
+                                </div>
+                            </div>
+                            <div class="timer-controls">
+                                <button id="timerStartBtn" class="btn-add-note pomo-btn">Start</button>
+                                <button id="timerPauseBtn" class="btn-add-note pomo-btn hidden">Pause</button>
+                                <button id="timerResetBtn" class="bookmark-table-reset pomo-btn-reset">Reset</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== NOTES PAGE (Hidden by default) ========== -->
+        <div id="notesPage" class="hidden">
             <!-- Notes Header -->
             <div class="notes-toolbar">
                 <div class="notes-toolbar-left">

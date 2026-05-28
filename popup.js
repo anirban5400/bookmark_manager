@@ -89,6 +89,8 @@ const weatherWind = document.getElementById('weatherWind');
 const weatherFeelsLike = document.getElementById('weatherFeelsLike');
 const weatherForecast = document.getElementById('weatherForecast');
 const weatherRefreshBtn = document.getElementById('weatherRefreshBtn');
+const weatherScene = document.getElementById('weatherScene');
+const weatherHourly = document.getElementById('weatherHourly');
 
 // Weather settings elements
 const weatherEnabledCheckbox = document.getElementById('weatherEnabled');
@@ -113,10 +115,14 @@ const aiRewriteBtn = document.getElementById('aiRewriteBtn');
 const notesToggleBtn = document.getElementById('notesToggleBtn');
 const calculatorsToggleBtn = document.getElementById('calculatorsToggleBtn');
 const aiWriterToggleBtn = document.getElementById('aiWriterToggleBtn');
+const weatherNavBtn = document.getElementById('weatherNavBtn');
+const watchNavBtn = document.getElementById('watchNavBtn');
 const bookmarksPage = document.getElementById('bookmarksPage');
 const notesPage = document.getElementById('notesPage');
 const calculatorsPage = document.getElementById('calculatorsPage');
 const aiWriterPage = document.getElementById('aiWriterPage');
+const weatherPage = document.getElementById('weatherPage');
+const watchPage = document.getElementById('watchPage');
 const notesContainer = document.getElementById('notesContainer');
 const notesCount = document.getElementById('notesCount');
 const addNoteBtn = document.getElementById('addNoteBtn');
@@ -172,7 +178,7 @@ let editingBookmarkId = null;
 const DEFAULT_CARD_VIEW_LIMIT = 10;
 const CARD_FIELD_KEYS = new Set(['favicon', 'url', 'description', 'createdAt']);
 const BOOKMARK_TABLE_REORDER_KEY = '__reorder__';
-const VALID_PAGES = new Set(['bookmarks', 'notes', 'calculators', 'ai-writer']);
+const VALID_PAGES = new Set(['bookmarks', 'notes', 'calculators', 'ai-writer', 'weather', 'watch']);
 let cardViewLimit = DEFAULT_CARD_VIEW_LIMIT;
 let isSidebarCollapsed = false;
 let currentZoomLevel = 100;
@@ -351,6 +357,14 @@ function isCalculatorsPageActive() {
 
 function isAiWriterPageActive() {
     return activePage === 'ai-writer';
+}
+
+function isWeatherPageActive() {
+    return activePage === 'weather';
+}
+
+function isWatchPageActive() {
+    return activePage === 'watch';
 }
 
 function parseCalculatorValue(input, fallback = 0) {
@@ -584,6 +598,10 @@ function setupEventListeners() {
     if (addToggleBtn) {
         addToggleBtn.addEventListener('click', toggleAddForm);
     }
+    const enableWeatherFallbackBtn = document.getElementById('enableWeatherFallbackBtn');
+    if (enableWeatherFallbackBtn) {
+        enableWeatherFallbackBtn.addEventListener('click', openWeatherSettings);
+    }
     if (cancelBookmarkEditBtn) {
         cancelBookmarkEditBtn.addEventListener('click', cancelBookmarkEdit);
     }
@@ -684,6 +702,12 @@ function setupEventListeners() {
     }
     if (aiWriterToggleBtn) {
         aiWriterToggleBtn.addEventListener('click', () => setActivePage('ai-writer'));
+    }
+    if (weatherNavBtn) {
+        weatherNavBtn.addEventListener('click', () => setActivePage('weather'));
+    }
+    if (watchNavBtn) {
+        watchNavBtn.addEventListener('click', () => setActivePage('watch'));
     }
     setupCalculatorListeners();
     setupCalculatorCardToggles();
@@ -2304,6 +2328,8 @@ function applyPageState() {
     const showNotes = isNotesPageActive();
     const showCalculators = isCalculatorsPageActive();
     const showAiWriter = isAiWriterPageActive();
+    const showWeather = isWeatherPageActive();
+    const showWatch = isWatchPageActive();
 
     if (bookmarksPage) {
         bookmarksPage.classList.toggle('hidden', !showBookmarks);
@@ -2317,11 +2343,19 @@ function applyPageState() {
     if (aiWriterPage) {
         aiWriterPage.classList.toggle('hidden', !showAiWriter);
     }
+    if (weatherPage) {
+        weatherPage.classList.toggle('hidden', !showWeather);
+    }
+    if (watchPage) {
+        watchPage.classList.toggle('hidden', !showWatch);
+    }
 
     if (appContainer) {
         appContainer.classList.toggle('notes-active', showNotes);
         appContainer.classList.toggle('calculators-active', showCalculators);
         appContainer.classList.toggle('ai-writer-active', showAiWriter);
+        appContainer.classList.toggle('weather-active', showWeather);
+        appContainer.classList.toggle('watch-active', showWatch);
     }
 
     if (!showNotes && aiRewriteBtn) {
@@ -2335,6 +2369,10 @@ function applyPageState() {
         initCalculators();
     } else if (showAiWriter) {
         hydrateAiWriterCards();
+    } else if (showWeather) {
+        initWeather();
+    } else if (showWatch) {
+        initWatchPage();
     } else {
         updateBookmarkViewControls();
     }
@@ -2354,6 +2392,12 @@ function updateDashboardContext() {
     }
     if (aiWriterToggleBtn) {
         aiWriterToggleBtn.classList.toggle('active', isAiWriterPageActive());
+    }
+    if (weatherNavBtn) {
+        weatherNavBtn.classList.toggle('active', isWeatherPageActive());
+    }
+    if (watchNavBtn) {
+        watchNavBtn.classList.toggle('active', isWatchPageActive());
     }
 }
 
@@ -4035,6 +4079,16 @@ function switchSettingsTab(tab) {
 }
 
 /**
+ * Open weather settings directly
+ */
+function openWeatherSettings() {
+    if (settingsModal) {
+        switchSettingsTab('weather');
+        settingsModal.classList.remove('hidden');
+    }
+}
+
+/**
  * Open settings modal
  */
 function openSettingsModal() {
@@ -4096,8 +4150,21 @@ function handleWeatherSettingsChange() {
  * Initialize weather widget
  */
 function initWeather() {
-    if (!settings.weatherEnabled || !settings.weatherApiKey) {
-        hideWeatherCard();
+    const isEnabled = settings.weatherEnabled && settings.weatherApiKey;
+    
+    if (weatherCard) {
+        weatherCard.classList.toggle('hidden', !isEnabled);
+    }
+    const fallback = document.getElementById('weatherDisabledFallback');
+    if (fallback) {
+        fallback.classList.toggle('hidden', isEnabled);
+    }
+    
+    if (!isEnabled) {
+        if (weatherRefreshInterval) {
+            clearInterval(weatherRefreshInterval);
+            weatherRefreshInterval = null;
+        }
         return;
     }
     
@@ -4106,19 +4173,18 @@ function initWeather() {
         clearInterval(weatherRefreshInterval);
     }
     
-    // Show weather card
-    if (weatherCard) {
-        weatherCard.classList.remove('hidden');
-    }
-    
     // Try to load from cache first
     const cached = getWeatherCache();
     if (cached) {
-        // Handle new cache format with current and forecast
+        // Handle cache format with current, forecast, and AQI
         if (cached.current) {
             renderWeather(cached.current);
             if (cached.forecast) {
                 renderForecast(cached.forecast);
+                renderHourlyForecast(cached.forecast);
+            }
+            if (cached.aqi) {
+                renderAirQuality(cached.aqi);
             }
         } else {
             // Legacy cache format - just current data
@@ -4140,6 +4206,10 @@ function initWeather() {
 function hideWeatherCard() {
     if (weatherCard) {
         weatherCard.classList.add('hidden');
+    }
+    const fallback = document.getElementById('weatherDisabledFallback');
+    if (fallback) {
+        fallback.classList.remove('hidden');
     }
     if (weatherRefreshInterval) {
         clearInterval(weatherRefreshInterval);
@@ -4242,9 +4312,23 @@ async function fetchWeather() {
         } catch (e) {
             console.log('Forecast fetch failed, continuing without it');
         }
+
+        // Fetch Air Quality Index using coordinates from weather response
+        let aqiData = null;
+        if (data && data.coord && data.coord.lat && data.coord.lon) {
+            try {
+                const aqiUrl = `https://api.openweathermap.org/data/2.5/air_pollution?lat=${data.coord.lat}&lon=${data.coord.lon}&appid=${settings.weatherApiKey}`;
+                const aqiResponse = await fetch(aqiUrl);
+                if (aqiResponse.ok) {
+                    aqiData = await aqiResponse.json();
+                }
+            } catch (e) {
+                console.log('AQI fetch failed, continuing without it');
+            }
+        }
         
         // Cache the result
-        setWeatherCache({ current: data, forecast: forecastData });
+        setWeatherCache({ current: data, forecast: forecastData, aqi: aqiData });
         
         // Render weather
         renderWeather(data);
@@ -4252,6 +4336,12 @@ async function fetchWeather() {
         // Render forecast if available
         if (forecastData) {
             renderForecast(forecastData);
+            renderHourlyForecast(forecastData);
+        }
+
+        // Render AQI if available
+        if (aqiData) {
+            renderAirQuality(aqiData);
         }
         
     } catch (error) {
@@ -4390,6 +4480,9 @@ function renderWeather(data) {
     
     // Apply weather-based gradient class
     applyWeatherGradient(data.weather?.[0]?.main, data.weather?.[0]?.icon);
+    
+    // Render animated weather scene
+    renderWeatherScene(data.weather?.[0]?.main, data.weather?.[0]?.icon, data.sys?.sunrise, data.sys?.sunset);
 }
 
 /**
@@ -4509,6 +4602,339 @@ function renderForecast(data) {
         
         weatherForecast.appendChild(dayEl);
     });
+}
+
+/**
+ * Render animated weather scene background
+ * Determines scene type from condition, icon (day/night), and sunrise/sunset times
+ */
+function renderWeatherScene(condition, icon, sunriseTs, sunsetTs) {
+    if (!weatherScene) return;
+    
+    // Clear existing scene
+    weatherScene.innerHTML = '';
+    weatherScene.className = 'weather-scene';
+    
+    const isNight = icon?.includes('n');
+    const now = Math.floor(Date.now() / 1000);
+    
+    // Determine if we're near sunrise or sunset (within ~1 hour)
+    const nearSunrise = sunriseTs && Math.abs(now - sunriseTs) < 3600;
+    const nearSunset = sunsetTs && Math.abs(now - sunsetTs) < 3600;
+    
+    let sceneType = 'sunrise'; // default: clear day
+    
+    if (condition === 'Rain' || condition === 'Drizzle') {
+        sceneType = 'rain';
+    } else if (condition === 'Thunderstorm') {
+        sceneType = 'thunder';
+    } else if (condition === 'Snow') {
+        sceneType = 'snow';
+    } else if (condition === 'Clouds') {
+        sceneType = 'clouds';
+    } else if (isNight) {
+        sceneType = 'night';
+    } else if (nearSunset) {
+        sceneType = 'sunset';
+    } else {
+        sceneType = 'sunrise'; // clear day / sunrise
+    }
+    
+    weatherScene.classList.add(`weather-scene-${sceneType}`);
+    
+    // Build scene elements based on type
+    switch (sceneType) {
+        case 'sunrise':
+            buildSunriseScene(weatherScene);
+            break;
+        case 'rain':
+            buildRainScene(weatherScene);
+            break;
+        case 'sunset':
+            buildSunsetScene(weatherScene);
+            break;
+        case 'clouds':
+            buildCloudsScene(weatherScene);
+            break;
+        case 'night':
+            buildNightScene(weatherScene);
+            break;
+        case 'snow':
+            buildSnowScene(weatherScene);
+            break;
+        case 'thunder':
+            buildThunderScene(weatherScene);
+            break;
+    }
+}
+
+function buildSunriseScene(container) {
+    // Sun circle
+    const sun = document.createElement('div');
+    sun.className = 'scene-sun';
+    container.appendChild(sun);
+    
+    // Sun rays container
+    const rays = document.createElement('div');
+    rays.className = 'scene-sun-rays';
+    container.appendChild(rays);
+    
+    // Individual ray spokes
+    for (let i = 0; i < 8; i++) {
+        const ray = document.createElement('div');
+        ray.className = 'scene-ray';
+        container.appendChild(ray);
+    }
+    
+    // Horizon glow
+    const horizon = document.createElement('div');
+    horizon.className = 'scene-horizon';
+    container.appendChild(horizon);
+}
+
+function buildRainScene(container) {
+    // Raindrops
+    for (let i = 0; i < 12; i++) {
+        const drop = document.createElement('div');
+        drop.className = 'scene-raindrop';
+        container.appendChild(drop);
+    }
+    
+    // Umbrella + person group
+    const group = document.createElement('div');
+    group.className = 'scene-umbrella-group';
+    
+    const umbrella = document.createElement('div');
+    umbrella.className = 'scene-umbrella';
+    group.appendChild(umbrella);
+    
+    const person = document.createElement('div');
+    person.className = 'scene-person';
+    group.appendChild(person);
+    
+    container.appendChild(group);
+    
+    // Puddle
+    const puddle = document.createElement('div');
+    puddle.className = 'scene-puddle';
+    container.appendChild(puddle);
+}
+
+function buildSunsetScene(container) {
+    // Sun
+    const sun = document.createElement('div');
+    sun.className = 'scene-sun';
+    container.appendChild(sun);
+    
+    // Horizon
+    const horizon = document.createElement('div');
+    horizon.className = 'scene-horizon';
+    container.appendChild(horizon);
+    
+    // Sunset clouds
+    for (let i = 0; i < 2; i++) {
+        const cloud = document.createElement('div');
+        cloud.className = 'scene-cloud';
+        container.appendChild(cloud);
+    }
+}
+
+function buildCloudsScene(container) {
+    for (let i = 0; i < 4; i++) {
+        const cloud = document.createElement('div');
+        cloud.className = 'scene-cloud';
+        container.appendChild(cloud);
+    }
+}
+
+function buildNightScene(container) {
+    // Stars
+    for (let i = 0; i < 12; i++) {
+        const star = document.createElement('div');
+        star.className = 'scene-star';
+        container.appendChild(star);
+    }
+    
+    // Moon
+    const moon = document.createElement('div');
+    moon.className = 'scene-moon';
+    container.appendChild(moon);
+}
+
+function buildSnowScene(container) {
+    // Snowflakes
+    for (let i = 0; i < 10; i++) {
+        const flake = document.createElement('div');
+        flake.className = 'scene-snowflake';
+        container.appendChild(flake);
+    }
+    
+    // Snow ground
+    const ground = document.createElement('div');
+    ground.className = 'scene-snow-ground';
+    container.appendChild(ground);
+}
+
+function buildThunderScene(container) {
+    // Rain drops
+    for (let i = 0; i < 8; i++) {
+        const drop = document.createElement('div');
+        drop.className = 'scene-raindrop';
+        container.appendChild(drop);
+    }
+    
+    // Lightning flash
+    const flash = document.createElement('div');
+    flash.className = 'scene-lightning';
+    container.appendChild(flash);
+    
+    // Second lightning with offset
+    const flash2 = document.createElement('div');
+    flash2.className = 'scene-lightning';
+    container.appendChild(flash2);
+    
+    // Lightning bolt
+    const bolt = document.createElement('div');
+    bolt.className = 'scene-bolt';
+    container.appendChild(bolt);
+}
+
+/**
+ * Render today's hourly forecast from the 3-hour interval data
+ */
+function renderHourlyForecast(data) {
+    if (!weatherHourly || !data?.list) return;
+    
+    const now = new Date();
+    const today = now.toDateString();
+    const currentHour = now.getHours();
+    
+    // Filter today's remaining hours from the forecast data
+    const todayHours = data.list.filter(item => {
+        const itemDate = new Date(item.dt * 1000);
+        return itemDate.toDateString() === today && itemDate.getHours() >= currentHour;
+    });
+    
+    // If no today hours, try to get the first few entries regardless of date
+    // (useful when the API returns data starting from next 3-hour slot)
+    const hoursToShow = todayHours.length > 0 ? todayHours : data.list.slice(0, 8);
+    
+    // Clear existing
+    weatherHourly.innerHTML = '';
+    
+    if (hoursToShow.length === 0) return;
+    
+    // Add label
+    const label = document.createElement('div');
+    label.className = 'hourly-label';
+    label.textContent = 'Today';
+    weatherHourly.appendChild(label);
+    
+    // Render each hourly item
+    hoursToShow.forEach((item, index) => {
+        const itemDate = new Date(item.dt * 1000);
+        const hour = itemDate.getHours();
+        const timeStr = itemDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+        
+        const emoji = getWeatherEmoji(item.weather[0].main, item.weather[0].icon);
+        const temp = Math.round(item.main.temp);
+        const unit = settings.tempUnit === 'fahrenheit' ? '°' : '°';
+        
+        const el = document.createElement('div');
+        el.className = 'hourly-item';
+        
+        // Mark the closest upcoming hour as "now"
+        if (index === 0 && todayHours.length > 0) {
+            el.classList.add('hourly-now');
+        }
+        
+        el.innerHTML = `
+            <span class="hourly-time">${timeStr}</span>
+            <span class="hourly-icon">${emoji}</span>
+            <span class="hourly-temp">${temp}${unit}</span>
+        `;
+        
+        weatherHourly.appendChild(el);
+    });
+}
+
+/**
+ * Render Air Quality Index
+ */
+function renderAirQuality(data) {
+    const aqiDot = document.querySelector('.aqi-dot');
+    const aqiText = document.querySelector('.aqi-text');
+    const aqiDesc = document.querySelector('.aqi-description');
+    const aqiFill = document.querySelector('.aqi-bar-fill');
+    
+    if (!data?.list?.[0]) return;
+    
+    const aqi = data.list[0].main.aqi; // 1 to 5
+    
+    let label = 'Good';
+    let aqiVal = 12; // mock US AQI within Good range
+    let color = '#10b981'; // green
+    let shadow = '0 0 10px rgba(16, 185, 129, 0.5)';
+    let desc = 'The air quality is ideal for most individuals; enjoy your normal outdoor activities.';
+    let fillPercent = '12%';
+    
+    switch(aqi) {
+        case 1:
+            label = 'Good';
+            aqiVal = 12;
+            color = '#10b981';
+            shadow = '0 0 10px rgba(16, 185, 129, 0.5)';
+            desc = 'The air quality is ideal for most individuals; enjoy your normal outdoor activities.';
+            fillPercent = '12%';
+            break;
+        case 2:
+            label = 'Fair';
+            aqiVal = 42;
+            color = '#84cc16';
+            shadow = '0 0 10px rgba(132, 204, 22, 0.5)';
+            desc = 'The air quality is generally acceptable, but sensitive groups should limit prolonged outdoor exertion.';
+            fillPercent = '35%';
+            break;
+        case 3:
+            label = 'Moderate';
+            aqiVal = 72;
+            color = '#eab308';
+            shadow = '0 0 10px rgba(234, 179, 8, 0.5)';
+            desc = 'Members of sensitive groups may experience health effects. The general public is not likely to be affected.';
+            fillPercent = '55%';
+            break;
+        case 4:
+            label = 'Poor';
+            aqiVal = 112;
+            color = '#f97316';
+            shadow = '0 0 10px rgba(249, 115, 22, 0.5)';
+            desc = 'Everyone may begin to experience health effects; members of sensitive groups may experience more serious health effects.';
+            fillPercent = '75%';
+            break;
+        case 5:
+            label = 'Very Poor';
+            aqiVal = 182;
+            color = '#ef4444';
+            shadow = '0 0 10px rgba(239, 68, 68, 0.5)';
+            desc = 'Health warnings of emergency conditions. The entire population is more likely to be affected.';
+            fillPercent = '95%';
+            break;
+    }
+    
+    if (aqiDot) {
+        aqiDot.style.backgroundColor = color;
+        aqiDot.style.boxShadow = shadow;
+    }
+    if (aqiText) {
+        aqiText.textContent = `${label} (${aqiVal} AQI)`;
+    }
+    if (aqiDesc) {
+        aqiDesc.textContent = desc;
+    }
+    if (aqiFill) {
+        aqiFill.style.backgroundColor = color;
+        aqiFill.style.width = fillPercent;
+    }
 }
 
 // ==========================================
@@ -5398,6 +5824,459 @@ function updateZoomDisplay() {
         zoomInBtn.disabled = currentZoomLevel >= ZOOM_MAX;
         zoomInBtn.style.opacity = currentZoomLevel >= ZOOM_MAX ? '0.35' : '1';
     }
+}
+
+// ==========================================
+// WATCH PAGE FUNCTIONS
+// ==========================================
+
+let watchClockInterval = null;
+let stopwatchInterval = null;
+let stopwatchStartTime = 0;
+let stopwatchElapsedTime = 0;
+let stopwatchIsRunning = false;
+let stopwatchLaps = [];
+
+let pomoInterval = null;
+let pomoEndTime = 0;
+let pomoTimeLeft = 25 * 60;
+let pomoDuration = 25 * 60;
+let pomoIsRunning = false;
+let pomoCurrentMode = 'work'; // 'work', 'short', 'long'
+
+let timerInterval = null;
+let timerEndTime = 0;
+let timerTimeLeft = 0;
+let timerDuration = 0;
+let timerIsRunning = false;
+
+// Audio context chime for alerts
+function playTimerAlarm() {
+    try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const now = audioCtx.currentTime;
+        
+        function beep(time, freq, duration) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.frequency.value = freq;
+            osc.type = 'sine';
+            
+            gain.gain.setValueAtTime(0, time);
+            gain.gain.linearRampToValueAtTime(0.2, time + 0.02);
+            gain.gain.setValueAtTime(0.2, time + duration - 0.02);
+            gain.gain.linearRampToValueAtTime(0, time + duration);
+            
+            osc.start(time);
+            osc.stop(time + duration);
+        }
+        
+        beep(now, 880, 0.12);
+        beep(now + 0.15, 880, 0.12);
+        beep(now + 0.3, 1318.51, 0.25);
+        
+        beep(now + 0.8, 880, 0.12);
+        beep(now + 0.95, 880, 0.12);
+        beep(now + 1.1, 1318.51, 0.25);
+    } catch (e) {
+        console.error('Audio chime failed:', e);
+    }
+}
+
+/**
+ * Initialize Watch Page elements and events
+ */
+let watchPageInitialized = false;
+function initWatchPage() {
+    // Run clock loop
+    if (!watchClockInterval) {
+        updateWatchClock();
+        watchClockInterval = setInterval(updateWatchClock, 16); // 60 FPS update for milliseconds
+    }
+    
+    if (watchPageInitialized) return;
+    watchPageInitialized = true;
+    
+    // Clock controls
+    const toggleWatchMs = document.getElementById('toggleWatchMs');
+    const watchTimezoneSelect = document.getElementById('watchTimezoneSelect');
+    
+    if (toggleWatchMs) {
+        toggleWatchMs.checked = localStorage.getItem('watchShowMs') === 'true';
+        toggleWatchMs.addEventListener('change', (e) => {
+            localStorage.setItem('watchShowMs', String(e.target.checked));
+        });
+    }
+    
+    if (watchTimezoneSelect) {
+        watchTimezoneSelect.value = localStorage.getItem('watchTimezone') || 'local';
+        watchTimezoneSelect.addEventListener('change', (e) => {
+            localStorage.setItem('watchTimezone', e.target.value);
+            updateWatchClock();
+        });
+    }
+    
+    // Pomodoro events
+    const pomoTabs = document.querySelectorAll('.pomo-tab');
+    pomoTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            pomoTabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            
+            const mode = tab.dataset.pomo;
+            pomoCurrentMode = mode;
+            
+            let mins = 25;
+            if (mode === 'short') mins = 5;
+            else if (mode === 'long') mins = 15;
+            
+            pomoDuration = mins * 60;
+            pomoTimeLeft = pomoDuration;
+            pomoIsRunning = false;
+            
+            if (pomoInterval) {
+                clearInterval(pomoInterval);
+                pomoInterval = null;
+            }
+            
+            updatePomoDisplay();
+            
+            document.getElementById('pomoStartBtn').classList.remove('hidden');
+            document.getElementById('pomoPauseBtn').classList.add('hidden');
+            
+            const statusText = mode === 'work' ? 'Ready to focus?' : 'Time for a break!';
+            document.getElementById('pomoStatus').textContent = statusText;
+            document.getElementById('pomoStatus').style.color = mode === 'work' ? '#2563eb' : '#10b981';
+        });
+    });
+    
+    document.getElementById('pomoStartBtn')?.addEventListener('click', startPomodoro);
+    document.getElementById('pomoPauseBtn')?.addEventListener('click', pausePomodoro);
+    document.getElementById('pomoResetBtn')?.addEventListener('click', resetPomodoro);
+    
+    // Stopwatch events
+    document.getElementById('stopwatchStartBtn')?.addEventListener('click', startStopwatch);
+    document.getElementById('stopwatchPauseBtn')?.addEventListener('click', pauseStopwatch);
+    document.getElementById('stopwatchLapBtn')?.addEventListener('click', recordStopwatchLap);
+    document.getElementById('stopwatchResetBtn')?.addEventListener('click', resetStopwatch);
+    
+    // Timer events
+    document.getElementById('timerStartBtn')?.addEventListener('click', startTimer);
+    document.getElementById('timerPauseBtn')?.addEventListener('click', pauseTimer);
+    document.getElementById('timerResetBtn')?.addEventListener('click', resetTimer);
+    
+    // Initialize countdown timer values
+    const timerHour = document.getElementById('timerHour');
+    const timerMin = document.getElementById('timerMin');
+    const timerSec = document.getElementById('timerSec');
+    
+    if (timerHour) timerHour.value = localStorage.getItem('timerSavedHour') || '';
+    if (timerMin) timerMin.value = localStorage.getItem('timerSavedMin') || '';
+    if (timerSec) timerSec.value = localStorage.getItem('timerSavedSec') || '';
+    
+    [timerHour, timerMin, timerSec].forEach(input => {
+        input?.addEventListener('change', () => {
+            localStorage.setItem('timerSavedHour', timerHour.value);
+            localStorage.setItem('timerSavedMin', timerMin.value);
+            localStorage.setItem('timerSavedSec', timerSec.value);
+        });
+    });
+}
+
+/**
+ * Clock loop function
+ */
+function updateWatchClock() {
+    // Only update elements if the page is visible to conserve CPU
+    if (activePage !== 'watch') {
+        if (watchClockInterval) {
+            clearInterval(watchClockInterval);
+            watchClockInterval = null;
+        }
+        return;
+    }
+    
+    const timeEl = document.getElementById('watchClockTime');
+    const msEl = document.getElementById('watchClockMs');
+    const dateEl = document.getElementById('watchClockDate');
+    if (!timeEl || !msEl || !dateEl) return;
+    
+    const now = new Date();
+    const showMs = localStorage.getItem('watchShowMs') === 'true';
+    const tz = localStorage.getItem('watchTimezone') || 'local';
+    
+    let localNow = now;
+    if (tz !== 'local') {
+        try {
+            // Convert timezone
+            const tzTime = now.toLocaleString('en-US', { timeZone: tz });
+            localNow = new Date(tzTime);
+            // Re-apply milliseconds as toLocaleString strips them
+            localNow.setMilliseconds(now.getMilliseconds());
+        } catch (e) {
+            console.error('Timezone error:', e);
+        }
+    }
+    
+    const h = localNow.getHours().toString().padStart(2, '0');
+    const m = localNow.getMinutes().toString().padStart(2, '0');
+    const s = localNow.getSeconds().toString().padStart(2, '0');
+    const ms = Math.floor(localNow.getMilliseconds() / 10).toString().padStart(2, '0');
+    
+    timeEl.textContent = `${h}:${m}:${s}`;
+    
+    if (showMs) {
+        msEl.style.display = 'inline';
+        msEl.textContent = `.${ms}`;
+    } else {
+        msEl.style.display = 'none';
+    }
+    
+    // Format date beautifully
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    dateEl.textContent = localNow.toLocaleDateString('en-US', options);
+}
+
+/**
+ * Pomodoro logic
+ */
+function startPomodoro() {
+    if (pomoIsRunning) return;
+    pomoIsRunning = true;
+    
+    document.getElementById('pomoStartBtn').classList.add('hidden');
+    document.getElementById('pomoPauseBtn').classList.remove('hidden');
+    
+    pomoEndTime = Date.now() + pomoTimeLeft * 1000;
+    
+    pomoInterval = setInterval(() => {
+        const remaining = Math.ceil((pomoEndTime - Date.now()) / 1000);
+        if (remaining <= 0) {
+            pomoTimeLeft = 0;
+            pomoIsRunning = false;
+            clearInterval(pomoInterval);
+            pomoInterval = null;
+            
+            playTimerAlarm();
+            showToast('Pomodoro session completed!', 'success');
+            
+            document.getElementById('pomoStartBtn').classList.remove('hidden');
+            document.getElementById('pomoPauseBtn').classList.add('hidden');
+            document.getElementById('pomoStatus').textContent = 'Session complete! Take a break.';
+            document.getElementById('pomoStatus').style.color = '#10b981';
+            
+            updatePomoDisplay();
+        } else {
+            pomoTimeLeft = remaining;
+            updatePomoDisplay();
+        }
+    }, 200);
+}
+
+function pausePomodoro() {
+    if (!pomoIsRunning) return;
+    pomoIsRunning = false;
+    
+    document.getElementById('pomoStartBtn').classList.remove('hidden');
+    document.getElementById('pomoPauseBtn').classList.add('hidden');
+    
+    if (pomoInterval) {
+        clearInterval(pomoInterval);
+        pomoInterval = null;
+    }
+}
+
+function resetPomodoro() {
+    pausePomodoro();
+    pomoTimeLeft = pomoDuration;
+    updatePomoDisplay();
+    document.getElementById('pomoStatus').textContent = pomoCurrentMode === 'work' ? 'Ready to focus?' : 'Time for a break!';
+}
+
+function updatePomoDisplay() {
+    const min = Math.floor(pomoTimeLeft / 60).toString().padStart(2, '0');
+    const sec = (pomoTimeLeft % 60).toString().padStart(2, '0');
+    
+    const pomoDisplay = document.getElementById('pomoTime');
+    if (pomoDisplay) pomoDisplay.textContent = `${min}:${sec}`;
+    
+    const pct = (pomoTimeLeft / pomoDuration) * 100;
+    const bar = document.getElementById('pomoProgressBar');
+    if (bar) bar.style.width = `${pct}%`;
+}
+
+/**
+ * Stopwatch logic
+ */
+function startStopwatch() {
+    if (stopwatchIsRunning) return;
+    stopwatchIsRunning = true;
+    
+    document.getElementById('stopwatchStartBtn').classList.add('hidden');
+    document.getElementById('stopwatchPauseBtn').classList.remove('hidden');
+    document.getElementById('stopwatchLapBtn').removeAttribute('disabled');
+    
+    stopwatchStartTime = Date.now() - stopwatchElapsedTime;
+    
+    stopwatchInterval = setInterval(() => {
+        stopwatchElapsedTime = Date.now() - stopwatchStartTime;
+        updateStopwatchDisplay();
+    }, 10);
+}
+
+function pauseStopwatch() {
+    if (!stopwatchIsRunning) return;
+    stopwatchIsRunning = false;
+    
+    document.getElementById('stopwatchStartBtn').classList.remove('hidden');
+    document.getElementById('stopwatchPauseBtn').classList.add('hidden');
+    document.getElementById('stopwatchLapBtn').setAttribute('disabled', 'true');
+    
+    if (stopwatchInterval) {
+        clearInterval(stopwatchInterval);
+        stopwatchInterval = null;
+    }
+}
+
+function resetStopwatch() {
+    pauseStopwatch();
+    stopwatchElapsedTime = 0;
+    stopwatchLaps = [];
+    updateStopwatchDisplay();
+    
+    const lapsList = document.getElementById('stopwatchLapsList');
+    if (lapsList) {
+        lapsList.innerHTML = '<li class="lap-empty">No laps recorded yet</li>';
+    }
+}
+
+function updateStopwatchDisplay() {
+    const elapsed = stopwatchElapsedTime;
+    const ms = Math.floor((elapsed % 1000) / 10).toString().padStart(2, '0');
+    const s = Math.floor((elapsed / 1000) % 60).toString().padStart(2, '0');
+    const m = Math.floor((elapsed / 60000) % 60).toString().padStart(2, '0');
+    
+    const disp = document.getElementById('stopwatchTime');
+    if (disp) disp.textContent = `${m}:${s}.${ms}`;
+}
+
+function recordStopwatchLap() {
+    if (!stopwatchIsRunning) return;
+    
+    const elapsed = stopwatchElapsedTime;
+    const ms = Math.floor((elapsed % 1000) / 10).toString().padStart(2, '0');
+    const s = Math.floor((elapsed / 1000) % 60).toString().padStart(2, '0');
+    const m = Math.floor((elapsed / 60000) % 60).toString().padStart(2, '0');
+    const lapTimeStr = `${m}:${s}.${ms}`;
+    
+    stopwatchLaps.unshift(lapTimeStr);
+    
+    const lapsList = document.getElementById('stopwatchLapsList');
+    if (lapsList) {
+        const empty = lapsList.querySelector('.lap-empty');
+        if (empty) empty.remove();
+        
+        const li = document.createElement('li');
+        li.innerHTML = `
+            <span class="lap-num">Lap ${stopwatchLaps.length}</span>
+            <span class="lap-time">${lapTimeStr}</span>
+        `;
+        lapsList.insertBefore(li, lapsList.firstChild);
+    }
+}
+
+/**
+ * Countdown timer logic
+ */
+function startTimer() {
+    if (timerIsRunning) return;
+    
+    if (timerTimeLeft === 0) {
+        const hourVal = parseInt(document.getElementById('timerHour')?.value || '0');
+        const minVal = parseInt(document.getElementById('timerMin')?.value || '0');
+        const secVal = parseInt(document.getElementById('timerSec')?.value || '0');
+        
+        const totalSecs = (hourVal * 3600) + (minVal * 60) + secVal;
+        if (totalSecs <= 0) {
+            showToast('Please set a valid countdown time', 'error');
+            return;
+        }
+        
+        timerDuration = totalSecs;
+        timerTimeLeft = totalSecs;
+    }
+    
+    timerIsRunning = true;
+    
+    document.getElementById('timerStartBtn').classList.add('hidden');
+    document.getElementById('timerPauseBtn').classList.remove('hidden');
+    document.getElementById('timerInputs').classList.add('hidden');
+    document.getElementById('timerDisplaySec').classList.remove('hidden');
+    
+    timerEndTime = Date.now() + timerTimeLeft * 1000;
+    
+    updateTimerDisplay();
+    
+    timerInterval = setInterval(() => {
+        const remaining = Math.ceil((timerEndTime - Date.now()) / 1000);
+        if (remaining <= 0) {
+            timerTimeLeft = 0;
+            timerIsRunning = false;
+            clearInterval(timerInterval);
+            timerInterval = null;
+            
+            playTimerAlarm();
+            showToast('Timer finished!', 'success');
+            
+            resetTimer();
+        } else {
+            timerTimeLeft = remaining;
+            updateTimerDisplay();
+        }
+    }, 200);
+}
+
+function pauseTimer() {
+    if (!timerIsRunning) return;
+    timerIsRunning = false;
+    
+    document.getElementById('timerStartBtn').classList.remove('hidden');
+    document.getElementById('timerPauseBtn').classList.add('hidden');
+    
+    if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    }
+}
+
+function resetTimer() {
+    pauseTimer();
+    timerTimeLeft = 0;
+    timerDuration = 0;
+    
+    document.getElementById('timerStartBtn').classList.remove('hidden');
+    document.getElementById('timerPauseBtn').classList.add('hidden');
+    document.getElementById('timerInputs').classList.remove('hidden');
+    document.getElementById('timerDisplaySec').classList.add('hidden');
+    
+    const bar = document.getElementById('timerProgressBar');
+    if (bar) bar.style.width = '100%';
+}
+
+function updateTimerDisplay() {
+    const hours = Math.floor(timerTimeLeft / 3600).toString().padStart(2, '0');
+    const mins = Math.floor((timerTimeLeft % 3600) / 60).toString().padStart(2, '0');
+    const secs = (timerTimeLeft % 60).toString().padStart(2, '0');
+    
+    const disp = document.getElementById('timerTextVal');
+    if (disp) disp.textContent = `${hours}:${mins}:${secs}`;
+    
+    const pct = (timerTimeLeft / timerDuration) * 100;
+    const bar = document.getElementById('timerProgressBar');
+    if (bar) bar.style.width = `${pct}%`;
 }
 
 // Initialize when DOM is ready
