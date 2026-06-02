@@ -162,6 +162,9 @@ const taxAgeBandInput = document.getElementById('taxAgeBandInput');
 const taxDaInput = document.getElementById('taxDaInput');
 const taxHraReceivedInput = document.getElementById('taxHraReceivedInput');
 const taxResetBtn = document.getElementById('taxResetBtn');
+// Cross-tab sync channel (BroadcastChannel API)
+const syncChannel = new BroadcastChannel('bm-sync');
+
 // State
 let allBookmarks = [];
 let isFormVisible = false;
@@ -473,6 +476,21 @@ async function init() {
         
         // Initialize status indicators
         initStatusIndicators();
+
+        // Listen for cross-tab sync messages
+        syncChannel.onmessage = async (event) => {
+            const { type } = event.data;
+            if (type === 'NOTES_CHANGED') {
+                await loadNotes();
+            } else if (type === 'BOOKMARKS_CHANGED') {
+                await loadBookmarks();
+            } else if (type === 'SETTINGS_CHANGED') {
+                await loadSettings();
+                applySettings();
+            } else if (type === 'THEME_CHANGED') {
+                loadTheme();
+            }
+        };
     } catch (error) {
         console.error('Failed to initialize:', error);
         showToast('Failed to initialize app', 'error');
@@ -2229,6 +2247,7 @@ async function handleAddBookmark(event) {
 
             closeBookmarkForm();
             await loadBookmarks();
+            syncChannel.postMessage({ type: 'BOOKMARKS_CHANGED' });
             showToast('Bookmark updated successfully!', 'success');
             return;
         }
@@ -2242,6 +2261,7 @@ async function handleAddBookmark(event) {
 
         closeBookmarkForm();
         await loadBookmarks();
+        syncChannel.postMessage({ type: 'BOOKMARKS_CHANGED' });
         showToast('Bookmark added successfully!', 'success');
     } catch (error) {
         console.error('Failed to save bookmark:', error);
@@ -2560,6 +2580,7 @@ async function persistBookmarkOrder(nextBookmarks) {
 
     try {
         await bookmarkDB.reorderBookmarks(allBookmarks.map((bookmark) => bookmark.id));
+        syncChannel.postMessage({ type: 'BOOKMARKS_CHANGED' });
     } catch (error) {
         allBookmarks = previousBookmarks;
         throw error;
@@ -2739,6 +2760,7 @@ function renderBookmarkCards(bookmarks) {
 
             try {
                 await bookmarkDB.reorderBookmarks(allBookmarks.map((item) => item.id));
+                syncChannel.postMessage({ type: 'BOOKMARKS_CHANGED' });
             } catch (error) {
                 console.error('Failed to reorder bookmarks:', error);
                 allBookmarks = previousBookmarks;
@@ -3564,6 +3586,7 @@ async function deleteBookmark(id) {
     try {
         await bookmarkDB.deleteBookmark(id);
         await loadBookmarks();
+        syncChannel.postMessage({ type: 'BOOKMARKS_CHANGED' });
         showToast('Bookmark deleted', 'success');
     } catch (error) {
         console.error('Failed to delete bookmark:', error);
@@ -3627,6 +3650,9 @@ function toggleTheme() {
     
     // Update icon
     updateThemeIcon(newTheme);
+    
+    // Notify other tabs
+    syncChannel.postMessage({ type: 'THEME_CHANGED' });
     
     // Add press animation
     themeToggle.style.boxShadow = 'inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light)';
@@ -3969,10 +3995,12 @@ async function saveSettings() {
         const storageArea = getStorageArea();
         if (storageArea) {
             await storageArea.set({ [SETTINGS_STORAGE_KEY]: settings });
+            syncChannel.postMessage({ type: 'SETTINGS_CHANGED' });
             return true;
         }
 
         localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+        syncChannel.postMessage({ type: 'SETTINGS_CHANGED' });
         return true;
     } catch (e) {
         console.error('Failed to save settings:', e);
@@ -5008,6 +5036,7 @@ function saveNotes(nextNotes = allNotes) {
         .then(async () => {
             await bookmarkDB.replaceAllNotes(snapshot);
             localStorage.removeItem(LEGACY_NOTES_STORAGE_KEY);
+            syncChannel.postMessage({ type: 'NOTES_CHANGED' });
         });
 
     return notesSaveQueue;
